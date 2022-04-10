@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!--
+      disabled warnings (produced by antlr generated source):
+      CS2002 source file specified multiple times;
+      CS3021 ClsCompliant class in assembly that is not ClsCompliant;
+    -->
+    <NoWarn>CS2002;CS3021</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4" Version="4.6.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Include="Antlr4\RedisQL.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <CustomToolNamespace>RedisQ.Core.Lang</CustomToolNamespace>
+      <Listener>True</Listener>
+      <Visitor>True</Visitor>
+    </Antlr4>
+  </ItemGroup>
+</Project>

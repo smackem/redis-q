@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8FAA6C76-547B-4A99-A1E2-452843CEE51C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisQ.Cli", "src\RedisQ.Cli\RedisQ.Cli.csproj", "{B125B0E1-34EE-45B5-9B07-D275BA182971}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisQ.Core", "src\RedisQ.Core\RedisQ.Core.csproj", "{DED740E3-77B5-409C-B607-5123E43B4DA9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9F89D197-B99F-42F6-8A4C-FFB4A0CFCC90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisQ.Core.Test", "tests\RedisQ.Core.Test\RedisQ.Core.Test.csproj", "{37C43A81-3505-4628-ABB4-38CB2CDCB9DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B125B0E1-34EE-45B5-9B07-D275BA182971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B125B0E1-34EE-45B5-9B07-D275BA182971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B125B0E1-34EE-45B5-9B07-D275BA182971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B125B0E1-34EE-45B5-9B07-D275BA182971}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DED740E3-77B5-409C-B607-5123E43B4DA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DED740E3-77B5-409C-B607-5123E43B4DA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DED740E3-77B5-409C-B607-5123E43B4DA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DED740E3-77B5-409C-B607-5123E43B4DA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37C43A81-3505-4628-ABB4-38CB2CDCB9DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37C43A81-3505-4628-ABB4-38CB2CDCB9DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37C43A81-3505-4628-ABB4-38CB2CDCB9DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37C43A81-3505-4628-ABB4-38CB2CDCB9DC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B125B0E1-34EE-45B5-9B07-D275BA182971} = {8FAA6C76-547B-4A99-A1E2-452843CEE51C}
+		{DED740E3-77B5-409C-B607-5123E43B4DA9} = {8FAA6C76-547B-4A99-A1E2-452843CEE51C}
+		{37C43A81-3505-4628-ABB4-38CB2CDCB9DC} = {9F89D197-B99F-42F6-8A4C-FFB4A0CFCC90}
+	EndGlobalSection
+EndGlobal
