@@ -28,4 +28,8 @@
       <Visitor>True</Visitor>
     </Antlr4>
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Antlr4\RedisQL.g4" />
+  </ItemGroup>
 </Project>
