@@ -1,6 +1,6 @@
 grammar RedisQL;
 
-expression
+main
     : expr EOF
     ;
 

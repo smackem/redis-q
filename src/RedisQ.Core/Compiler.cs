@@ -27,7 +27,7 @@ public class Compiler
         var lexer = new RedisQLLexer(stream);
         var tokens = new CommonTokenStream(lexer);
         var parser = new RedisQLParser(tokens);
-        var tree = parser.expression();
+        var tree = parser.main();
         //ParseTreeWalker.Default.Walk(tree);
     }
 }
