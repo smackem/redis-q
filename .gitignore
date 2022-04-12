@@ -351,3 +351,5 @@ MigrationBackup/
 
 # JetBrains ide files
 .idea
+
+dump.rdb

@@ -5,6 +5,15 @@ public abstract class Expr
     public abstract Task<Value> Evaluate(Context ctx);
 }
 
+public class LiteralExpr : Expr
+{
+    public LiteralExpr(Value literal) => Literal = literal;
+
+    public Value Literal { get; }
+
+    public override Task<Value> Evaluate(Context _) => Task.FromResult(Literal);
+}
+
 public class FunctionExpr : Expr
 {
     public FunctionExpr(FunctionDefinition function, IReadOnlyList<Expr> arguments) =>
