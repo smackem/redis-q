@@ -6,8 +6,12 @@ main
 
 expr
     : conditionalOrExpr
-    | fromClause (fromClause | letClause | whereClause)* selectClause
+    | fromExpr
     ; 
+
+fromExpr
+    : fromClause (fromClause | letClause | whereClause)* selectClause
+    ;
 
 fromClause
     : 'from' Ident 'in' primary
@@ -107,7 +111,12 @@ primary
     | StringLiteral
     | CharLiteral
     | functionInvocation
+    | tuple
     | '(' expr ')'
+    ;
+
+tuple
+    : '(' expr ',' expr (',' expr)* ')'
     ;
 
 functionInvocation

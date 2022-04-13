@@ -2,7 +2,7 @@ from key in keys("exo.mesh.*")
 select key
 
 from key in keys("exo.mesh.*")
-where key->kind == "CrownDesign"
+where json(get(key), ".kind") == "CrownDesign"
 select key
 
 // is the same as
