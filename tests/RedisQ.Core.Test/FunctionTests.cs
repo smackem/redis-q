@@ -7,7 +7,7 @@ namespace RedisQ.Core.Test;
 
 public class FunctionTests : IntegrationTestBase
 {
-    //[Fact]
+    [Fact]
     public async Task Keys()
     {
         using var redis = Connect();

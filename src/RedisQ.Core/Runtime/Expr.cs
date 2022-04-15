@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
 
@@ -255,28 +256,72 @@ public record PosExpr(Expr Operand) : UnaryExpr(Operand, value =>
 public record NotExpr(Expr Operand) : UnaryExpr(Operand, value =>
     BoolValue.Of(value.AsBoolean() == false));
 
-public record FromExpr(string Ident, Expr Source, IReadOnlyList<NestedClause> NestedClauses, Expr Target) : Expr
+public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClauses, Expr Selection) : Expr
 {
     public override async Task<Value> Evaluate(Context ctx)
     {
         ctx = Context.Inherit(ctx);
-        var source = await Source.Evaluate(ctx);
-        if (source is EnumerableValue coll == false) throw new RuntimeException("source is not enumerable");
+        var source = await Head.Source.Evaluate(ctx);
+        if (source is EnumerableValue coll == false) throw new RuntimeException($"from: source value {source} is not enumerable");
 
-        async IAsyncEnumerable<Value> Select()
+        async IAsyncEnumerable<Value> InnerSelect()
         {
             await foreach (var value in coll)
             {
-                ctx.Bind(Ident, value);
-                yield return await Target.Evaluate(ctx);
+                Trace.WriteLine($"InnerSelect: {value}");
+                ctx.Bind(Head.Ident, value);
+                yield return value;
             }
         }
 
-        return new EnumerableValue(Select());
+        var selection = InnerSelect();
+        foreach (var clause in NestedClauses)
+        {
+            selection = clause switch
+            {
+                LetClause let => Bind(selection, let, ctx),
+                WhereClause where => Filter(selection, where, ctx),
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        async IAsyncEnumerable<Value> OuterSelect(IAsyncEnumerable<Value> inner)
+        {
+            await foreach (var _ in inner)
+            {
+                var value = await Selection.Evaluate(ctx);
+                Trace.WriteLine($"InnerSelect: {value}");
+                yield return value;
+            }
+        }
+
+        return new EnumerableValue(OuterSelect(selection));
+    }
+
+    private static async IAsyncEnumerable<Value> Filter(IAsyncEnumerable<Value> coll, WhereClause where, Context ctx)
+    {
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            var include = await where.Predicate.Evaluate(ctx).ConfigureAwait(false);
+            if (include.AsBoolean()) yield return value;
+        }
+    }
+
+    private static async IAsyncEnumerable<Value> Bind(IAsyncEnumerable<Value> coll, LetClause let, Context ctx)
+    {
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            var r = await let.Right.Evaluate(ctx).ConfigureAwait(false);
+            ctx.Bind(let.Ident, r);
+            yield return value;
+        }
     }
 }
 
-public abstract record NestedClause;
+public abstract record NestedClause : Expr
+{
+    public override Task<Value> Evaluate(Context ctx) => throw new NotSupportedException();
+}
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record LetClause(string Ident, Expr Right) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;

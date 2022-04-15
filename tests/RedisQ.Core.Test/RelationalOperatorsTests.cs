@@ -29,6 +29,10 @@ public class RelationalOperatorsTests : TestBase
         Assert.Equal(BoolValue.False, value9);
         var value10 = await Interpret(@"1 == ""1""");
         Assert.Equal(BoolValue.False, value10);
+        var value11 = await Interpret(@"null == null");
+        Assert.Equal(BoolValue.True, value11);
+        var value12 = await Interpret(@"null == 1");
+        Assert.Equal(BoolValue.False, value12);
     }
 
     [Fact]
