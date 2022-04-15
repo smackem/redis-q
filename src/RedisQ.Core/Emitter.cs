@@ -22,7 +22,7 @@ public class Emitter : RedisQLBaseVisitor<Expr>
         Value? value = context switch
         {
             var ctx when ctx.StringLiteral() != null => new StringValue(ParseString(ctx.StringLiteral().GetText())),
-            var ctx when ctx.CharLiteral() != null => new CharValue(ParseChar(ctx.StringLiteral().GetText())),
+            var ctx when ctx.CharLiteral() != null => new CharValue(ParseChar(ctx.CharLiteral().GetText())),
             _ => null,
         };
 
@@ -42,6 +42,19 @@ public class Emitter : RedisQLBaseVisitor<Expr>
     {
         var items = context.expr().Select(a => a.Accept(this));
         return new TupleExpr(items.ToArray());
+    }
+
+    public override Expr VisitMain(RedisQLParser.MainContext context) =>
+        context.expr().Accept(this);
+
+    protected override Expr AggregateResult(Expr aggregate, Expr nextResult)
+    {
+        return (aggregate, nextResult) switch
+        {
+            (not null, null) => aggregate,
+            (null, not null) => nextResult,
+            (_, _) => base.AggregateResult(aggregate!, nextResult!),
+        };
     }
 
     private static string ParseString(string s) => s.Trim('\"');

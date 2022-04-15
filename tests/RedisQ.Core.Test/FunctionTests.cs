@@ -1,41 +1,22 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
-using RedisQ.Core.Redis;
 using RedisQ.Core.Runtime;
 using Xunit;
 
 namespace RedisQ.Core.Test;
 
-public class FunctionTests : IDisposable
+public class FunctionTests : IntegrationTestBase
 {
-    private readonly Process _redisProcess;
-    private const int Port = 55666;
-
-    public FunctionTests()
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "redis-server",
-            Arguments = $"--port {Port} --save \"\" --appendonly no",
-        };
-        _redisProcess = Process.Start(psi)!;
-    }
-    
     [Fact]
     public async Task Keys()
     {
-        using var redis = new RedisConnection($"localhost:{Port}");
+        using var redis = Connect();
         var db = await redis.GetDatabase();
         db.StringSet("test-key-1", "test-value");
-        var functions = new FunctionRegistry();
-        var ctx = Context.Root(redis, functions);
-        var keysFunc = functions.Lookup("keys", 1);
-        var args = new Value[] { new StringValue("*") };
-        var result = await keysFunc.Invoke(ctx, args);
-        Assert.IsType<VectorValue>(result);
-        var keys = await Collect((VectorValue) result);
+        var expr = Compile("keys(\"*\")");
+        var value = await Eval(expr, redis);
+        Assert.IsType<VectorValue>(value);
+        var keys = await Collect((VectorValue) value);
         Assert.Collection(keys,
             v => Assert.True(v is KeyValue { Value: "test-key-1" }));
     }
@@ -48,13 +29,5 @@ public class FunctionTests : IDisposable
             items.Add(item);
         }
         return items;
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-        _redisProcess.Kill();
-        _redisProcess.WaitForExit(1000);
-        _redisProcess.Dispose();
     }
 }
