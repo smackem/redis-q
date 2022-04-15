@@ -10,11 +10,17 @@ expr
     ; 
 
 fromExpr
-    : fromClause (fromClause | letClause | whereClause)* selectClause
+    : fromClause nestedClause* selectClause
     ;
 
 fromClause
     : 'from' Ident 'in' primary
+    ;
+
+nestedClause
+    : fromClause
+    | letClause
+    | whereClause
     ;
 
 letClause
@@ -112,6 +118,7 @@ primary
     | CharLiteral
     | True
     | False
+    | Null
     | functionInvocation
     | tuple
     | list
@@ -156,6 +163,7 @@ And         : '&&';
 Not         : '!';
 True        : 'true';
 False       : 'false';
+Null        : 'null';
 
 Ident
     : ([a-z] | [A-Z] | '_') ([a-z] | [A-Z] | DigitOrUnderscore)*

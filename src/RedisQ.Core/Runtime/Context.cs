@@ -38,4 +38,7 @@ public class Context
 
         return null;
     }
+
+    public void Bind(string name, Value value) =>
+        _scope.Set(name, value);
 }

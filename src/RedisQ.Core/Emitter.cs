@@ -9,6 +9,18 @@ public class Emitter : RedisQLBaseVisitor<Expr>
     public override Expr VisitMain(RedisQLParser.MainContext context) =>
         context.expr().Accept(this);
 
+    public override Expr VisitFromExpr(RedisQLParser.FromExprContext context)
+    {
+        return base.VisitFromExpr(context);
+    }
+
+    public override Expr VisitFromClause(RedisQLParser.FromClauseContext context)
+    {
+        var ident = context.Ident().GetText();
+        var expr = context.primary().Accept(this);
+        return base.VisitFromClause(context);
+    }
+
     public override Expr VisitConditionalOrExpr(RedisQLParser.ConditionalOrExprContext context)
     {
         if (context.conditionalOrExpr() == null) return base.VisitConditionalOrExpr(context);
@@ -91,6 +103,7 @@ public class Emitter : RedisQLBaseVisitor<Expr>
             var ctx when ctx.CharLiteral() != null => new CharValue(ParseChar(ctx.CharLiteral().GetText())),
             var ctx when ctx.True() != null => BoolValue.True,
             var ctx when ctx.False() != null => BoolValue.False,
+            var ctx when ctx.Null() != null => NullValue.Instance,
             _ => null,
         };
 

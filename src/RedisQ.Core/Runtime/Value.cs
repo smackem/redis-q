@@ -8,6 +8,17 @@ public abstract class Value
     public abstract bool AsBoolean();
 }
 
+public class NullValue : Value
+{
+    private NullValue()
+    {}
+
+    public static readonly NullValue Instance = new();
+
+    public override string AsString() => string.Empty;
+    public override bool AsBoolean() => false;
+}
+
 public abstract class ScalarValue<T> : Value, IEquatable<ScalarValue<T>>
     where T : IEquatable<T>
 {

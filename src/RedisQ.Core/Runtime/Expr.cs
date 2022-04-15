@@ -254,3 +254,29 @@ public record PosExpr(Expr Operand) : UnaryExpr(Operand, value =>
 
 public record NotExpr(Expr Operand) : UnaryExpr(Operand, value =>
     BoolValue.Of(value.AsBoolean() == false));
+
+public record FromExpr(string Ident, Expr Source, IReadOnlyList<NestedClause> NestedClauses, Expr Target) : Expr
+{
+    public override async Task<Value> Evaluate(Context ctx)
+    {
+        ctx = Context.Inherit(ctx);
+        var source = await Source.Evaluate(ctx);
+        if (source is EnumerableValue coll == false) throw new RuntimeException("source is not enumerable");
+
+        async IAsyncEnumerable<Value> Select()
+        {
+            await foreach (var value in coll)
+            {
+                ctx.Bind(Ident, value);
+                yield return await Target.Evaluate(ctx);
+            }
+        }
+
+        return new EnumerableValue(Select());
+    }
+}
+
+public abstract record NestedClause;
+public record FromClause(string Ident, Expr Source) : NestedClause;
+public record LetClause(string Ident, Expr Right) : NestedClause;
+public record WhereClause(Expr Predicate) : NestedClause;
