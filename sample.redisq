@@ -2,24 +2,18 @@ from key in keys("exo.mesh.*")
 select key
 
 from key in keys("exo.mesh.*")
-where json(get(key), ".kind") == "CrownDesign"
+where get(key)[".kind"] == "CrownDesign"
 select key
 
 // is the same as
 from key in keys("exo.mesh.*")
-where get(key).kind == "CrownDesign"
+where get(key)->kind == "CrownDesign"
 select key
 
 from key in keys("exo.mesh.*")
-let meta = key["meta"]
-where meta.kind == "LibraryModel"
-select meta.filename
-
-// same as
-from key in keys("exo.mesh.*")
 let meta = hget(key, "meta")
-where meta.kind == "LibraryModel"
-select meta.filename
+where meta[".kind"] == "LibraryModel"
+select meta[".filename"]
 
 from meshKey in keys("exo.mesh.*")
 from sessionKey in "exo.session.*"

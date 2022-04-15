@@ -3,7 +3,7 @@ using StackExchange.Redis;
 
 namespace RedisQ.Core.Redis;
 
-public class RedisConnection : IDisposable
+public class RedisConnection : IRedisConnection
 {
     private readonly SemaphoreSlim _semaphore = new(1);
     private readonly string _connectionString;

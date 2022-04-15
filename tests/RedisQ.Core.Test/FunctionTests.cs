@@ -24,7 +24,7 @@ public class FunctionTests : IDisposable
     }
     
     [Fact]
-    public async void Keys()
+    public async Task Keys()
     {
         using var redis = new RedisConnection($"localhost:{Port}");
         var db = await redis.GetDatabase();

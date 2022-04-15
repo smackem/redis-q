@@ -13,7 +13,7 @@ public class Context
         Redis = parent.Redis;
     }
 
-    private Context(RedisConnection redis, FunctionRegistry functions)
+    private Context(IRedisConnection redis, FunctionRegistry functions)
     {
         Parent = null;
         Redis = redis;
@@ -21,10 +21,10 @@ public class Context
     }
 
     public Context? Parent { get; }
-    public RedisConnection Redis { get; }
+    public IRedisConnection Redis { get; }
     public FunctionRegistry Functions { get; }
 
-    public static Context Root(RedisConnection redis, FunctionRegistry functions) => new(redis, functions);
+    public static Context Root(IRedisConnection redis, FunctionRegistry functions) => new(redis, functions);
     public static Context Inherit(Context parent) => new(parent);
 
     public Value? LookupBinding(string name)

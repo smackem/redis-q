@@ -1,5 +1,6 @@
 ﻿using Antlr4.Runtime;
 using RedisQ.Core.Lang;
+using RedisQ.Core.Runtime;
 
 namespace RedisQ.Core;
 
@@ -20,14 +21,14 @@ public class Compiler
         outErrors.addAll(errorListener.errors);
     */
 
-    public void Compile(string source)
+    public Expr Compile(string source)
     {
         using var sourceReader = new StringReader(source);
-        var stream = new UnbufferedCharStream(sourceReader);
+        var stream = new AntlrInputStream(sourceReader);
         var lexer = new RedisQLLexer(stream);
         var tokens = new CommonTokenStream(lexer);
         var parser = new RedisQLParser(tokens);
         var tree = parser.main();
-        //ParseTreeWalker.Default.Walk(tree);
+        return tree.Accept(new Emitter());
     }
 }
