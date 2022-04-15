@@ -41,7 +41,7 @@ public class LiteralTests : TestBase
         var value = await Eval(expr);
         Assert.Equal(new CharValue('a'), value);
     }
-    
+
     [Fact]
     public async Task SingleReal()
     {

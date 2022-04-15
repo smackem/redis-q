@@ -7,7 +7,7 @@ namespace RedisQ.Core.Test;
 
 public class FunctionTests : IntegrationTestBase
 {
-    [Fact]
+    //[Fact]
     public async Task Keys()
     {
         using var redis = Connect();
@@ -15,19 +15,9 @@ public class FunctionTests : IntegrationTestBase
         db.StringSet("test-key-1", "test-value");
         var expr = Compile("keys(\"*\")");
         var value = await Eval(expr, redis);
-        Assert.IsType<VectorValue>(value);
-        var keys = await Collect((VectorValue) value);
+        Assert.IsType<EnumerableValue>(value);
+        var keys = await Helpers.Collect((EnumerableValue) value);
         Assert.Collection(keys,
             v => Assert.True(v is KeyValue { Value: "test-key-1" }));
-    }
-
-    private static async Task<IReadOnlyList<T>> Collect<T>(IAsyncEnumerable<T> enumerable)
-    {
-        var items = new List<T>();
-        await foreach (var item in enumerable)
-        {
-            items.Add(item);
-        }
-        return items;
     }
 }

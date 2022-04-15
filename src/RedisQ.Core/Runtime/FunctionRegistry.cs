@@ -24,7 +24,7 @@ public class FunctionRegistry
             }
         }
 
-        return Task.FromResult<Value>(new VectorValue(Scan()));
+        return Task.FromResult<Value>(new EnumerableValue(Scan()));
     }
 
     public FunctionDefinition Lookup(string name, int parameterCount)

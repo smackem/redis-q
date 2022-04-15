@@ -35,11 +35,11 @@ public abstract class ScalarValue<T> : Value, IEquatable<ScalarValue<T>>
     public override string ToString() => $"{GetType().Name}[{AsString()}]";
 }
 
-public class VectorValue : Value, IAsyncEnumerable<Value>
+public class EnumerableValue : Value, IAsyncEnumerable<Value>
 {
     private readonly IAsyncEnumerable<Value> _enumerable;
 
-    public VectorValue(IAsyncEnumerable<Value> enumerable) => _enumerable = enumerable;
+    public EnumerableValue(IAsyncEnumerable<Value> enumerable) => _enumerable = enumerable;
     
     public IAsyncEnumerator<Value> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
         _enumerable.GetAsyncEnumerator(cancellationToken);
@@ -48,7 +48,7 @@ public class VectorValue : Value, IAsyncEnumerable<Value>
     public override bool AsBoolean() => throw new NotSupportedException();
 }
 
-public class TupleValue : Value
+public class TupleValue : Value, IEquatable<TupleValue>
 {
     public TupleValue(IReadOnlyList<Value> values)
     {
@@ -62,20 +62,38 @@ public class TupleValue : Value
         $"{GetType().Name}[{string.Join(", ", Values.Select(v => v.ToString()))}]";
 
     public override bool AsBoolean() => true;
+
+    public bool Equals(TupleValue? other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (Values.Count != other.Values.Count) return false;
+        return !Values.Where((t, i) => Equals(t, other.Values[i]) == false).Any();
+    }
+    
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((TupleValue)obj);
+    }
+
+    public override int GetHashCode() => Values.GetHashCode();
 }
 
-public class KeyValue : ScalarValue<string>
+public class StringValue : ScalarValue<string>
 {
-    public KeyValue(string value) : base(value)
+    public StringValue(string value) : base(value)
     {}
 
     public override string AsString() => Value;
     public override bool AsBoolean() => string.IsNullOrEmpty(Value) == false;
 }
 
-public class StringValue : ScalarValue<string>
+public class KeyValue : StringValue
 {
-    public StringValue(string value) : base(value)
+    public KeyValue(string value) : base(value)
     {}
 
     public override string AsString() => Value;
@@ -107,4 +125,18 @@ public class CharValue : ScalarValue<char>
 
     public override string AsString() => Value.ToString();
     public override bool AsBoolean() => Value != 0;
+}
+
+public class BoolValue : ScalarValue<bool>
+{
+    public static readonly BoolValue True = new(true);
+    public static readonly BoolValue False = new(false);
+
+    private BoolValue(bool value) : base(value)
+    {}
+
+    public static BoolValue Of(bool value) => value ? True : False;
+
+    public override string AsString() => Value.ToString();
+    public override bool AsBoolean() => Value;
 }

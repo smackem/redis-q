@@ -11,6 +11,7 @@ public class Context
     {
         Parent = parent;
         Redis = parent.Redis;
+        Functions = parent.Functions;
     }
 
     private Context(IRedisConnection redis, FunctionRegistry functions)

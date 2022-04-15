@@ -36,21 +36,21 @@ conditionalOrExpr
 
 conditionalAndExpr
     : relationalExpr
-    | relationalExpr And relationalExpr
+    | relationalExpr And conditionalAndExpr
     ;
 
 relationalExpr
     : additiveExpr
-    | additiveExpr relationalOp additiveExpr?
+    | additiveExpr relationalOp additiveExpr
     ;
 
 relationalOp
     : Eq
+    | Ne
     | Lt
     | Le
     | Gt
     | Ge
-    | Ne
     | Match
     ;
 
@@ -110,13 +110,20 @@ primary
     | number
     | StringLiteral
     | CharLiteral
+    | True
+    | False
     | functionInvocation
     | tuple
+    | list
     | '(' expr ')'
     ;
 
 tuple
     : '(' expr ',' expr (',' expr)* ')'
+    ;
+
+list
+    : '[' arguments? ']'
     ;
 
 functionInvocation
@@ -147,6 +154,8 @@ Match       : '~=';
 Or          : '||';
 And         : '&&';
 Not         : '!';
+True        : 'true';
+False       : 'false';
 
 Ident
     : ([a-z] | [A-Z] | '_') ([a-z] | [A-Z] | DigitOrUnderscore)*
