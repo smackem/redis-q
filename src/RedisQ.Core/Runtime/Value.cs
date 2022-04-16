@@ -1,4 +1,6 @@
 ﻿using System.Globalization;
+using StackExchange.Redis;
+using SR = StackExchange.Redis;
 
 namespace RedisQ.Core.Runtime;
 
@@ -22,7 +24,7 @@ public class NullValue : Value
 public abstract class ScalarValue<T> : Value, IEquatable<ScalarValue<T>>
     where T : IEquatable<T>
 {
-    public ScalarValue(T value) => Value = value;
+    protected ScalarValue(T value) => Value = value;
 
     public T Value { get; }
 
@@ -37,7 +39,7 @@ public abstract class ScalarValue<T> : Value, IEquatable<ScalarValue<T>>
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
+        if (obj.GetType() != GetType()) return false;
         return Equals((ScalarValue<T>)obj);
     }
 
@@ -50,13 +52,17 @@ public class EnumerableValue : Value, IAsyncEnumerable<Value>
 {
     private readonly IAsyncEnumerable<Value> _enumerable;
 
-    public EnumerableValue(IAsyncEnumerable<Value> enumerable) => _enumerable = enumerable;
+    public EnumerableValue(IAsyncEnumerable<Value> enumerable) =>
+        _enumerable = enumerable;
+
+    public EnumerableValue(IReadOnlyCollection<Value> collection) =>
+        _enumerable = AsyncEnumerable.FromCollection(collection);
     
     public IAsyncEnumerator<Value> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
         _enumerable.GetAsyncEnumerator(cancellationToken);
 
-    public override string AsString() => throw new NotSupportedException();
-    public override bool AsBoolean() => throw new NotSupportedException();
+    public override string AsString() => throw new RuntimeException("cannot convert enumerable to string");
+    public override bool AsBoolean() => throw new RuntimeException("cannot convert enumerable to boolean");
 }
 
 public class TupleValue : Value, IEquatable<TupleValue>
@@ -94,22 +100,49 @@ public class TupleValue : Value, IEquatable<TupleValue>
         Values.Aggregate(1, (hash, v) => hash * 31 + v.GetHashCode());
 }
 
-public class StringValue : ScalarValue<string>
+public interface IRedisKey
+{
+    RedisKey AsRedisKey();
+}
+
+public interface IRedisValue
+{
+    SR.RedisValue AsRedisValue();
+}
+
+public class StringValue : ScalarValue<string>, IRedisKey, IRedisValue
 {
     public StringValue(string value) : base(value)
     {}
 
     public override string AsString() => Value;
     public override bool AsBoolean() => string.IsNullOrEmpty(Value) == false;
+
+    public RedisKey AsRedisKey() => (RedisKey)Value;
+    public SR.RedisValue AsRedisValue() => (SR.RedisValue)Value;
 }
 
-public class KeyValue : StringValue
+public class RedisKeyValue : ScalarValue<RedisKey>, IRedisKey, IRedisValue
 {
-    public KeyValue(string value) : base(value)
+    public RedisKeyValue(RedisKey value) : base(value)
     {}
 
     public override string AsString() => Value;
-    public override bool AsBoolean() => string.IsNullOrEmpty(Value) == false;
+    public override bool AsBoolean() => true;
+
+    public RedisKey AsRedisKey() => Value;
+    public SR.RedisValue AsRedisValue() => new(Value);
+}
+
+public class RedisValue : ScalarValue<SR.RedisValue>, IRedisKey, IRedisValue
+{
+    public RedisValue(StackExchange.Redis.RedisValue value) : base(value)
+    {}
+
+    public override string AsString() => Value;
+    public override bool AsBoolean() => Value.HasValue;
+    public RedisKey AsRedisKey() => new(Value);
+    public SR.RedisValue AsRedisValue() => Value;
 }
 
 public class IntegerValue : ScalarValue<int>

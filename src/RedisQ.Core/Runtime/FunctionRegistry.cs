@@ -13,19 +13,24 @@ public class FunctionRegistry
 
     private static Task<Value> FuncKeys(Context ctx, Value[] arguments)
     {
-        var pattern = arguments[0].AsString();
-        var keys = ctx.Redis.ScanKeys(pattern);
+        if (arguments[0] is IRedisValue pattern == false) throw new RuntimeException("");
+        var keys = ctx.Redis.ScanKeys(pattern.AsRedisValue());
 
         async IAsyncEnumerable<Value> Scan()
         {
             await foreach (var key in keys)
             {
-                yield return new KeyValue(key);
+                yield return new RedisKeyValue(key);
             }
         }
 
         return Task.FromResult<Value>(new EnumerableValue(Scan()));
     }
+    
+    // len(enumerable|string)
+    // get(key) -> redisValue
+    // hkeys(key) -> enumerable<key>
+    //
 
     public FunctionDefinition Lookup(string name, int parameterCount)
     {

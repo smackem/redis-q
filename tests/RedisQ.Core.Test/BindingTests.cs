@@ -54,4 +54,15 @@ public class BindingTests : TestBase
         var expr = Compile(@"X");
         await Assert.ThrowsAsync<RuntimeException>(() => expr.Evaluate(ctx));
     }
+
+    [Fact]
+    public async Task TopLevelBindingClause()
+    {
+        var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
+        var expr = Compile(@"let x = 123");
+        var value = await expr.Evaluate(ctx);
+        Assert.Equal(new IntegerValue(123), value);
+        var resolvedValue = ctx.Resolve("x");
+        Assert.Equal(new IntegerValue(123), resolvedValue);
+    }
 }

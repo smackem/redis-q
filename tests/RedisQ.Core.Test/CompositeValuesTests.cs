@@ -13,7 +13,7 @@ public class CompositeValuesTests : TestBase
         var expr = Compile(source);
         var value = await Eval(expr);
         Assert.IsType<EnumerableValue>(value);
-        var values = await Helpers.Collect((EnumerableValue)value);
+        var values = await ((EnumerableValue)value).Collect();
         Assert.Collection(values,
             v => Assert.Equal(new CharValue('a'), v),
             v => Assert.Equal(new IntegerValue(123), v),
@@ -28,7 +28,7 @@ public class CompositeValuesTests : TestBase
         var expr = Compile(source);
         var value = await Eval(expr);
         Assert.IsType<EnumerableValue>(value);
-        var values = await Helpers.Collect((EnumerableValue)value);
+        var values = await ((EnumerableValue)value).Collect();
         Assert.Empty(values);
     }
 

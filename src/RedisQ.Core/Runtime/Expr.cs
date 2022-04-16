@@ -48,7 +48,7 @@ public record ListExpr(IReadOnlyList<Expr> Items) : Expr
 public record IdentExpr(string Ident) : Expr
 {
     public override Task<Value> Evaluate(Context ctx) =>
-        Task.FromResult(ctx.LookupBinding(Ident) ?? throw new RuntimeException($"identifier {Ident} not found"));
+        Task.FromResult(ctx.Resolve(Ident) ?? throw new RuntimeException($"identifier {Ident} not found"));
 }
 
 public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
@@ -97,11 +97,7 @@ public record NeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, 
     BoolValue.Of(Equals(l, r) == false));
 
 public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
-    (l, r) switch
-    {
-        (StringValue lv, StringValue rv) => BoolValue.Of(Regex.IsMatch(lv.Value, rv.Value)),
-        _ => throw new RuntimeException($"incompatible values for match operator. expected (string, string) but found ({l}, {r}"),
-    });
+    BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())));
 
 public record LtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
@@ -326,10 +322,19 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
     {
         await foreach (var value in coll.ConfigureAwait(false))
         {
-            var r = await @let.Right.Evaluate(ctx).ConfigureAwait(false);
-            ctx.Bind(let.Ident, r);
+            _ = await @let.Evaluate(ctx).ConfigureAwait(false);
             yield return value;
         }
+    }
+}
+
+public record EagerFromExpr(FromExpr From) : Expr
+{
+    public override async Task<Value> Evaluate(Context ctx)
+    {
+        var enumerable = (EnumerableValue) await From.Evaluate(ctx).ConfigureAwait(false);
+        var collection = await enumerable.Collect().ConfigureAwait(false);
+        return new EnumerableValue(collection);
     }
 }
 
@@ -337,6 +342,16 @@ public abstract record NestedClause : Expr
 {
     public override Task<Value> Evaluate(Context ctx) => throw new NotSupportedException();
 }
+
 public record FromClause(string Ident, Expr Source) : NestedClause;
-public record LetClause(string Ident, Expr Right) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
+
+public record LetClause(string Ident, Expr Right) : NestedClause
+{
+    public override async Task<Value> Evaluate(Context ctx)
+    {
+        var value = await Right.Evaluate(ctx).ConfigureAwait(false);
+        ctx.Bind(Ident, value);
+        return value;
+    }
+}

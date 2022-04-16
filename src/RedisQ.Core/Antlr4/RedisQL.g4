@@ -1,7 +1,8 @@
 grammar RedisQL;
 
 main
-    : expr EOF
+    : (expr
+    | letClause) EOF
     ;
 
 expr
@@ -24,7 +25,7 @@ fromClause
     ;
 
 letClause
-    : 'let' Ident '=' conditionalOrExpr
+    : 'let' Ident '=' expr
     ;
 
 whereClause
@@ -32,7 +33,7 @@ whereClause
     ;
 
 selectClause
-    : 'select' conditionalOrExpr
+    : 'select' expr
     ;
 
 conditionalOrExpr

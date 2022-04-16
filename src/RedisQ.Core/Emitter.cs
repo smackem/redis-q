@@ -1,4 +1,5 @@
 using System.Globalization;
+using Antlr4.Runtime.Tree;
 using RedisQ.Core.Lang;
 using RedisQ.Core.Runtime;
 
@@ -6,24 +7,43 @@ namespace RedisQ.Core;
 
 public class Emitter : RedisQLBaseVisitor<Expr>
 {
+    private int _nestingLevel;
+    
     public override Expr VisitMain(RedisQLParser.MainContext context) =>
-        context.expr().Accept(this);
+        (context.expr() as IParseTree ?? context.letClause()).Accept(this);
 
     public override Expr VisitFromExpr(RedisQLParser.FromExprContext context)
     {
         var head = (FromClause) context.fromClause().Accept(this);
-        var selection = context.selectClause().conditionalOrExpr().Accept(this);
+        var selection = context.selectClause().Accept(this);
         var nested = context.nestedClause()
             .Select(clause => (NestedClause) clause.Accept(this))
             .ToArray();
-        return new FromExpr(head, nested, selection);
+        var @from = new FromExpr(head, nested, selection);
+        return _nestingLevel > 0 ? new EagerFromExpr(@from) : @from;
+    }
+
+    public override Expr VisitSelectClause(RedisQLParser.SelectClauseContext context)
+    {
+        _nestingLevel++;
+        var result = context.expr().Accept(this);
+        _nestingLevel--;
+        return result;
+    }
+
+    public override Expr VisitNestedClause(RedisQLParser.NestedClauseContext context)
+    {
+        _nestingLevel++;
+        var result = base.VisitNestedClause(context);
+        _nestingLevel--;
+        return result;
     }
 
     public override Expr VisitFromClause(RedisQLParser.FromClauseContext context) =>
         new FromClause(context.Ident().GetText(), context.primary().Accept(this));
 
     public override Expr VisitLetClause(RedisQLParser.LetClauseContext context) =>
-        new LetClause(context.Ident().GetText(), context.conditionalOrExpr().Accept(this));
+        new LetClause(context.Ident().GetText(), context.expr().Accept(this));
 
     public override Expr VisitWhereClause(RedisQLParser.WhereClauseContext context) =>
         new WhereClause(context.conditionalOrExpr().Accept(this));

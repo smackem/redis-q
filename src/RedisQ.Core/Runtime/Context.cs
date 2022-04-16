@@ -28,7 +28,7 @@ public class Context
     public static Context Root(IRedisConnection redis, FunctionRegistry functions) => new(redis, functions);
     public static Context Inherit(Context parent) => new(parent);
 
-    public Value? LookupBinding(string name)
+    public Value? Resolve(string name)
     {
         for (var ctx = this; ctx != null; ctx = ctx.Parent)
         {

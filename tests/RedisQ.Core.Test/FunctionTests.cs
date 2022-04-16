@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using RedisQ.Core.Runtime;
+using StackExchange.Redis;
 using Xunit;
 
 namespace RedisQ.Core.Test;
@@ -16,8 +16,8 @@ public class FunctionTests : IntegrationTestBase
         var expr = Compile("keys(\"*\")");
         var value = await Eval(expr, redis);
         Assert.IsType<EnumerableValue>(value);
-        var keys = await Helpers.Collect((EnumerableValue) value);
+        var keys = await ((EnumerableValue) value).Collect();
         Assert.Collection(keys,
-            v => Assert.True(v is KeyValue { Value: "test-key-1" }));
+            v => Assert.True(v is RedisKeyValue key && key.Value == "test-key-1"));
     }
 }
