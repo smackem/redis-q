@@ -10,6 +10,8 @@ public class FunctionRegistry
         Register(new FunctionDefinition("len", 1, FuncLen));
         Register(new FunctionDefinition("get", 1, FuncGet));
         Register(new FunctionDefinition("mget", 1, FuncMGet));
+        Register(new FunctionDefinition("strlen", 1, FuncStrLen));
+        Register(new FunctionDefinition("getrange", 3, FuncGetRange));
     }
 
     private static Task<Value> FuncKeys(Context ctx, Value[] arguments)
@@ -55,8 +57,23 @@ public class FunctionRegistry
         return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
     }
 
-    // strlen(key) -> int
-    // getrange(key, int, int) -> redisValue
+    private static async Task<Value> FuncStrLen(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"get({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var val = await db.StringLengthAsync(key.AsRedisKey());
+        return IntegerValue.Of((int) val);
+    }
+
+    private static async Task<Value> FuncGetRange(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"get({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IntegerValue start == false) throw new RuntimeException($"get({arguments[1]}): incompatible operand, Integer expected");
+        if (arguments[2] is IntegerValue end == false) throw new RuntimeException($"get({arguments[2]}): incompatible operand, Integer expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var val = await db.StringGetRangeAsync(key.AsRedisKey(), start.Value, end.Value);
+        return new RedisValue(val);
+    }
     // hkeys(key) -> enumerable<key>
     // hget(key, redisValue) -> redisValue
     // hgetall(key) -> enumerable<tuple(redisValue, redisValue)>
@@ -78,7 +95,7 @@ public class FunctionRegistry
         return function;
     }
 
-    private void Register(FunctionDefinition function)
+    public void Register(FunctionDefinition function)
     {
         _dict.Add(function.Name, function);
     }

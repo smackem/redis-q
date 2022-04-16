@@ -1,12 +1,11 @@
 using System.Globalization;
-using System.Net.Mime;
 using Antlr4.Runtime.Tree;
 using RedisQ.Core.Lang;
 using RedisQ.Core.Runtime;
 
 namespace RedisQ.Core;
 
-public class Emitter : RedisQLBaseVisitor<Expr>
+internal class Emitter : RedisQLBaseVisitor<Expr>
 {
     private int _nestingLevel;
     

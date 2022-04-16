@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using RedisQ.Core.Redis;
+﻿using RedisQ.Core.Redis;
 
 namespace RedisQ.Core.Runtime;
 
