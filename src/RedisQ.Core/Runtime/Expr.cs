@@ -258,60 +258,75 @@ public record NotExpr(Expr Operand) : UnaryExpr(Operand, value =>
 
 public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClauses, Expr Selection) : Expr
 {
-    public override async Task<Value> Evaluate(Context ctx)
+    public override Task<Value> Evaluate(Context ctx)
     {
         ctx = Context.Inherit(ctx);
-        var source = await Head.Source.Evaluate(ctx);
-        if (source is EnumerableValue coll == false) throw new RuntimeException($"from: source value {source} is not enumerable");
+        var selection = SelectFromSource(Head, ctx);
 
-        async IAsyncEnumerable<Value> InnerSelect()
-        {
-            await foreach (var value in coll)
-            {
-                Trace.WriteLine($"InnerSelect: {value}");
-                ctx.Bind(Head.Ident, value);
-                yield return value;
-            }
-        }
-
-        var selection = InnerSelect();
         foreach (var clause in NestedClauses)
         {
             selection = clause switch
             {
-                LetClause let => Bind(selection, let, ctx),
-                WhereClause where => Filter(selection, where, ctx),
+                FromClause @from => CrossJoin(selection, @from, ctx),
+                LetClause @let => Bind(selection, @let, ctx),
+                WhereClause @where => Filter(selection, @where, ctx),
                 _ => throw new NotImplementedException(),
             };
         }
 
         async IAsyncEnumerable<Value> OuterSelect(IAsyncEnumerable<Value> inner)
         {
-            await foreach (var _ in inner)
+            await foreach (var _ in inner.ConfigureAwait(false))
             {
-                var value = await Selection.Evaluate(ctx);
-                Trace.WriteLine($"InnerSelect: {value}");
+                var value = await Selection.Evaluate(ctx).ConfigureAwait(false);
+                Trace.WriteLine($"SelectSource: {value}");
                 yield return value;
             }
         }
 
-        return new EnumerableValue(OuterSelect(selection));
+        var resultValue = new EnumerableValue(OuterSelect(selection));
+        return Task.FromResult(resultValue as Value);
     }
 
-    private static async IAsyncEnumerable<Value> Filter(IAsyncEnumerable<Value> coll, WhereClause where, Context ctx)
+    private static async IAsyncEnumerable<Value> SelectFromSource(FromClause @from,  Context ctx)
+    {
+        var sourceValue = await @from.Source.Evaluate(ctx);
+        if (sourceValue is EnumerableValue source == false) throw new RuntimeException($"from: source value {sourceValue} is not enumerable");
+
+        await foreach (var value in source.ConfigureAwait(false))
+        {
+            Trace.WriteLine($"SelectSource: {value}");
+            ctx.Bind(from.Ident, value);
+            yield return value;
+        }
+    }
+
+    private static async IAsyncEnumerable<Value> CrossJoin(IAsyncEnumerable<Value> coll, FromClause @from, Context ctx)
+    {
+        await foreach (var _ in coll.ConfigureAwait(false))
+        {
+            var selection = SelectFromSource(@from, ctx);
+            await foreach (var value in selection.ConfigureAwait(false))
+            {
+                yield return value;
+            }
+        }
+    }
+
+    private static async IAsyncEnumerable<Value> Filter(IAsyncEnumerable<Value> coll, WhereClause @where, Context ctx)
     {
         await foreach (var value in coll.ConfigureAwait(false))
         {
-            var include = await where.Predicate.Evaluate(ctx).ConfigureAwait(false);
+            var include = await @where.Predicate.Evaluate(ctx).ConfigureAwait(false);
             if (include.AsBoolean()) yield return value;
         }
     }
 
-    private static async IAsyncEnumerable<Value> Bind(IAsyncEnumerable<Value> coll, LetClause let, Context ctx)
+    private static async IAsyncEnumerable<Value> Bind(IAsyncEnumerable<Value> coll, LetClause @let, Context ctx)
     {
         await foreach (var value in coll.ConfigureAwait(false))
         {
-            var r = await let.Right.Evaluate(ctx).ConfigureAwait(false);
+            var r = await @let.Right.Evaluate(ctx).ConfigureAwait(false);
             ctx.Bind(let.Ident, r);
             yield return value;
         }

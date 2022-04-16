@@ -90,7 +90,8 @@ public class TupleValue : Value, IEquatable<TupleValue>
         return Equals((TupleValue)obj);
     }
 
-    public override int GetHashCode() => Values.GetHashCode();
+    public override int GetHashCode() =>
+        Values.Aggregate(1, (hash, v) => hash * 31 + v.GetHashCode());
 }
 
 public class StringValue : ScalarValue<string>

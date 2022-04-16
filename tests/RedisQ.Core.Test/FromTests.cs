@@ -45,7 +45,7 @@ from x in [1, 2, 3] select x + 1
             v => Assert.Equal(new IntegerValue(4), v));
     }
 
-    [Fact]
+    //[Fact]
     public async Task ThrowsOnNonEnumerableSource()
     {
         const string source = @"
@@ -132,39 +132,69 @@ select x
 
         const string source = @"
 from x in [1, 2, 3]
-from y in [1]
+from y in [1, 2]
 select x + y
 ";
         var value = await Interpret(source);
         _out.WriteLine(writer.GetStringBuilder().ToString());
-        _out.WriteLine("depp");
         Assert.IsType<EnumerableValue>(value);
         var coll = (EnumerableValue) value;
         var values = await Helpers.Collect(coll);
         Assert.Collection(values,
-            v =>
-            {
-                Assert.IsType<EnumerableValue>(v);
-                var innerColl = (EnumerableValue) v;
-                var innerValues = Helpers.Collect(innerColl).Result;
-                Assert.Collection(innerValues,
-                    iv => Assert.Equal(new IntegerValue(2), iv));
-            },
-            v =>
-            {
-                Assert.IsType<EnumerableValue>(v);
-                var innerColl = (EnumerableValue) v;
-                var innerValues = Helpers.Collect(innerColl).Result;
-                Assert.Collection(innerValues,
-                    iv => Assert.Equal(new IntegerValue(3), iv));
-            },
-            v =>
-            {
-                Assert.IsType<EnumerableValue>(v);
-                var innerColl = (EnumerableValue) v;
-                var innerValues = Helpers.Collect(innerColl).Result;
-                Assert.Collection(innerValues,
-                    iv => Assert.Equal(new IntegerValue(4), iv));
-            });
+            v => Assert.Equal(new IntegerValue(2), v),
+            v => Assert.Equal(new IntegerValue(3), v),
+            v => Assert.Equal(new IntegerValue(3), v),
+            v => Assert.Equal(new IntegerValue(4), v),
+            v => Assert.Equal(new IntegerValue(4), v),
+            v => Assert.Equal(new IntegerValue(5), v));
+    }
+    
+    [Fact]
+    public async Task SelectFilteredNestedFrom()
+    {
+        await using var writer = new StringWriter();
+        Trace.Listeners.Add(new TextWriterTraceListener(writer));
+
+        const string source = @"
+from x in [1, 2, 3]
+where x % 2 == 0
+from y in [1, 2, 3, 4, 5]
+where y % 2 == 0
+select x + y
+";
+        var value = await Interpret(source);
+        _out.WriteLine(writer.GetStringBuilder().ToString());
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue) value;
+        var values = await Helpers.Collect(coll);
+        Assert.Collection(values,
+            v => Assert.Equal(new IntegerValue(4), v),
+            v => Assert.Equal(new IntegerValue(6), v));
+    }
+
+    [Fact]
+    public async Task SelectFilteredNestedFromWithBindings()
+    {
+        await using var writer = new StringWriter();
+        Trace.Listeners.Add(new TextWriterTraceListener(writer));
+
+        const string source = @"
+from x in [1, 2, 3]
+let temp = x % 2
+where temp == 0
+from y in [1, 2, 3, 4, 5]
+let temp = y % 2
+where temp == 0
+select x + y
+";
+        var value = await Interpret(source);
+        _out.WriteLine(writer.GetStringBuilder().ToString());
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue) value;
+        var values = await Helpers.Collect(coll);
+        Assert.Collection(values,
+            v => Assert.Equal(new IntegerValue(4), v),
+            v => Assert.Equal(new IntegerValue(6), v));
     }
 }
+

@@ -11,16 +11,16 @@ public class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitFromExpr(RedisQLParser.FromExprContext context)
     {
-        var ident = context.Ident().GetText();
-        var expr = context.primary().Accept(this);
-        var head = new FromClause(ident, expr);
-        var selection = context.selectClause()?.conditionalOrExpr().Accept(this)
-            ?? context.fromExpr().Accept(this);
+        var head = (FromClause) context.fromClause().Accept(this);
+        var selection = context.selectClause().conditionalOrExpr().Accept(this);
         var nested = context.nestedClause()
             .Select(clause => (NestedClause) clause.Accept(this))
             .ToArray();
         return new FromExpr(head, nested, selection);
     }
+
+    public override Expr VisitFromClause(RedisQLParser.FromClauseContext context) =>
+        new FromClause(context.Ident().GetText(), context.primary().Accept(this));
 
     public override Expr VisitLetClause(RedisQLParser.LetClauseContext context) =>
         new LetClause(context.Ident().GetText(), context.conditionalOrExpr().Accept(this));

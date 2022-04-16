@@ -10,12 +10,17 @@ expr
     ; 
 
 fromExpr
-    : 'from' Ident 'in' primary nestedClause* (selectClause | fromExpr)
+    : fromClause nestedClause* selectClause
     ;
 
 nestedClause
-    : letClause
+    : fromClause
+    | letClause
     | whereClause
+    ;
+
+fromClause
+    : 'from' Ident 'in' primary
     ;
 
 letClause
