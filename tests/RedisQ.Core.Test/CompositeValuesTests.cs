@@ -40,7 +40,7 @@ public class CompositeValuesTests : TestBase
         var value = await Eval(expr);
         Assert.IsType<TupleValue>(value);
         var tuple = (TupleValue)value;
-        Assert.Collection(tuple.Values,
+        Assert.Collection(tuple.Items,
             v => Assert.Equal(new CharValue('a'), v),
             v => Assert.Equal(IntegerValue.Of(123), v),
             v => Assert.Equal(new RealValue(2.5), v),

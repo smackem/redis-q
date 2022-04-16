@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using RedisQ.Core.Redis;
 using RedisQ.Core.Runtime;
@@ -17,8 +18,17 @@ public class IntegrationTestBase : TestBase, IDisposable
         {
             FileName = "redis-server",
             Arguments = $"--port {Port} --save \"\" --appendonly no",
+            RedirectStandardOutput = true,
         };
         _redisProcess = Process.Start(psi)!;
+        WaitUntilReady(_redisProcess.StandardOutput);
+    }
+
+    private static void WaitUntilReady(TextReader reader)
+    {
+        while (reader.ReadLine()?.Contains("Ready to accept connections") == false)
+        {
+        }
     }
 
     private protected static IRedisConnection Connect() => new RedisConnection($"localhost:{Port}");

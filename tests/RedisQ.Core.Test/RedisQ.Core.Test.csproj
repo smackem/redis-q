@@ -24,4 +24,7 @@
     <ProjectReference Include="..\..\src\RedisQ.Core\RedisQ.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

@@ -82,16 +82,18 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>
 
 public class TupleValue : Value, IEquatable<TupleValue>
 {
-    public TupleValue(IReadOnlyList<Value> values)
+    public TupleValue(IReadOnlyList<Value> items)
     {
-        if (values.Count < 2) throw new ArgumentException("a tuple must have at least two items");
-        Values = values;
+        if (items.Count < 2) throw new ArgumentException("a tuple must have at least two items");
+        Items = items;
     }
 
-    public IReadOnlyList<Value> Values { get; }
+    public IReadOnlyList<Value> Items { get; }
+
+    public static TupleValue Create(Value item1, Value item2) => new(new[] { item1, item2 });
 
     public override string AsString() =>
-        $"{GetType().Name}[{string.Join(", ", Values.Select(v => v.ToString()))}]";
+        $"{GetType().Name}[{string.Join(", ", Items.Select(v => v.ToString()))}]";
 
     public override bool AsBoolean() => true;
 
@@ -99,8 +101,8 @@ public class TupleValue : Value, IEquatable<TupleValue>
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        if (Values.Count != other.Values.Count) return false;
-        return !Values.Where((t, i) => Equals(t, other.Values[i]) == false).Any();
+        if (Items.Count != other.Items.Count) return false;
+        return !Items.Where((t, i) => Equals(t, other.Items[i]) == false).Any();
     }
     
     public override bool Equals(object? obj)
@@ -112,7 +114,7 @@ public class TupleValue : Value, IEquatable<TupleValue>
     }
 
     public override int GetHashCode() =>
-        Values.Aggregate(1, (hash, v) => hash * 31 + v.GetHashCode());
+        Items.Aggregate(1, (hash, v) => hash * 31 + v.GetHashCode());
 }
 
 public interface IRedisKey
@@ -151,8 +153,10 @@ public class RedisKeyValue : ScalarValue<RedisKey>, IRedisKey, IRedisValue
 
 public class RedisValue : ScalarValue<SR.RedisValue>, IRedisKey, IRedisValue
 {
-    public RedisValue(StackExchange.Redis.RedisValue value) : base(value)
+    public RedisValue(SR.RedisValue value) : base(value)
     {}
+
+    public static readonly RedisValue Empty = new(SR.RedisValue.Null);
 
     public override string AsString() => Value;
     public override bool AsBoolean() => Value.HasValue;
