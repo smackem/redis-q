@@ -114,4 +114,49 @@ public class FunctionTests : IntegrationTestBase
         var value2 = await Eval(expr2, redis);
         Assert.Equal(new RedisValue("1234567890"), value2);
     }
+
+    [Fact]
+    public async Task HKeys()
+    {
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.HashSet("person", "name", "bob");
+        db.HashSet("person", "age", 60);
+        var expr1 = Compile(@"hkeys(""person"")");
+        var value1 = await Eval(expr1, redis);
+        Assert.IsType<ListValue>(value1);
+        Assert.Collection((ListValue)value1,
+            v => Assert.Equal(new RedisValue("name"), v),
+            v => Assert.Equal(new RedisValue("age"), v));
+    }
+
+    [Fact]
+    public async Task HGet()
+    {
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.HashSet("person", "name", "bob");
+        db.HashSet("person", "age", 60);
+        var expr1 = Compile(@"hget(""person"", ""name"")");
+        var value1 = await Eval(expr1, redis);
+        Assert.Equal(new RedisValue("bob"), value1);
+        var expr2 = Compile(@"hget(""person"", ""nonexisting"")");
+        var value2 = await Eval(expr2, redis);
+        Assert.Equal(RedisValue.Empty, value2);
+    }
+
+    [Fact]
+    public async Task HGetAll()
+    {
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.HashSet("person", "name", "bob");
+        db.HashSet("person", "age", 60);
+        var expr1 = Compile(@"hgetall(""person"")");
+        var value1 = await Eval(expr1, redis);
+        Assert.IsType<ListValue>(value1);
+        Assert.Collection((ListValue) value1,
+            v => Assert.Equal(TupleValue.Of(new RedisValue("name"), new RedisValue("bob")), v),
+            v => Assert.Equal(TupleValue.Of(new RedisValue("age"), new RedisValue(60)), v));
+    }
 }

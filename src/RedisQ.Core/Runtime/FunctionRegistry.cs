@@ -104,7 +104,7 @@ public class FunctionRegistry
         var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
         var entries = await db.HashGetAllAsync(key.AsRedisKey());
         var tuples = entries
-            .Select(entry => TupleValue.Create(new RedisValue(entry.Name), new RedisValue(entry.Value)))
+            .Select(entry => TupleValue.Of(new RedisValue(entry.Name), new RedisValue(entry.Value)))
             .Cast<Value>()
             .ToArray();
         return new ListValue(tuples);

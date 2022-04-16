@@ -90,7 +90,7 @@ public class TupleValue : Value, IEquatable<TupleValue>
 
     public IReadOnlyList<Value> Items { get; }
 
-    public static TupleValue Create(Value item1, Value item2) => new(new[] { item1, item2 });
+    public static TupleValue Of(Value item1, Value item2) => new(new[] { item1, item2 });
 
     public override string AsString() =>
         $"{GetType().Name}[{string.Join(", ", Items.Select(v => v.ToString()))}]";
