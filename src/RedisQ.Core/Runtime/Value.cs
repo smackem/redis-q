@@ -169,9 +169,11 @@ public class IntegerValue : ScalarValue<int>
     private static readonly IntegerValue[] CachedValues = Enumerable.Range(0, 100)
         .Select(n => new IntegerValue(n))
         .ToArray();
-    
+
     private IntegerValue(int value) : base(value)
     {}
+
+    public static IntegerValue Zero => CachedValues[0];
 
     public static IntegerValue Of(int n) =>
         n >= 0 && n < CachedValues.Length ? CachedValues[n] : new IntegerValue(n);
