@@ -206,7 +206,7 @@ select x + y
         const string source = @"
 from x in [1, 2, 3]
 let multiples =
-    (from y in [1, 2] select x * y)
+    from y in [1, 2] select x * y
 from m in multiples
 select m
 ";
@@ -233,9 +233,9 @@ select m
         const string source = @"
 from x in [1, 2, 3]
 let multiples =
-    (from y in [1, 2]
-    let h = (from z in [2] select y * z)
-    from i in h select x * i)
+    from y in [1, 2]
+    let h = from z in [2] select y * z
+    from i in h select x * i
 from m in multiples
 select m
 ";
@@ -262,7 +262,7 @@ select m
         const string source = @"
 from x in [1, 2, 3]
 select
-    (from y in [1, 2] select x * y)
+    from y in [1, 2] select x * y
 ";
         var value = await Interpret(source);
         _out.WriteLine(writer.GetStringBuilder().ToString());
