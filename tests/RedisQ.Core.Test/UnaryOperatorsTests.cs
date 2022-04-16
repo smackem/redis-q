@@ -10,7 +10,7 @@ public class UnaryOperatorsTests : TestBase
     public async Task Negate()
     {
         var value1 = await Interpret("-(123)");
-        Assert.Equal(new IntegerValue(-123), value1);
+        Assert.Equal(IntegerValue.Of(-123), value1);
         var value2 = await Interpret("-(1.5 - 1)");
         Assert.Equal(new RealValue(-0.5), value2);
         var value3 = await Interpret("-(123) == -123");
@@ -21,7 +21,7 @@ public class UnaryOperatorsTests : TestBase
     public async Task Positive()
     {
         var value1 = await Interpret("+(123)");
-        Assert.Equal(new IntegerValue(123), value1);
+        Assert.Equal(IntegerValue.Of(123), value1);
         var value2 = await Interpret("+(1.5 - 1)");
         Assert.Equal(new RealValue(0.5), value2);
         var value3 = await Interpret("+(123) == +123");

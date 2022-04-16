@@ -12,11 +12,11 @@ public class CompositeValuesTests : TestBase
         const string source = "['a', 123, 2.5, \"abc\"]";
         var expr = Compile(source);
         var value = await Eval(expr);
-        Assert.IsType<EnumerableValue>(value);
-        var values = await ((EnumerableValue)value).Collect();
+        Assert.IsType<ListValue>(value);
+        var values = (ListValue)value;
         Assert.Collection(values,
             v => Assert.Equal(new CharValue('a'), v),
-            v => Assert.Equal(new IntegerValue(123), v),
+            v => Assert.Equal(IntegerValue.Of(123), v),
             v => Assert.Equal(new RealValue(2.5), v),
             v => Assert.Equal(new StringValue("abc"), v));
     }
@@ -27,8 +27,8 @@ public class CompositeValuesTests : TestBase
         const string source = "[]";
         var expr = Compile(source);
         var value = await Eval(expr);
-        Assert.IsType<EnumerableValue>(value);
-        var values = await ((EnumerableValue)value).Collect();
+        Assert.IsType<ListValue>(value);
+        var values = (ListValue)value;
         Assert.Empty(values);
     }
 
@@ -42,7 +42,7 @@ public class CompositeValuesTests : TestBase
         var tuple = (TupleValue)value;
         Assert.Collection(tuple.Values,
             v => Assert.Equal(new CharValue('a'), v),
-            v => Assert.Equal(new IntegerValue(123), v),
+            v => Assert.Equal(IntegerValue.Of(123), v),
             v => Assert.Equal(new RealValue(2.5), v),
             v => Assert.Equal(new StringValue("abc"), v));
     }

@@ -12,7 +12,7 @@ public class LiteralTests : TestBase
         const string source = "1";
         var expr = Compile(source);
         var value = await Eval(expr);
-        Assert.Equal(new IntegerValue(1), value);
+        Assert.Equal(IntegerValue.Of(1), value);
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public class LiteralTests : TestBase
         const string source = "1_000_000_000";
         var expr = Compile(source);
         var value = await Eval(expr);
-        Assert.Equal(new IntegerValue(1_000_000_000), value);
+        Assert.Equal(IntegerValue.Of(1_000_000_000), value);
     }
 
     [Fact]

@@ -97,7 +97,7 @@ postFixedPrimary
     : primary
     | postFixedPrimary fieldAccessPostfix
     | postFixedPrimary indirectFieldAccessPostfix
-    | postFixedPrimary mapAccessPostfix
+    | postFixedPrimary subscriptPostfix
     ;
 
 fieldAccessPostfix
@@ -108,7 +108,7 @@ indirectFieldAccessPostfix
     : '->' Ident
     ;
 
-mapAccessPostfix
+subscriptPostfix
     : '[' expr ']'
     ;
 

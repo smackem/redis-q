@@ -10,7 +10,7 @@ public class AdditiveOperatorsTests : TestBase
     public async Task AddIntegers()
     {
         var value = await Interpret(@"1 + 1");
-        Assert.Equal(new IntegerValue(2), value);
+        Assert.Equal(IntegerValue.Of(2), value);
     }
 
     [Fact]
@@ -33,16 +33,16 @@ public class AdditiveOperatorsTests : TestBase
     public async Task AddIntegerAndChar()
     {
         var value1 = await Interpret(@"'a' + 1");
-        Assert.Equal(new IntegerValue('a' + 1), value1);
+        Assert.Equal(IntegerValue.Of('a' + 1), value1);
         var value2 = await Interpret(@"1 + 'a'");
-        Assert.Equal(new IntegerValue('a' + 1), value2);
+        Assert.Equal(IntegerValue.Of('a' + 1), value2);
     }
 
     [Fact]
     public async Task AddChars()
     {
         var value = await Interpret(@"'a' + 'b'");
-        Assert.Equal(new IntegerValue('a' + 'b'), value);
+        Assert.Equal(IntegerValue.Of('a' + 'b'), value);
     }
     
     [Fact]
@@ -77,7 +77,7 @@ public class AdditiveOperatorsTests : TestBase
     public async Task SubtractIntegers()
     {
         var value = await Interpret(@"1 - 1");
-        Assert.Equal(new IntegerValue(0), value);
+        Assert.Equal(IntegerValue.Of(0), value);
     }
 
     [Fact]
@@ -93,16 +93,16 @@ public class AdditiveOperatorsTests : TestBase
     public async Task SubtractIntegerAndChar()
     {
         var value1 = await Interpret(@"'a' - 1");
-        Assert.Equal(new IntegerValue('a' - 1), value1);
+        Assert.Equal(IntegerValue.Of('a' - 1), value1);
         var value2 = await Interpret(@"1 - 'a'");
-        Assert.Equal(new IntegerValue(1 - 'a'), value2);
+        Assert.Equal(IntegerValue.Of(1 - 'a'), value2);
     }
 
     [Fact]
     public async Task LongAdditiveWithIntegers()
     {
         var value = await Interpret(@"1 + 10 - 5 + 4 - 9");
-        Assert.Equal(new IntegerValue(1), value);
+        Assert.Equal(IntegerValue.Of(1), value);
     }
 
     [Fact]

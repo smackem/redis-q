@@ -24,9 +24,9 @@ from x in [1, 2, 3] select x
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(1), v),
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(3), v));
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
     }
 
     [Fact]
@@ -40,9 +40,9 @@ from x in [1, 2, 3] select x + 1
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(3), v),
-            v => Assert.Equal(new IntegerValue(4), v));
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v),
+            v => Assert.Equal(IntegerValue.Of(4), v));
     }
 
     //[Fact]
@@ -67,7 +67,7 @@ select x
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(2), v));
+            v => Assert.Equal(IntegerValue.Of(2), v));
     }
 
     [Fact]
@@ -84,9 +84,9 @@ select x
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(6), v),
-            v => Assert.Equal(new IntegerValue(12), v),
-            v => Assert.Equal(new IntegerValue(24), v));
+            v => Assert.Equal(IntegerValue.Of(6), v),
+            v => Assert.Equal(IntegerValue.Of(12), v),
+            v => Assert.Equal(IntegerValue.Of(24), v));
     }
 
     [Fact]
@@ -102,9 +102,9 @@ select y
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(1), v),
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(3), v));
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
     }
 
     [Fact]
@@ -121,7 +121,7 @@ select x
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(2), v));
+            v => Assert.Equal(IntegerValue.Of(2), v));
     }
 
     [Fact]
@@ -141,12 +141,12 @@ select x + y
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(3), v),
-            v => Assert.Equal(new IntegerValue(3), v),
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(5), v));
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v),
+            v => Assert.Equal(IntegerValue.Of(3), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(5), v));
     }
 
     [Fact]
@@ -168,8 +168,8 @@ select x + y
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(6), v));
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(6), v));
     }
 
     [Fact]
@@ -193,8 +193,8 @@ select x + y
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(6), v));
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(6), v));
     }
 
     [Fact]
@@ -216,12 +216,12 @@ select m
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(1), v),
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(3), v),
-            v => Assert.Equal(new IntegerValue(6), v));
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(3), v),
+            v => Assert.Equal(IntegerValue.Of(6), v));
     }
 
     [Fact]
@@ -245,12 +245,12 @@ select m
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Collection(values,
-            v => Assert.Equal(new IntegerValue(2), v),
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(4), v),
-            v => Assert.Equal(new IntegerValue(8), v),
-            v => Assert.Equal(new IntegerValue(6), v),
-            v => Assert.Equal(new IntegerValue(12), v));
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(8), v),
+            v => Assert.Equal(IntegerValue.Of(6), v),
+            v => Assert.Equal(IntegerValue.Of(12), v));
     }
 
     [Fact]
@@ -272,30 +272,27 @@ select
         Assert.Collection(values,
             v =>
             {
-                Assert.IsType<EnumerableValue>(v);
-                var innerColl = (EnumerableValue) v;
-                var innerValues = innerColl.Collect().Result;
+                Assert.IsType<ListValue>(v);
+                var innerValues = (ListValue) v;
                 Assert.Collection(innerValues,
-                    iv => Assert.Equal(new IntegerValue(1), iv),
-                    iv => Assert.Equal(new IntegerValue(2), iv));
+                    iv => Assert.Equal(IntegerValue.Of(1), iv),
+                    iv => Assert.Equal(IntegerValue.Of(2), iv));
             },
             v =>
             {
-                Assert.IsType<EnumerableValue>(v);
-                var innerColl = (EnumerableValue) v;
-                var innerValues = innerColl.Collect().Result;
+                Assert.IsType<ListValue>(v);
+                var innerValues = (ListValue) v;
                 Assert.Collection(innerValues,
-                    iv => Assert.Equal(new IntegerValue(2), iv),
-                    iv => Assert.Equal(new IntegerValue(4), iv));
+                    iv => Assert.Equal(IntegerValue.Of(2), iv),
+                    iv => Assert.Equal(IntegerValue.Of(4), iv));
             },
             v =>
             {
-                Assert.IsType<EnumerableValue>(v);
-                var innerColl = (EnumerableValue) v;
-                var innerValues = innerColl.Collect().Result;
+                Assert.IsType<ListValue>(v);
+                var innerValues = (ListValue) v;
                 Assert.Collection(innerValues,
-                    iv => Assert.Equal(new IntegerValue(3), iv),
-                    iv => Assert.Equal(new IntegerValue(6), iv));
+                    iv => Assert.Equal(IntegerValue.Of(3), iv),
+                    iv => Assert.Equal(IntegerValue.Of(6), iv));
             });
     }
 }

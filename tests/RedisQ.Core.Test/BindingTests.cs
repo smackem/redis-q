@@ -10,47 +10,47 @@ public class BindingTests : TestBase
     public async Task SimpleBinding()
     {
         var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
-        ctx.Bind("a", new IntegerValue(1));
+        ctx.Bind("a", IntegerValue.Of(1));
         var expr = Compile(@"a");
         var value = await expr.Evaluate(ctx);
-        Assert.Equal(new IntegerValue(1), value);
+        Assert.Equal(IntegerValue.Of(1), value);
     }
 
     [Fact]
     public async Task NestedBinding()
     {
         var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
-        ctx.Bind("a", new IntegerValue(1));
+        ctx.Bind("a", IntegerValue.Of(1));
         ctx = Context.Inherit(ctx);
-        ctx.Bind("b", new IntegerValue(2));
+        ctx.Bind("b", IntegerValue.Of(2));
         ctx = Context.Inherit(ctx);
-        ctx.Bind("c", new IntegerValue(3));
+        ctx.Bind("c", IntegerValue.Of(3));
         var expr = Compile(@"a + b + c");
         var value = await expr.Evaluate(ctx);
-        Assert.Equal(new IntegerValue(6), value);
+        Assert.Equal(IntegerValue.Of(6), value);
     }
 
     [Fact]
     public async Task NestedBindingWithOverride()
     {
         var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
-        ctx.Bind("a", new IntegerValue(1));
+        ctx.Bind("a", IntegerValue.Of(1));
         ctx = Context.Inherit(ctx);
-        ctx.Bind("b", new IntegerValue(2));
+        ctx.Bind("b", IntegerValue.Of(2));
         ctx = Context.Inherit(ctx);
-        ctx.Bind("c", new IntegerValue(3));
+        ctx.Bind("c", IntegerValue.Of(3));
         ctx = Context.Inherit(ctx);
-        ctx.Bind("a", new IntegerValue(6));
+        ctx.Bind("a", IntegerValue.Of(6));
         var expr = Compile(@"a + b + c");
         var value = await expr.Evaluate(ctx);
-        Assert.Equal(new IntegerValue(11), value);
+        Assert.Equal(IntegerValue.Of(11), value);
     }
 
     [Fact]
     public async Task ThrowsOnUnknownIdent()
     {
         var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
-        ctx.Bind("a", new IntegerValue(1));
+        ctx.Bind("a", IntegerValue.Of(1));
         var expr = Compile(@"X");
         await Assert.ThrowsAsync<RuntimeException>(() => expr.Evaluate(ctx));
     }
@@ -61,8 +61,8 @@ public class BindingTests : TestBase
         var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
         var expr = Compile(@"let x = 123");
         var value = await expr.Evaluate(ctx);
-        Assert.Equal(new IntegerValue(123), value);
+        Assert.Equal(IntegerValue.Of(123), value);
         var resolvedValue = ctx.Resolve("x");
-        Assert.Equal(new IntegerValue(123), resolvedValue);
+        Assert.Equal(IntegerValue.Of(123), resolvedValue);
     }
 }

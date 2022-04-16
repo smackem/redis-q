@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net.Mime;
 using Antlr4.Runtime.Tree;
 using RedisQ.Core.Lang;
 using RedisQ.Core.Runtime;
@@ -140,11 +141,24 @@ public class Emitter : RedisQLBaseVisitor<Expr>
             : base.VisitPrimary(context);
     }
 
+    public override Expr VisitPostFixedPrimary(RedisQLParser.PostFixedPrimaryContext context)
+    {
+        if (context.primary() != null) return context.primary().Accept(this);
+        var first = context.postFixedPrimary().Accept(this);
+        return context switch
+        {
+            var ctx when ctx.subscriptPostfix() != null => new SubscriptExpr(first, ctx.subscriptPostfix().Accept(this)),
+            var ctx when ctx.fieldAccessPostfix() != null => throw new NotImplementedException(),
+            var ctx when ctx.indirectFieldAccessPostfix() != null => throw new NotImplementedException(),
+            _ => throw new CompilationException("syntax does not allow this"),
+        };
+    }
+
     public override Expr VisitNumber(RedisQLParser.NumberContext context)
     {
         Value value = context switch
         {
-            var ctx when ctx.Integer() != null => new IntegerValue(ParseInteger(ctx.Integer().GetText())),
+            var ctx when ctx.Integer() != null => IntegerValue.Of(ParseInteger(ctx.Integer().GetText())),
             var ctx when ctx.Real() != null => new RealValue(ParseReal(ctx.Real().GetText())),
             _ => throw new CompilationException($"unexpected number literal: {context.GetText()}"),
         };

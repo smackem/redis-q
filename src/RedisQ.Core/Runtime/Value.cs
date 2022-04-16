@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using StackExchange.Redis;
 using SR = StackExchange.Redis;
 
@@ -55,14 +56,28 @@ public class EnumerableValue : Value, IAsyncEnumerable<Value>
     public EnumerableValue(IAsyncEnumerable<Value> enumerable) =>
         _enumerable = enumerable;
 
-    public EnumerableValue(IReadOnlyCollection<Value> collection) =>
-        _enumerable = AsyncEnumerable.FromCollection(collection);
-    
     public IAsyncEnumerator<Value> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
         _enumerable.GetAsyncEnumerator(cancellationToken);
 
     public override string AsString() => throw new RuntimeException("cannot convert enumerable to string");
     public override bool AsBoolean() => throw new RuntimeException("cannot convert enumerable to boolean");
+}
+
+public class ListValue : EnumerableValue, IReadOnlyList<Value>
+{
+    private readonly IReadOnlyList<Value> _list;
+
+    public ListValue(IReadOnlyList<Value> collection)
+        : base(AsyncEnumerable.FromCollection(collection)) =>
+        _list = collection;
+
+    public Value this[int index] => _list[index];
+
+    public int Count => _list.Count;
+
+    public IEnumerator<Value> GetEnumerator() => _list.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 public class TupleValue : Value, IEquatable<TupleValue>
@@ -147,8 +162,15 @@ public class RedisValue : ScalarValue<SR.RedisValue>, IRedisKey, IRedisValue
 
 public class IntegerValue : ScalarValue<int>
 {
-    public IntegerValue(int value) : base(value)
+    private static readonly IntegerValue[] CachedValues = Enumerable.Range(0, 100)
+        .Select(n => new IntegerValue(n))
+        .ToArray();
+    
+    private IntegerValue(int value) : base(value)
     {}
+
+    public static IntegerValue Of(int n) =>
+        n >= 0 && n < CachedValues.Length ? CachedValues[n] : new IntegerValue(n);
 
     public override string AsString() => Value.ToString();
     public override bool AsBoolean() => Value != 0;

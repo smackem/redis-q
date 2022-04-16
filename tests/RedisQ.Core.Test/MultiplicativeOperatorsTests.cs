@@ -10,7 +10,7 @@ public class MultiplicativeOperatorsTests : TestBase
     public async Task MultiplyIntegers()
     {
         var value = await Interpret(@"2 * 3");
-        Assert.Equal(new IntegerValue(6), value);
+        Assert.Equal(IntegerValue.Of(6), value);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class MultiplicativeOperatorsTests : TestBase
     public async Task DivideIntegers()
     {
         var value = await Interpret(@"10 / 3");
-        Assert.Equal(new IntegerValue(3), value);
+        Assert.Equal(IntegerValue.Of(3), value);
     }
 
     [Fact]

@@ -31,17 +31,11 @@ public record ListExpr(IReadOnlyList<Expr> Items) : Expr
 {
     public static readonly ListExpr Empty = new(Array.Empty<Expr>());
 
-    public override Task<Value> Evaluate(Context ctx)
+    public override async Task<Value> Evaluate(Context ctx)
     {
-        async IAsyncEnumerable<Value> Enumerate()
-        {
-            foreach (var expr in Items)
-            {
-                yield return await expr.Evaluate(ctx);
-            }
-        }
-
-        return Task.FromResult(new EnumerableValue(Enumerate()) as Value);
+        var tasks = Items.Select(expr => expr.Evaluate(ctx));
+        var list = await Task.WhenAll(tasks);
+        return new ListValue(list);
     }
 }
 
@@ -55,7 +49,7 @@ public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
 {
     public override async Task<Value> Evaluate(Context ctx)
     {
-        var function = ctx.Functions.Lookup(Ident, Arguments.Count);
+        var function = ctx.Functions.Resolve(Ident, Arguments.Count);
         var arguments = new List<Value>();
         foreach (var arg in Arguments)
         {
@@ -67,14 +61,19 @@ public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
     }
 }
 
-public abstract record BinaryExpr(Expr Left, Expr Right) : Expr;
-
-public record SimpleBinaryExpr : BinaryExpr
+public record BinaryExpr : Expr
 {
     private readonly Func<Value, Value, Value> _evalFunc;
 
-    protected SimpleBinaryExpr(Expr left, Expr right, Func<Value, Value, Value> evalFunc)
-        : base(left, right) => _evalFunc = evalFunc;
+    protected BinaryExpr(Expr left, Expr right, Func<Value, Value, Value> evalFunc)
+    {
+        Left = left;
+        Right = right;
+        _evalFunc = evalFunc;
+    }
+
+    public Expr Left { get; }
+    public Expr Right { get; }
 
     public override async Task<Value> Evaluate(Context ctx)
     {
@@ -84,22 +83,22 @@ public record SimpleBinaryExpr : BinaryExpr
     }
 }
 
-public record OrExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record OrExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(l.AsBoolean() || r.AsBoolean()));
 
-public record AndExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record AndExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(l.AsBoolean() && r.AsBoolean()));
 
-public record EqExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record EqExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(Equals(l, r)));
 
-public record NeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record NeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(Equals(l, r) == false));
 
-public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record MatchExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())));
 
-public record LtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record LtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) < 0),
@@ -111,7 +110,7 @@ public record LtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, 
         _ => throw new RuntimeException($"the operator '<' cannot be applied to the operands {l} and {r}"),
     });
 
-public record LeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record LeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) <= 0),
@@ -123,7 +122,7 @@ public record LeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, 
         _ => throw new RuntimeException($"the operator '<=' cannot be applied to the operands {l} and {r}"),
     });
 
-public record GtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record GtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) > 0),
@@ -135,7 +134,7 @@ public record GtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, 
         _ => throw new RuntimeException($"the operator '>' cannot be applied to the operands {l} and {r}"),
     });
 
-public record GeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record GeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) >= 0),
@@ -147,71 +146,71 @@ public record GeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, 
         _ => throw new RuntimeException($"the operator '>=' cannot be applied to the operands {l} and {r}"),
     });
 
-public record PlusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record PlusExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => new StringValue(lv.Value + rv.Value),
         (StringValue lv, _) => new StringValue(lv.Value + r.AsString()),
         (_, StringValue rv) => new StringValue(l.AsString() + rv.Value),
-        (IntegerValue lv, IntegerValue rv) => new IntegerValue(lv.Value + rv.Value),
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value + rv.Value),
         (RealValue lv, RealValue rv) => new RealValue(lv.Value + rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value + rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value + rv.Value),
-        (CharValue lv, CharValue rv) => new IntegerValue(lv.Value + rv.Value),
-        (CharValue lv, IntegerValue rv) => new IntegerValue(lv.Value + rv.Value),
-        (IntegerValue lv, CharValue rv) => new IntegerValue(lv.Value + rv.Value),
+        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value + rv.Value),
+        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value + rv.Value),
+        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value + rv.Value),
         _ => throw new RuntimeException($"the operator '+' cannot be applied to the operands {l} and {r}"),
     });
 
-public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record MinusExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (IntegerValue lv, IntegerValue rv) => new IntegerValue(lv.Value - rv.Value),
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value - rv.Value),
         (RealValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value - rv.Value),
-        (CharValue lv, CharValue rv) => new IntegerValue(lv.Value - rv.Value),
-        (CharValue lv, IntegerValue rv) => new IntegerValue(lv.Value - rv.Value),
-        (IntegerValue lv, CharValue rv) => new IntegerValue(lv.Value - rv.Value),
+        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value - rv.Value),
+        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value - rv.Value),
+        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value - rv.Value),
         _ => throw new RuntimeException($"the operator '-' cannot be applied to the operands {l} and {r}"),
     });
 
-public record TimesExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record TimesExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (IntegerValue lv, IntegerValue rv) => new IntegerValue(lv.Value * rv.Value),
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value * rv.Value),
         (RealValue lv, RealValue rv) => new RealValue(lv.Value * rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value * rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value * rv.Value),
-        (CharValue lv, CharValue rv) => new IntegerValue(lv.Value * rv.Value),
-        (CharValue lv, IntegerValue rv) => new IntegerValue(lv.Value * rv.Value),
-        (IntegerValue lv, CharValue rv) => new IntegerValue(lv.Value * rv.Value),
+        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value * rv.Value),
+        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value * rv.Value),
+        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value * rv.Value),
         _ => throw new RuntimeException($"the operator '*' cannot be applied to the operands {l} and {r}"),
     });
 
-public record DivExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record DivExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (IntegerValue lv, IntegerValue rv) => new IntegerValue(lv.Value / rv.Value),
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value / rv.Value),
         (RealValue lv, RealValue rv) => new RealValue(lv.Value / rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value / rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value / rv.Value),
-        (CharValue lv, CharValue rv) => new IntegerValue(lv.Value / rv.Value),
-        (CharValue lv, IntegerValue rv) => new IntegerValue(lv.Value / rv.Value),
-        (IntegerValue lv, CharValue rv) => new IntegerValue(lv.Value / rv.Value),
+        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value / rv.Value),
+        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value / rv.Value),
+        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value / rv.Value),
         _ => throw new RuntimeException($"the operator '/' cannot be applied to the operands {l} and {r}"),
     });
 
-public record ModExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+public record ModExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (IntegerValue lv, IntegerValue rv) => new IntegerValue(lv.Value % rv.Value),
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value % rv.Value),
         (RealValue lv, RealValue rv) => new RealValue(lv.Value % rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value % rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value % rv.Value),
-        (CharValue lv, CharValue rv) => new IntegerValue(lv.Value % rv.Value),
-        (CharValue lv, IntegerValue rv) => new IntegerValue(lv.Value % rv.Value),
-        (IntegerValue lv, CharValue rv) => new IntegerValue(lv.Value % rv.Value),
+        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value % rv.Value),
+        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value % rv.Value),
+        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value % rv.Value),
         _ => throw new RuntimeException($"the operator '%' cannot be applied to the operands {l} and {r}"),
     });
 
@@ -234,9 +233,9 @@ public record UnaryExpr : Expr
 public record NegExpr(Expr Operand) : UnaryExpr(Operand, value =>
     value switch
     {
-        IntegerValue v => new IntegerValue(-v.Value),
+        IntegerValue v => IntegerValue.Of(-v.Value),
         RealValue v => new RealValue(-v.Value),
-        CharValue v => new IntegerValue(-v.Value),
+        CharValue v => IntegerValue.Of(-v.Value),
         _ => throw new RuntimeException($"operator '-' cannot be applied to operand {value}"),
     });
 
@@ -251,6 +250,28 @@ public record PosExpr(Expr Operand) : UnaryExpr(Operand, value =>
 
 public record NotExpr(Expr Operand) : UnaryExpr(Operand, value =>
     BoolValue.Of(value.AsBoolean() == false));
+
+public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
+{
+    public override async Task<Value> Evaluate(Context ctx)
+    {
+        var operandValue = await Operand.Evaluate(ctx).ConfigureAwait(false);
+        var subscriptValue = await Subscript.Evaluate(ctx).ConfigureAwait(false);
+        return (operandValue, subscriptValue) switch
+        {
+            (ListValue list, IntegerValue index) => list[CoerceIndex(list, index.Value)],
+            (StringValue str, IntegerValue index) => new CharValue(str.Value[CoerceIndex(str.Value, index.Value)]),
+            (RedisValue _, StringValue _) => throw new NotImplementedException("json path goes here"),
+            _ => throw new RuntimeException($"incompatible operands for subscript expression: {operandValue}[{subscriptValue}]"),
+        };
+    }
+
+    private static int CoerceIndex(IReadOnlyCollection<Value> list, int index) =>
+        index < 0 ? list.Count + index : index;
+
+    private static int CoerceIndex(string str, int index) =>
+        index < 0 ? str.Length + index : index;
+}
 
 public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClauses, Expr Selection) : Expr
 {
@@ -334,7 +355,7 @@ public record EagerFromExpr(FromExpr From) : Expr
     {
         var enumerable = (EnumerableValue) await From.Evaluate(ctx).ConfigureAwait(false);
         var collection = await enumerable.Collect().ConfigureAwait(false);
-        return new EnumerableValue(collection);
+        return new ListValue(collection);
     }
 }
 
