@@ -29,7 +29,7 @@ internal static class Program
             if (string.IsNullOrEmpty(source)) continue;
             if (source.StartsWith("#q")) break;
             var value = await Interpret(compiler, source, ctx);
-            if (value != null) printer.Print(value, Console.Out);
+            if (value != null) await printer.Print(value, Console.Out);
         }
     }
 

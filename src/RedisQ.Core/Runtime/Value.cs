@@ -106,8 +106,11 @@ public class TupleValue : Value, IEquatable<TupleValue>
 
     public static TupleValue Of(Value item1, Value item2) => new(new[] { item1, item2 });
 
-    public override string AsString() =>
+    public override string ToString() =>
         $"{GetType().Name}[{string.Join(", ", Items.Select(v => v.ToString()))}]";
+
+    public override string AsString() =>
+        $"({string.Join(", ", Items.Select(v => v.AsString()))})";
 
     public override bool AsBoolean() => true;
 
