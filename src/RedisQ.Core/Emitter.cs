@@ -8,7 +8,7 @@ namespace RedisQ.Core;
 internal class Emitter : RedisQLBaseVisitor<Expr>
 {
     private int _nestingLevel;
-    
+
     public override Expr VisitMain(RedisQLParser.MainContext context) =>
         (context.expr() as IParseTree ?? context.letClause()).Accept(this);
 
@@ -47,6 +47,14 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitWhereClause(RedisQLParser.WhereClauseContext context) =>
         new WhereClause(context.conditionalOrExpr().Accept(this));
+
+    public override Expr VisitTernaryExpr(RedisQLParser.TernaryExprContext context) =>
+        context.ternaryExpr() != null
+        ? new TernaryExpr(
+            context.conditionalOrExpr(0).Accept(this),
+            context.conditionalOrExpr(1).Accept(this),
+            context.ternaryExpr().Accept(this))
+        : context.conditionalOrExpr(0).Accept(this);
 
     public override Expr VisitConditionalOrExpr(RedisQLParser.ConditionalOrExprContext context)
     {

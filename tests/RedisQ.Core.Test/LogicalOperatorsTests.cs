@@ -41,4 +41,13 @@ public class LogicalOperatorsTests : TestBase
         var value3 = await Interpret(@"1 == 1 && true && (true || false)");
         Assert.Equal(BoolValue.True, value3);
     }
+
+    [Fact]
+    public async Task Ternary()
+    {
+        var value1 = await Interpret(@"1 == 1 ? -10 : 10");
+        Assert.Equal(IntegerValue.Of(-10), value1);
+        var value2 = await Interpret(@"1 >= 100 ? -10 : 10");
+        Assert.Equal(IntegerValue.Of(10), value2);
+    }
 }

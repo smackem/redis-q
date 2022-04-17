@@ -6,8 +6,8 @@ public class FunctionRegistry
 
     public FunctionRegistry()
     {
+        // redis functions
         Register(new FunctionDefinition("keys", 1, FuncKeys));
-        Register(new FunctionDefinition("len", 1, FuncLen));
         Register(new FunctionDefinition("get", 1, FuncGet));
         Register(new FunctionDefinition("mget", 1, FuncMGet));
         Register(new FunctionDefinition("strlen", 1, FuncStrLen));
@@ -18,6 +18,13 @@ public class FunctionRegistry
         Register(new FunctionDefinition("llen", 1, FuncLLen));
         Register(new FunctionDefinition("lrange", 3, FuncLRange));
         Register(new FunctionDefinition("lindex", 2, FuncLIndex));
+
+        // util functions
+        Register(new FunctionDefinition("len", 1, FuncLen));
+        Register(new FunctionDefinition("int", 1, FuncInt));
+        Register(new FunctionDefinition("real", 1, FuncReal));
+        Register(new FunctionDefinition("bool", 1, FuncBool));
+        Register(new FunctionDefinition("string", 1, FuncString));
     }
 
     private static Task<Value> FuncKeys(Context ctx, Value[] arguments)
@@ -32,15 +39,6 @@ public class FunctionRegistry
 
         return Task.FromResult<Value>(new EnumerableValue(Scan()));
     }
-
-    private static Task<Value> FuncLen(Context ctx, Value[] arguments) =>
-        arguments[0] switch
-        {
-            ListValue list => Task.FromResult(IntegerValue.Of(list.Count) as Value),
-            StringValue str => Task.FromResult(IntegerValue.Of(str.Value.Length) as Value),
-            IRedisValue val => Task.FromResult(IntegerValue.Of((int) val.AsRedisValue().Length()) as Value),
-            _ => throw new RuntimeException($"len({arguments[0]}): incompatible operand, List or String or RedisValue expected"),
-        };
 
     private static async Task<Value> FuncGet(Context ctx, Value[] arguments)
     {
@@ -136,6 +134,55 @@ public class FunctionRegistry
         var val = await db.ListGetByIndexAsync(key.AsRedisKey(), index.Value);
         return new RedisValue(val);
     }
+
+    private static Task<Value> FuncLen(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            ListValue list => Task.FromResult(IntegerValue.Of(list.Count) as Value),
+            StringValue str => Task.FromResult(IntegerValue.Of(str.Value.Length) as Value),
+            IRedisValue val => Task.FromResult(IntegerValue.Of((int) val.AsRedisValue().Length()) as Value),
+            _ => Task.FromResult<Value>(NullValue.Instance),
+        };
+
+    private static Task<Value> FuncInt(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            IntegerValue n => Task.FromResult<Value>(n),
+            RealValue real => Task.FromResult<Value>(IntegerValue.Of((int) real.Value)),
+            CharValue ch => Task.FromResult<Value>(IntegerValue.Of(ch.Value)),
+            StringValue str => Task.FromResult<Value>(
+                int.TryParse(str.Value, out var n) ? IntegerValue.Of(n) : NullValue.Instance),
+            IRedisValue val => Task.FromResult<Value>(
+                val.AsRedisValue().TryParse(out int n) ? IntegerValue.Of(n) : NullValue.Instance),
+            _ => Task.FromResult<Value>(NullValue.Instance),
+        };
+
+    private static Task<Value> FuncReal(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            IntegerValue n => Task.FromResult<Value>(new RealValue(n.Value)),
+            RealValue real => Task.FromResult<Value>(real),
+            CharValue ch => Task.FromResult<Value>(new RealValue(ch.Value)),
+            StringValue str => Task.FromResult<Value>(
+                double.TryParse(str.Value, out var d) ? new RealValue(d) : NullValue.Instance),
+            IRedisValue val => Task.FromResult<Value>(
+                val.AsRedisValue().TryParse(out double d) ? new RealValue(d) : NullValue.Instance),
+            _ => Task.FromResult<Value>(NullValue.Instance),
+        };
+
+    private static Task<Value> FuncBool(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            EnumerableValue or TupleValue => Task.FromResult<Value>(NullValue.Instance),
+            var v => Task.FromResult<Value>(BoolValue.Of(v.AsBoolean())),
+        };
+
+    private static Task<Value> FuncString(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            EnumerableValue => Task.FromResult<Value>(NullValue.Instance),
+            var v => Task.FromResult<Value>(new StringValue(v.AsString())),
+        };
 
     public FunctionDefinition Resolve(string name, int parameterCount)
     {

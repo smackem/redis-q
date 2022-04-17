@@ -6,7 +6,7 @@ main
     ;
 
 expr
-    : conditionalOrExpr
+    : ternaryExpr
     | fromExpr
     ; 
 
@@ -34,6 +34,11 @@ whereClause
 
 selectClause
     : 'select' expr
+    ;
+
+ternaryExpr
+    : conditionalOrExpr
+    | conditionalOrExpr '?' conditionalOrExpr ':' ternaryExpr
     ;
 
 conditionalOrExpr

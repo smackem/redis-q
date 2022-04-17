@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.Mime;
 using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
@@ -117,6 +118,9 @@ public record LtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value < rv.Value),
         (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value < rv.Value),
         (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value < rv.Value),
+        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) < 0),
+        (NullValue, _) => BoolValue.False,
+        (_, NullValue) => BoolValue.False,
         _ => throw new RuntimeException($"the operator '<' cannot be applied to the operands {l} and {r}"),
     });
 
@@ -129,6 +133,9 @@ public record LeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value <= rv.Value),
         (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value <= rv.Value),
         (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value <= rv.Value),
+        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) <= 0),
+        (NullValue, _) => BoolValue.False,
+        (_, NullValue) => BoolValue.False,
         _ => throw new RuntimeException($"the operator '<=' cannot be applied to the operands {l} and {r}"),
     });
 
@@ -141,6 +148,9 @@ public record GtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value > rv.Value),
         (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value > rv.Value),
         (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value > rv.Value),
+        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) > 0),
+        (NullValue, _) => BoolValue.False,
+        (_, NullValue) => BoolValue.False,
         _ => throw new RuntimeException($"the operator '>' cannot be applied to the operands {l} and {r}"),
     });
 
@@ -153,6 +163,9 @@ public record GeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value >= rv.Value),
         (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value >= rv.Value),
         (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value >= rv.Value),
+        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) >= 0),
+        (NullValue, _) => BoolValue.False,
+        (_, NullValue) => BoolValue.False,
         _ => throw new RuntimeException($"the operator '>=' cannot be applied to the operands {l} and {r}"),
     });
 
@@ -281,6 +294,14 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
 
     private static int CoerceIndex(string str, int index) =>
         index < 0 ? str.Length + index : index;
+}
+
+public record TernaryExpr(Expr Condition, Expr TrueCase, Expr FalseCase) : Expr
+{
+    public override async Task<Value> Evaluate(Context ctx) =>
+        (await Condition.Evaluate(ctx)).AsBoolean()
+            ? await TrueCase.Evaluate(ctx)
+            : await FalseCase.Evaluate(ctx);
 }
 
 public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClauses, Expr Selection) : Expr
