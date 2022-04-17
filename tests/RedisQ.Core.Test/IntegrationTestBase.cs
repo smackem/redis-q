@@ -38,6 +38,12 @@ public class IntegrationTestBase : TestBase, IDisposable
         var ctx = Context.Root(redis, Helpers.DefaultFunctions);
         return expr.Evaluate(ctx);
     }
+
+    private protected static Task<Value> Interpret(string source, IRedisConnection redis)
+    {
+        var expr = Compile(source);
+        return Eval(expr, redis);
+    }
     
     public void Dispose()
     {

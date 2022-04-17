@@ -1,0 +1,11 @@
+<Project>
+    <PropertyGroup>
+        <StackExchange_Redis_Version>2.5.43</StackExchange_Redis_Version>
+        <Antlr4_Version>4.6.6</Antlr4_Version>
+        <CommandLineParser_Version>2.8.0</CommandLineParser_Version>
+        <Microsoft_NET_Test_Sdk_Version>16.11.0</Microsoft_NET_Test_Sdk_Version>
+        <xunit_Version>2.4.1</xunit_Version>
+        <xunit_runner_visualstudio_Version>2.4.3</xunit_runner_visualstudio_Version>
+        <coverlet_collector_Version>3.1.0</coverlet_collector_Version>
+    </PropertyGroup>
+</Project>

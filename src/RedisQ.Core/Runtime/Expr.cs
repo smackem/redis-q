@@ -90,10 +90,20 @@ public record AndExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(l.AsBoolean() && r.AsBoolean()));
 
 public record EqExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
-    BoolValue.Of(Equals(l, r)));
+    (l, r) switch
+    {
+        (IRedisKey lv, IRedisKey rv) => BoolValue.Of(lv.AsRedisKey() == rv.AsRedisKey()),
+        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue() == rv.AsRedisValue()),
+        _ => BoolValue.Of(Equals(l, r)),
+    });
 
 public record NeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
-    BoolValue.Of(Equals(l, r) == false));
+    (l, r) switch
+    {
+        (IRedisKey lv, IRedisKey rv) => BoolValue.Of(lv.AsRedisKey() != rv.AsRedisKey()),
+        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue() != rv.AsRedisValue()),
+        _ => BoolValue.Of(Equals(l, r) == false),
+    });
 
 public record MatchExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
     BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())));

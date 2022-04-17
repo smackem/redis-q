@@ -20,7 +20,7 @@ public class RelationalOperatorsTests : TestBase
         var value5 = await Interpret(@"12.5 == 12.5");
         Assert.Equal(BoolValue.True, value5);
         var value6 = await Interpret(@"12 == 12.0");
-        Assert.Equal(BoolValue.False, value6);
+        Assert.Equal(BoolValue.True, value6);
         var value7 = await Interpret(@"""abc"" == ""abc""");
         Assert.Equal(BoolValue.True, value7);
         var value8 = await Interpret(@"true == true");
@@ -28,7 +28,7 @@ public class RelationalOperatorsTests : TestBase
         var value9 = await Interpret(@"true == false");
         Assert.Equal(BoolValue.False, value9);
         var value10 = await Interpret(@"1 == ""1""");
-        Assert.Equal(BoolValue.False, value10);
+        Assert.Equal(BoolValue.True, value10);
         var value11 = await Interpret(@"null == null");
         Assert.Equal(BoolValue.True, value11);
         var value12 = await Interpret(@"null == 1");
@@ -49,7 +49,7 @@ public class RelationalOperatorsTests : TestBase
         var value5 = await Interpret(@"12.5 != 12.5");
         Assert.NotEqual(BoolValue.True, value5);
         var value6 = await Interpret(@"12 != 12.0");
-        Assert.NotEqual(BoolValue.False, value6);
+        Assert.NotEqual(BoolValue.True, value6);
         var value7 = await Interpret(@"""abc"" != ""abc""");
         Assert.NotEqual(BoolValue.True, value7);
         var value8 = await Interpret(@"true != true");
@@ -57,7 +57,7 @@ public class RelationalOperatorsTests : TestBase
         var value9 = await Interpret(@"true != false");
         Assert.NotEqual(BoolValue.False, value9);
         var value10 = await Interpret(@"1 != ""1""");
-        Assert.NotEqual(BoolValue.False, value10);
+        Assert.NotEqual(BoolValue.True, value10);
     }
 
     [Fact]

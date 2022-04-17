@@ -159,4 +159,65 @@ public class FunctionTests : IntegrationTestBase
             v => Assert.Equal(TupleValue.Of(new RedisValue("name"), new RedisValue("bob")), v),
             v => Assert.Equal(TupleValue.Of(new RedisValue("age"), new RedisValue(60)), v));
     }
+
+    [Fact]
+    public async Task LLen()
+    {
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.ListRightPush("list", "item-1");
+        db.ListRightPush("list", "item-2");
+        db.ListRightPush("list", "item-3");
+        var expr1 = Compile(@"llen(""list"")");
+        var value1 = await Eval(expr1, redis);
+        Assert.Equal(IntegerValue.Of(3), value1);
+    }
+
+    [Fact]
+    public async Task LRange()
+    {
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.ListRightPush("list", "item-1");
+        db.ListRightPush("list", "item-2");
+        db.ListRightPush("list", "item-3");
+        db.ListRightPush("list", "item-4");
+        db.ListRightPush("list", "item-5");
+        var expr1 = Compile(@"lrange(""list"", 0, -1)");
+        var value1 = await Eval(expr1, redis);
+        Assert.IsType<ListValue>(value1);
+        Assert.Collection((ListValue)value1,
+            v => Assert.Equal(new RedisValue("item-1"), v),
+            v => Assert.Equal(new RedisValue("item-2"), v),
+            v => Assert.Equal(new RedisValue("item-3"), v),
+            v => Assert.Equal(new RedisValue("item-4"), v),
+            v => Assert.Equal(new RedisValue("item-5"), v));
+        var expr2 = Compile(@"lrange(""list"", 1, 2)");
+        var value2 = await Eval(expr2, redis);
+        Assert.IsType<ListValue>(value2);
+        Assert.Collection((ListValue)value2,
+            v => Assert.Equal(new RedisValue("item-2"), v),
+            v => Assert.Equal(new RedisValue("item-3"), v));
+    }
+
+    [Fact]
+    public async Task LIndex()
+    {
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.ListRightPush("list", "item-1");
+        db.ListRightPush("list", "item-2");
+        db.ListRightPush("list", "item-3");
+        db.ListRightPush("list", "item-4");
+        db.ListRightPush("list", "item-5");
+        var expr1 = Compile(@"lindex(""list"", 0)");
+        var value1 = await Eval(expr1, redis);
+        Assert.Equal(new RedisValue("item-1"), value1);
+        var expr2 = Compile(@"lindex(""list"", -1)");
+        var value2 = await Eval(expr2, redis);
+        Assert.Equal(new RedisValue("item-5"), value2);
+        var expr3 = Compile(@"lindex(""list"", 1000)");
+        var value3 = await Eval(expr3, redis);
+        Assert.Equal(RedisValue.Empty, value3);
+    }
 }

@@ -13,12 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Antlr4" Version="4.6.6">
+    <PackageReference Include="Antlr4" Version="$(Antlr4_Version)">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
-    <PackageReference Include="StackExchange.Redis" Version="2.5.43" />
+    <PackageReference Include="Antlr4.Runtime" Version="$(Antlr4_Version)" />
+    <PackageReference Include="StackExchange.Redis" Version="$(StackExchange_Redis_Version)" />
   </ItemGroup>
 
   <ItemGroup>
