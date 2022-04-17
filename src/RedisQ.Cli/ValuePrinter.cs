@@ -21,10 +21,17 @@ internal class ValuePrinter
                 break;
             case EnumerableValue enumerable:
                 var count = 0;
-                await foreach (var v in enumerable)
+                try
                 {
-                    await Print(v, writer, indent + "  ");
-                    count++;
+                    await foreach (var v in enumerable)
+                    {
+                        await Print(v, writer, indent + "  ");
+                        count++;
+                    }
+                }
+                catch (RuntimeException e)
+                {
+                    Console.WriteLine(e);
                 }
                 await writer.WriteLineAsync($"{indent}Found {count} element(s)");
                 break;
