@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Reflection;
+using System.Text;
 using CommandLine;
 using RedisQ.Core;
 using RedisQ.Core.Redis;
@@ -18,6 +19,7 @@ internal static class Program
 
     private static async Task RunRepl(Options options)
     {
+        PrintBanner(options);
         var redis = new RedisConnection(options.ConnectionString);
         var functions = new FunctionRegistry();
         var ctx = Context.Root(redis, functions);
@@ -33,12 +35,20 @@ internal static class Program
         }
     }
 
+    private static void PrintBanner(Options options)
+    {
+        var version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        Console.WriteLine($"***** redis-q v{version}");
+        Console.WriteLine($"redis @ {options.ConnectionString}");
+        Console.WriteLine("terminate expressions with ;");
+        Console.WriteLine("enter #q to exit...");
+    }
+
     private static async Task<Value?> Interpret(Compiler compiler, string source, Context ctx)
     {
         try
         {
             var expr = compiler.Compile(source);
-            if (expr == null) throw new CompilationException("TODO: implement compilation error reporting");
             return await expr.Evaluate(ctx);
         }
         catch (CompilationException e)
