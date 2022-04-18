@@ -113,6 +113,13 @@ public class AdditiveOperatorsTests : TestBase
     }
 
     [Fact]
+    public async Task LongAdditiveWithNull()
+    {
+        var value = await Interpret(@"(1 + 10.5 - 5.5 + 4 - 9) + null");
+        Assert.Equal(NullValue.Instance, value);
+    }
+
+    [Fact]
     public async Task ThrowsOnIncompatibleAdditiveOperands()
     {
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"(1, 2) + 1"));

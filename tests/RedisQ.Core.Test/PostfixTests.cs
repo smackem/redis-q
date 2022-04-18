@@ -18,4 +18,11 @@ public class PostfixTests : TestBase
         var value4 = await Interpret(@"""abc""[-1]");
         Assert.Equal(new CharValue('c'), value4);
     }
+
+    [Fact]
+    public async Task Throw()
+    {
+        await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"throw 'X'"));
+        await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"false ? 1 : throw 'X'"));
+    }
 }

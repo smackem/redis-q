@@ -19,6 +19,7 @@
     </PackageReference>
     <PackageReference Include="Antlr4.Runtime" Version="$(Antlr4_Version)" />
     <PackageReference Include="StackExchange.Redis" Version="$(StackExchange_Redis_Version)" />
+    <PackageReference Include="Newtonsoft.Json" Version="$(Newtonsoft_Json_Version)" />
   </ItemGroup>
 
   <ItemGroup>

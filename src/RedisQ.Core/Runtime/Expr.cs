@@ -1,22 +1,37 @@
 ﻿using System.Diagnostics;
-using System.Net.Mime;
 using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
 
 public abstract record Expr
 {
-    public abstract Task<Value> Evaluate(Context ctx);
+    public async Task<Value> Evaluate(Context ctx)
+    {
+        try
+        {
+            return await EvaluateOverride(ctx);
+        }
+        catch (RuntimeException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    private protected abstract Task<Value> EvaluateOverride(Context ctx);
 }
 
 public record LiteralExpr(Value Literal) : Expr
 {
-    public override Task<Value> Evaluate(Context _) => Task.FromResult(Literal);
+    private protected override Task<Value> EvaluateOverride(Context _) => Task.FromResult(Literal);
 }
 
 public record TupleExpr(IReadOnlyList<Expr> Items) : Expr
 {
-    public override async Task<Value> Evaluate(Context ctx)
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var values = new List<Value>();
         foreach (var expr in Items)
@@ -32,7 +47,7 @@ public record ListExpr(IReadOnlyList<Expr> Items) : Expr
 {
     public static readonly ListExpr Empty = new(Array.Empty<Expr>());
 
-    public override async Task<Value> Evaluate(Context ctx)
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var tasks = Items.Select(expr => expr.Evaluate(ctx));
         var list = await Task.WhenAll(tasks);
@@ -42,13 +57,13 @@ public record ListExpr(IReadOnlyList<Expr> Items) : Expr
 
 public record IdentExpr(string Ident) : Expr
 {
-    public override Task<Value> Evaluate(Context ctx) =>
+    private protected override Task<Value> EvaluateOverride(Context ctx) =>
         Task.FromResult(ctx.Resolve(Ident) ?? throw new RuntimeException($"identifier {Ident} not found"));
 }
 
 public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
 {
-    public override async Task<Value> Evaluate(Context ctx)
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var function = ctx.Functions.Resolve(Ident, Arguments.Count);
         var arguments = new List<Value>();
@@ -62,66 +77,59 @@ public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
     }
 }
 
-public record BinaryExpr : Expr
+public abstract record BinaryExpr(Expr Left, Expr Right) : Expr;
+
+public record OrExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right)
 {
-    private readonly Func<Value, Value, Value> _evalFunc;
+    private protected override async Task<Value> EvaluateOverride(Context ctx) =>
+        BoolValue.Of((await Left.Evaluate(ctx)).AsBoolean() || (await Right.Evaluate(ctx)).AsBoolean());
+}
 
-    protected BinaryExpr(Expr left, Expr right, Func<Value, Value, Value> evalFunc)
-    {
-        Left = left;
-        Right = right;
-        _evalFunc = evalFunc;
-    }
+public record AndExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right)
+{
+    private protected override async Task<Value> EvaluateOverride(Context ctx) =>
+        BoolValue.Of((await Left.Evaluate(ctx)).AsBoolean() && (await Right.Evaluate(ctx)).AsBoolean());
+}
 
-    public Expr Left { get; }
-    public Expr Right { get; }
-
-    public override async Task<Value> Evaluate(Context ctx)
+public record SimpleBinaryExpr(Expr Left, Expr Right, Func<Value, Value, Value> EvalFunc)
+    : BinaryExpr(Left, Right)
+{
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var l = await Left.Evaluate(ctx).ConfigureAwait(false);
         var r = await Right.Evaluate(ctx).ConfigureAwait(false);
-        return _evalFunc(l, r);
+        return EvalFunc(l, r);
     }
 }
 
-public record OrExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
-    (l, r) switch
-    {
-        (NullValue, _) or (_, NullValue) => NullValue.Instance,
-        _ => BoolValue.Of(l.AsBoolean() || r.AsBoolean()),
-    });
-
-public record AndExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
-    (l, r) switch
-    {
-        (NullValue, _) or (_, NullValue) => NullValue.Instance,
-        _ => BoolValue.Of(l.AsBoolean() && r.AsBoolean()),
-    });
-
-public record EqExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record EqExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (IRedisKey lv, IRedisKey rv) => BoolValue.Of(lv.AsRedisKey() == rv.AsRedisKey()),
         (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue() == rv.AsRedisValue()),
+        (IRedisValue lv, NullValue) => BoolValue.Of(lv.AsRedisValue().IsNullOrEmpty),
+        (NullValue, IRedisValue rv) => BoolValue.Of(rv.AsRedisValue().IsNullOrEmpty),
         _ => BoolValue.Of(Equals(l, r)),
     });
 
-public record NeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record NeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (IRedisKey lv, IRedisKey rv) => BoolValue.Of(lv.AsRedisKey() != rv.AsRedisKey()),
         (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue() != rv.AsRedisValue()),
+        (IRedisValue lv, NullValue) => BoolValue.Of(lv.AsRedisValue().IsNullOrEmpty == false),
+        (NullValue, IRedisValue rv) => BoolValue.Of(rv.AsRedisValue().IsNullOrEmpty == false),
         _ => BoolValue.Of(Equals(l, r) == false),
     });
 
-public record MatchExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (NullValue, _) or (_, NullValue) => BoolValue.False,
         _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())),
     });
 
-public record LtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record LtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) < 0),
@@ -135,7 +143,7 @@ public record LtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         _ => throw new RuntimeException($"the operator '<' cannot be applied to the operands {l} and {r}"),
     });
 
-public record LeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record LeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) <= 0),
@@ -149,7 +157,7 @@ public record LeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         _ => throw new RuntimeException($"the operator '<=' cannot be applied to the operands {l} and {r}"),
     });
 
-public record GtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record GtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) > 0),
@@ -163,7 +171,7 @@ public record GtExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         _ => throw new RuntimeException($"the operator '>' cannot be applied to the operands {l} and {r}"),
     });
 
-public record GeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record GeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) >= 0),
@@ -177,7 +185,7 @@ public record GeExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         _ => throw new RuntimeException($"the operator '>=' cannot be applied to the operands {l} and {r}"),
     });
 
-public record PlusExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record PlusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (StringValue lv, StringValue rv) => new StringValue(lv.Value + rv.Value),
@@ -194,7 +202,7 @@ public record PlusExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =
         _ => throw new RuntimeException($"the operator '+' cannot be applied to the operands {l} and {r}"),
     });
 
-public record MinusExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value - rv.Value),
@@ -208,7 +216,7 @@ public record MinusExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) 
         _ => throw new RuntimeException($"the operator '-' cannot be applied to the operands {l} and {r}"),
     });
 
-public record TimesExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record TimesExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value * rv.Value),
@@ -222,7 +230,7 @@ public record TimesExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) 
         _ => throw new RuntimeException($"the operator '*' cannot be applied to the operands {l} and {r}"),
     });
 
-public record DivExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record DivExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value / rv.Value),
@@ -236,7 +244,7 @@ public record DivExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
         _ => throw new RuntimeException($"the operator '/' cannot be applied to the operands {l} and {r}"),
     });
 
-public record ModExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right, (l, r) =>
+public record ModExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
         (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value % rv.Value),
@@ -262,7 +270,7 @@ public record UnaryExpr : Expr
 
     public Expr Operand { get; }
 
-    public override async Task<Value> Evaluate(Context ctx) =>
+    private protected override async Task<Value> EvaluateOverride(Context ctx) =>
         _evalFunc(await Operand.Evaluate(ctx).ConfigureAwait(false));
 }
 
@@ -295,7 +303,7 @@ public record NotExpr(Expr Operand) : UnaryExpr(Operand, value =>
 
 public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
 {
-    public override async Task<Value> Evaluate(Context ctx)
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var operandValue = await Operand.Evaluate(ctx).ConfigureAwait(false);
         var subscriptValue = await Subscript.Evaluate(ctx).ConfigureAwait(false);
@@ -318,7 +326,7 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
 
 public record TernaryExpr(Expr Condition, Expr TrueCase, Expr FalseCase) : Expr
 {
-    public override async Task<Value> Evaluate(Context ctx) =>
+    private protected override async Task<Value> EvaluateOverride(Context ctx) =>
         (await Condition.Evaluate(ctx)).AsBoolean()
             ? await TrueCase.Evaluate(ctx)
             : await FalseCase.Evaluate(ctx);
@@ -326,7 +334,7 @@ public record TernaryExpr(Expr Condition, Expr TrueCase, Expr FalseCase) : Expr
 
 public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClauses, Expr Selection) : Expr
 {
-    public override Task<Value> Evaluate(Context ctx)
+    private protected override Task<Value> EvaluateOverride(Context ctx)
     {
         ctx = Context.Inherit(ctx);
         var selection = SelectFromSource(Head, ctx);
@@ -402,7 +410,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
 public record EagerFromExpr(FromExpr From) : Expr
 {
-    public override async Task<Value> Evaluate(Context ctx)
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var enumerable = (EnumerableValue) await From.Evaluate(ctx).ConfigureAwait(false);
         var collection = await enumerable.Collect().ConfigureAwait(false);
@@ -412,7 +420,7 @@ public record EagerFromExpr(FromExpr From) : Expr
 
 public abstract record NestedClause : Expr
 {
-    public override Task<Value> Evaluate(Context ctx) => throw new NotSupportedException();
+    private protected override Task<Value> EvaluateOverride(Context ctx) => throw new NotSupportedException();
 }
 
 public record FromClause(string Ident, Expr Source) : NestedClause;
@@ -420,10 +428,19 @@ public record WhereClause(Expr Predicate) : NestedClause;
 
 public record LetClause(string Ident, Expr Right) : NestedClause
 {
-    public override async Task<Value> Evaluate(Context ctx)
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var value = await Right.Evaluate(ctx).ConfigureAwait(false);
         ctx.Bind(Ident, value);
         return value;
+    }
+}
+
+public record ThrowExpr(Expr Exception) : Expr
+{
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
+    {
+        var exception = await Exception.Evaluate(ctx).ConfigureAwait(false);
+        throw new RuntimeException($"Runtime exception: {exception.AsString()}");
     }
 }

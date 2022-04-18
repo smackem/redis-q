@@ -220,4 +220,98 @@ public class FunctionTests : IntegrationTestBase
         var value3 = await Eval(expr3, redis);
         Assert.Equal(RedisValue.Empty, value3);
     }
+
+    [Fact]
+    public async Task Integer()
+    {
+        Assert.Equal(IntegerValue.Of(1), await Interpret(@"int(1)"));
+        Assert.Equal(IntegerValue.Of(100), await Interpret(@"int(""100"")"));
+        Assert.Equal(IntegerValue.Of(200), await Interpret(@"int(200.25)"));
+    }
+
+    [Fact]
+    public async Task Count()
+    {
+        Assert.Equal(IntegerValue.Zero, await Interpret(@"count([])"));
+        Assert.Equal(IntegerValue.Zero, await Interpret(@"count(from v in [] select v)"));
+        Assert.Equal(NullValue.Instance, await Interpret(@"count("""")"));
+        Assert.Equal(IntegerValue.Of(1), await Interpret(@"count([123])"));
+        Assert.Equal(IntegerValue.Of(1), await Interpret(@"count(from v in [123] select v)"));
+        Assert.Equal(NullValue.Instance, await Interpret(@"count(""a"")"));
+    }
+
+    [Fact]
+    public async Task Size()
+    {
+        Assert.Equal(IntegerValue.Zero, await Interpret(@"size([])"));
+        Assert.Equal(NullValue.Instance, await Interpret(@"size(from v in [] select v)"));
+        Assert.Equal(IntegerValue.Zero, await Interpret(@"size("""")"));
+        Assert.Equal(IntegerValue.Of(1), await Interpret(@"size([123])"));
+        Assert.Equal(NullValue.Instance, await Interpret(@"size(from v in [123] select v)"));
+        Assert.Equal(IntegerValue.Of(1), await Interpret(@"size(""a"")"));
+    }
+
+    [Fact]
+    public async Task RedisValueSize()
+    {
+        var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
+        ctx.Bind("a", new RedisValue(SR.RedisValue.Null));
+        ctx.Bind("b", new RedisValue("abc"));
+        ctx.Bind("c", new RedisValue(123));
+        var compiler = new Compiler();
+        var value1 = await compiler.Compile(@"size(a)").Evaluate(ctx);
+        Assert.Equal(IntegerValue.Zero, value1);
+        var value2 = await compiler.Compile(@"size(b)").Evaluate(ctx);
+        Assert.Equal(IntegerValue.Of(3), value2);
+        await Assert.ThrowsAsync<RuntimeException>(() => compiler.Compile(@"size(c)").Evaluate(ctx));
+    }
+
+    [Fact]
+    public async Task RedisValueConversion()
+    {
+        var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
+        ctx.Bind("a", new RedisValue(SR.RedisValue.Null));
+        ctx.Bind("s", new RedisValue("hello"));
+        ctx.Bind("n", new RedisValue(123));
+        ctx.Bind("r", new RedisValue(123.25));
+        var compiler = new Compiler();
+        // a: empty
+        var value1 = await compiler.Compile(@"int(a)").Evaluate(ctx);
+        Assert.Equal(IntegerValue.Zero, value1);
+        var value2 = await compiler.Compile(@"bool(a)").Evaluate(ctx);
+        Assert.Equal(BoolValue.False, value2);
+        var value3 = await compiler.Compile(@"string(a)").Evaluate(ctx);
+        Assert.Equal(StringValue.Empty, value3);
+        var value4 = await compiler.Compile(@"real(a)").Evaluate(ctx);
+        Assert.Equal(RealValue.Zero, value4);
+        // s: string
+        var value11 = await compiler.Compile(@"int(s)").Evaluate(ctx);
+        Assert.Equal(NullValue.Instance, value11);
+        var value12 = await compiler.Compile(@"bool(s)").Evaluate(ctx);
+        Assert.Equal(BoolValue.True, value12);
+        var value13 = await compiler.Compile(@"string(s)").Evaluate(ctx);
+        Assert.Equal(new StringValue("hello"), value13);
+        var value14 = await compiler.Compile(@"real(s)").Evaluate(ctx);
+        Assert.Equal(NullValue.Instance, value14);
+        // n: integer
+        var value21 = await compiler.Compile(@"int(n)").Evaluate(ctx);
+        Assert.Equal(IntegerValue.Of(123), value21);
+        var value22 = await compiler.Compile(@"bool(n)").Evaluate(ctx);
+        Assert.Equal(BoolValue.True, value22);
+        var value23 = await compiler.Compile(@"string(n)").Evaluate(ctx);
+        Assert.Equal(new StringValue("123"), value23);
+        var value24 = await compiler.Compile(@"real(n)").Evaluate(ctx);
+        Assert.Equal(new RealValue(123), value24);
+        // r: real
+        var value31 = await compiler.Compile(@"int(r)").Evaluate(ctx);
+        Assert.Equal(NullValue.Instance, value31);
+        var value32 = await compiler.Compile(@"bool(r)").Evaluate(ctx);
+        Assert.Equal(BoolValue.True, value32);
+        var value33 = await compiler.Compile(@"string(r)").Evaluate(ctx);
+        Assert.Equal(new StringValue("123.25"), value33);
+        var value34 = await compiler.Compile(@"real(r)").Evaluate(ctx);
+        Assert.Equal(new RealValue(123.25), value34);
+        var value35 = await compiler.Compile(@"int(real(r))").Evaluate(ctx);
+        Assert.Equal(IntegerValue.Of(123), value35);
+    }
 }

@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using RedisQ.Core.Runtime;
 using Xunit;
+using SR = StackExchange.Redis;
 
 namespace RedisQ.Core.Test;
 
@@ -131,5 +132,25 @@ public class RelationalOperatorsTests : TestBase
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"1 < []"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"(1,2) < []"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"['a'] >= 'x'"));
+    }
+
+    [Fact]
+    public async Task EmptyRedisValueComparison()
+    {
+        var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
+        ctx.Bind("a", new RedisValue(SR.RedisValue.Null));
+        var compiler = new Compiler();
+        var value1 = await compiler.Compile(@"a == null").Evaluate(ctx);
+        Assert.Equal(BoolValue.True, value1);
+        var value2 = await compiler.Compile(@"bool(a)").Evaluate(ctx);
+        Assert.Equal(BoolValue.False, value2);
+        var value3 = await compiler.Compile(@"!a").Evaluate(ctx);
+        Assert.Equal(BoolValue.True, value3);
+        var value4 = await compiler.Compile(@"a == false").Evaluate(ctx);
+        Assert.Equal(BoolValue.False, value4);
+        var value5 = await compiler.Compile(@"a ~= ""[a-z]""").Evaluate(ctx);
+        Assert.Equal(BoolValue.False, value5);
+        var value6 = await compiler.Compile(@"a == """"").Evaluate(ctx);
+        Assert.Equal(BoolValue.False, value6);
     }
 }

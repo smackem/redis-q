@@ -46,7 +46,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         new LetClause(context.Ident().GetText(), context.expr().Accept(this));
 
     public override Expr VisitWhereClause(RedisQLParser.WhereClauseContext context) =>
-        new WhereClause(context.conditionalOrExpr().Accept(this));
+        new WhereClause(context.ternaryExpr().Accept(this));
 
     public override Expr VisitTernaryExpr(RedisQLParser.TernaryExprContext context) =>
         context.ternaryExpr() != null
@@ -193,15 +193,16 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             : ListExpr.Empty;
     }
 
-    protected override Expr AggregateResult(Expr aggregate, Expr nextResult)
-    {
-        return (aggregate, nextResult) switch
+    public override Expr VisitThrowExpr(RedisQLParser.ThrowExprContext context) =>
+        new ThrowExpr(context.expr().Accept(this));
+
+    protected override Expr AggregateResult(Expr aggregate, Expr nextResult) =>
+        (aggregate, nextResult) switch
         {
             (not null, null) => aggregate,
             (null, not null) => nextResult,
             (_, _) => base.AggregateResult(aggregate!, nextResult!),
         };
-    }
 
     private static string ParseString(string s) => s.Trim('\"');
     private static char ParseChar(string s) => s.Trim('\'')[0];

@@ -18,13 +18,17 @@ public class FunctionRegistry
         Register(new FunctionDefinition("llen", 1, FuncLLen));
         Register(new FunctionDefinition("lrange", 3, FuncLRange));
         Register(new FunctionDefinition("lindex", 2, FuncLIndex));
+        Register(new FunctionDefinition("type", 1, FuncType));
 
         // util functions
-        Register(new FunctionDefinition("len", 1, FuncLen));
+        Register(new FunctionDefinition("size", 1, FuncSize));
+        Register(new FunctionDefinition("count", 1, FuncCount));
         Register(new FunctionDefinition("int", 1, FuncInt));
         Register(new FunctionDefinition("real", 1, FuncReal));
         Register(new FunctionDefinition("bool", 1, FuncBool));
         Register(new FunctionDefinition("string", 1, FuncString));
+        Register(new FunctionDefinition("lower", 1, FuncLower));
+        Register(new FunctionDefinition("upper", 1, FuncUpper));
     }
 
     private static Task<Value> FuncKeys(Context ctx, Value[] arguments)
@@ -135,15 +139,38 @@ public class FunctionRegistry
         return new RedisValue(val);
     }
 
-    private static Task<Value> FuncLen(Context ctx, Value[] arguments) =>
+    private static async Task<Value> FuncType(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"type({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var val = await db.KeyTypeAsync(key.AsRedisKey());
+        return new StringValue(val.ToString().ToLower());
+    }
+
+    private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
         arguments[0] switch
         {
-            ListValue list => Task.FromResult(IntegerValue.Of(list.Count) as Value),
-            StringValue str => Task.FromResult(IntegerValue.Of(str.Value.Length) as Value),
-            IRedisValue val => Task.FromResult(IntegerValue.Of((int) val.AsRedisValue().Length()) as Value),
+            ListValue list => Task.FromResult<Value>(IntegerValue.Of(list.Count)),
+            StringValue str => Task.FromResult<Value>(IntegerValue.Of(str.Value.Length)),
+            IRedisValue val => Task.FromResult<Value>(IntegerValue.Of((int) val.AsRedisValue().Length())),
             _ => Task.FromResult<Value>(NullValue.Instance),
         };
 
+    private static async Task<Value> FuncCount(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            ListValue list => IntegerValue.Of(list.Count),
+            EnumerableValue enumerable => IntegerValue.Of(await CountEnumerable(enumerable).ConfigureAwait(false)),
+            _ => NullValue.Instance,
+        };
+
+    private static async Task<int> CountEnumerable(EnumerableValue enumerable)
+    {
+        var count = 0;
+        await foreach (var _ in enumerable.ConfigureAwait(false)) count++;
+        return count;
+    }
+    
     private static Task<Value> FuncInt(Context ctx, Value[] arguments) =>
         arguments[0] switch
         {
@@ -184,6 +211,12 @@ public class FunctionRegistry
             var v => Task.FromResult<Value>(new StringValue(v.AsString())),
         };
 
+    private static Task<Value> FuncLower(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(new StringValue(arguments[0].AsString().ToLower()));
+
+    private static Task<Value> FuncUpper(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(new StringValue(arguments[0].AsString().ToUpper()));
+
     public FunctionDefinition Resolve(string name, int parameterCount)
     {
         if (!_dict.TryGetValue(name, out var function)) throw new Exception($"function {name} not found");
@@ -192,7 +225,7 @@ public class FunctionRegistry
         return function;
     }
 
-    public void Register(FunctionDefinition function)
+    private void Register(FunctionDefinition function)
     {
         _dict.Add(function.Name, function);
     }

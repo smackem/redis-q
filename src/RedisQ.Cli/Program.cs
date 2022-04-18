@@ -58,7 +58,7 @@ internal static class Program
         while (true)
         {
             var atBegin = source.Length == 0;
-            Console.Write(atBegin ? "> " : ": ");
+            Console.Write(atBegin ? "> " : "- ");
             var line = Console.ReadLine()!.Trim();
             if (atBegin)
             {

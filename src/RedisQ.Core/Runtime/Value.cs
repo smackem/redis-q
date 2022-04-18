@@ -146,6 +146,8 @@ public interface IRedisValue
 
 public class StringValue : ScalarValue<string>, IRedisKey, IRedisValue
 {
+    public static readonly StringValue Empty = new(string.Empty);
+
     public StringValue(string value) : base(value)
     {}
 
@@ -175,7 +177,7 @@ public class RedisValue : ScalarValue<SR.RedisValue>, IRedisKey, IRedisValue
 
     public static readonly RedisValue Empty = new(SR.RedisValue.Null);
 
-    public override string AsString() => Value;
+    public override string AsString() => Value.HasValue ? Value : string.Empty;
     public override bool AsBoolean() => Value.HasValue;
     public RedisKey AsRedisKey() => new(Value);
     public SR.RedisValue AsRedisValue() => Value;
@@ -202,6 +204,8 @@ public class IntegerValue : ScalarValue<int>, IRedisValue
 
 public class RealValue : ScalarValue<double>, IRedisValue
 {
+    public static readonly RealValue Zero = new(0);
+
     public RealValue(double value) : base(value)
     {}
 

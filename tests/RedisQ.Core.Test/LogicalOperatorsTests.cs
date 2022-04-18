@@ -50,4 +50,13 @@ public class LogicalOperatorsTests : TestBase
         var value2 = await Interpret(@"1 >= 100 ? -10 : 10");
         Assert.Equal(IntegerValue.Of(10), value2);
     }
+
+    [Fact]
+    public async Task LogicalShortCircuit()
+    {
+        var value1 = await Interpret(@"true || throw 'X'");
+        Assert.Equal(BoolValue.True, value1);
+        var value2 = await Interpret(@"false && throw 'X'");
+        Assert.Equal(BoolValue.False, value2);
+    }
 }

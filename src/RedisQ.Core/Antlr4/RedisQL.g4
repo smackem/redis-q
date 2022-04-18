@@ -29,7 +29,7 @@ letClause
     ;
 
 whereClause
-    : 'where' conditionalOrExpr
+    : 'where' ternaryExpr
     ;
 
 selectClause
@@ -125,6 +125,7 @@ primary
     | True
     | False
     | Null
+    | throwExpr
     | functionInvocation
     | tuple
     | list
@@ -149,6 +150,10 @@ arguments
 
 number
     : (Plus | Minus)? (Integer | Real | HexInteger)
+    ;
+
+throwExpr
+    : 'throw' expr
     ;
 
 Plus        : '+';
