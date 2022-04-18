@@ -25,8 +25,9 @@ internal static class Program
     {
         PrintBanner(options);
         var redis = new RedisConnection(options.ConnectionString);
+        var promptStr = new FormattedString("> ", new FormatSpan(0, 2, AnsiColor.Blue));
         var prompt = new Prompt(
-            configuration: new PromptConfiguration(prompt: new FormattedString("> ", ConsoleFormat.None)),
+            configuration: new PromptConfiguration(prompt: promptStr),
             callbacks: new LocalPromptCallbacks());
         var functions = new FunctionRegistry();
         var ctx = Context.Root(redis, functions);
@@ -44,7 +45,9 @@ internal static class Program
 
     private static void PrintBanner(Options options)
     {
-        var version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        var version = Assembly.GetEntryAssembly()?
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
         Console.WriteLine($"***** redis-q v{version}");
         Console.WriteLine($"redis @ {options.ConnectionString}");
         Console.WriteLine("terminate expressions with ;");
@@ -82,17 +85,19 @@ internal static class Program
 
     private class LocalPromptCallbacks : PromptCallbacks
     {
+        private static readonly KeyPress SoftEnter = new(new ConsoleKeyInfo('\n', ConsoleKey.Enter, shift: true, alt: false, control: false));
+
         protected override Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {
-            if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter)
+            if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter
+            && keyPress.ConsoleKeyInfo.Modifiers == default
+            && string.IsNullOrWhiteSpace(text) == false && text.EndsWith(Terminator) == false)
             {
-                if (string.IsNullOrWhiteSpace(text) == false && text.EndsWith(Terminator) == false)
-                {
-                    return Task.FromResult(new KeyPress(new ConsoleKeyInfo('\n', ConsoleKey.Enter, shift: true, alt: false, control: false)));
-                }
+                return Task.FromResult(new KeyPress(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), "\n"));
+                //return Task.FromResult(SoftEnter);
             }
 
-            return base.TransformKeyPressAsync(text, caret, keyPress, cancellationToken);
+            return Task.FromResult(keyPress);
         }
     }
 }
