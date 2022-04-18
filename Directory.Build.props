@@ -13,5 +13,6 @@
         <xunit_runner_visualstudio_Version>2.4.3</xunit_runner_visualstudio_Version>
         <coverlet_collector_Version>3.1.0</coverlet_collector_Version>
         <Newtonsoft_Json_Version>13.0.1</Newtonsoft_Json_Version>
+        <PrettyPrompt_Version>3.0.5</PrettyPrompt_Version>
     </PropertyGroup>
 </Project>

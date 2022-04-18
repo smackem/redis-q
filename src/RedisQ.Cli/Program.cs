@@ -1,6 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Net.Mime;
+using System.Reflection;
 using System.Text;
 using CommandLine;
+using PrettyPrompt;
+using PrettyPrompt.Consoles;
+using PrettyPrompt.Highlighting;
 using RedisQ.Core;
 using RedisQ.Core.Redis;
 using RedisQ.Core.Runtime;
@@ -21,13 +25,16 @@ internal static class Program
     {
         PrintBanner(options);
         var redis = new RedisConnection(options.ConnectionString);
+        var prompt = new Prompt(
+            configuration: new PromptConfiguration(prompt: new FormattedString("> ", ConsoleFormat.None)),
+            callbacks: new LocalPromptCallbacks());
         var functions = new FunctionRegistry();
         var ctx = Context.Root(redis, functions);
         var compiler = new Compiler();
         var printer = new ValuePrinter();
         while (true)
         {
-            var source = ReadSource();
+            var source = await ReadSource(prompt);
             if (string.IsNullOrEmpty(source)) continue;
             if (source.StartsWith("#q")) break;
             var value = await Interpret(compiler, source, ctx);
@@ -41,7 +48,7 @@ internal static class Program
         Console.WriteLine($"***** redis-q v{version}");
         Console.WriteLine($"redis @ {options.ConnectionString}");
         Console.WriteLine("terminate expressions with ;");
-        Console.WriteLine("enter #q to exit...");
+        Console.WriteLine("enter #q; to exit...");
     }
 
     private static async Task<Value?> Interpret(Compiler compiler, string source, Context ctx)
@@ -62,24 +69,30 @@ internal static class Program
         return null;
     }
 
-    private static string ReadSource()
+    private static async Task<string> ReadSource(Prompt prompt)
     {
-        var source = new StringBuilder();
-        while (true)
-        {
-            var atBegin = source.Length == 0;
-            Console.Write(atBegin ? "> " : "- ");
-            var line = Console.ReadLine()!.Trim();
-            if (atBegin)
-            {
-                if (string.IsNullOrEmpty(line)) return string.Empty;
-                if (line.StartsWith("#")) return line;
-            }
-            source.AppendLine(line);
-            if (line.EndsWith(Terminator)) return TrimSource(source.ToString());
-        }
+        var response = await prompt.ReadLineAsync();
+        return response.IsSuccess
+            ? TrimSource(response.Text)
+            : string.Empty;
     }
 
     private static string TrimSource(string source) =>
         source.TrimEnd('\r', '\n', ' ', '\t', Terminator);
+
+    private class LocalPromptCallbacks : PromptCallbacks
+    {
+        protected override Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+        {
+            if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter)
+            {
+                if (string.IsNullOrWhiteSpace(text) == false && text.EndsWith(Terminator) == false)
+                {
+                    return Task.FromResult(new KeyPress(new ConsoleKeyInfo('\n', ConsoleKey.Enter, shift: true, alt: false, control: false)));
+                }
+            }
+
+            return base.TransformKeyPressAsync(text, caret, keyPress, cancellationToken);
+        }
+    }
 }
