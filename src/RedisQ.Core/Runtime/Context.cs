@@ -5,22 +5,22 @@ namespace RedisQ.Core.Runtime;
 public class Context
 {
     private readonly Scope _scope = new();
+    private readonly Context? _parent;
 
     private Context(Context parent)
     {
-        Parent = parent;
+        _parent = parent;
         Redis = parent.Redis;
         Functions = parent.Functions;
     }
 
     private Context(IRedisConnection redis, FunctionRegistry functions)
     {
-        Parent = null;
+        _parent = null;
         Redis = redis;
         Functions = functions;
     }
 
-    public Context? Parent { get; }
     public IRedisConnection Redis { get; }
     public FunctionRegistry Functions { get; }
 
@@ -29,7 +29,7 @@ public class Context
 
     public Value? Resolve(string name)
     {
-        for (var ctx = this; ctx != null; ctx = ctx.Parent)
+        for (var ctx = this; ctx != null; ctx = ctx._parent)
         {
             var value = ctx._scope.Get(name);
             if (value != null) return value;

@@ -1,5 +1,10 @@
 <Project>
     <PropertyGroup>
+        <VersionPrefix>0.0.1</VersionPrefix>
+        <VersionSuffix>snapshot</VersionSuffix>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <StackExchange_Redis_Version>2.5.43</StackExchange_Redis_Version>
         <Antlr4_Version>4.6.6</Antlr4_Version>
         <CommandLineParser_Version>2.8.0</CommandLineParser_Version>
