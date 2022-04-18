@@ -311,7 +311,8 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         {
             (ListValue list, IntegerValue index) => list[CoerceIndex(list, index.Value)],
             (StringValue str, IntegerValue index) => new CharValue(str.Value[CoerceIndex(str.Value, index.Value)]),
-            (RedisValue, StringValue) => throw new NotImplementedException("json path goes here"),
+            (StringValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
+            (RedisValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (NullValue, _) or (_, NullValue) => NullValue.Instance,
             _ => throw new RuntimeException($"incompatible operands for subscript expression: {operandValue}[{subscriptValue}]"),
         };

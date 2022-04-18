@@ -1,33 +1,17 @@
-from k in keys("*") let v = get(k) select v > 3 ? (k, v) : (k, v, "<= 3");
+from k in keys("json")
+let v = get(k)
+select (v[".name"], v[".age"]);
 
-from k in keys("exo-mesh-*")
-let kind = hget(k, "kind")
-where kind && kind ~= "Library.*"
-select (k, kind);
+from path in [".name", ".age"]
+let v = get("json")
+select v[path];
 
-from key in keys("exo.mesh.*")
+from k in keys("*")
+where type(k) == "string"
+let v = get(k)
+select v > 3 ? (k, v) : (k, v, "<= 3");
+
+from key in keys("user.*")
+let userJson = get(key)
+where userJson[".age"] > 12 && lower(userJson[".name"]) ~= "john"
 select key
-
-from key in keys("exo.mesh.*")
-where get(key)[".kind"] == "CrownDesign"
-select key
-
-// is the same as
-from key in keys("exo.mesh.*")
-where get(key)->kind == "CrownDesign"
-select key
-
-from key in keys("exo.mesh.*")
-let meta = hget(key, "meta")
-where meta[".kind"] == "LibraryModel"
-select meta[".filename"]
-
-from meshKey in keys("exo.mesh.*")
-from sessionKey in "exo.session.*"
-where meshKey["meta"].sessionKey == sessionKey
-select (meshKey, sessionKey)
-
-from key in keys("exo.mesh.*")
-from hkey in hkeys(key)
-where len(hkey) > 0
-select (key, hkey)
