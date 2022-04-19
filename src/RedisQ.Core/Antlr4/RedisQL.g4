@@ -21,19 +21,19 @@ nestedClause
     ;
 
 fromClause
-    : 'from' Ident 'in' primary
+    : From Ident In primary
     ;
 
 letClause
-    : 'let' Ident '=' expr
+    : Let Ident '=' expr
     ;
 
 whereClause
-    : 'where' ternaryExpr
+    : Where ternaryExpr
     ;
 
 selectClause
-    : 'select' expr
+    : Select expr
     ;
 
 ternaryExpr
@@ -156,6 +156,14 @@ throwExpr
     : 'throw' expr
     ;
 
+From        : 'from';
+In          : 'in';
+Let         : 'let';
+Where       : 'where';
+Select      : 'select';
+True        : 'true';
+False       : 'false';
+Null        : 'null';
 Plus        : '+';
 Minus       : '-';
 Times       : '*';
@@ -171,9 +179,6 @@ Match       : '~=';
 Or          : '||';
 And         : '&&';
 Not         : '!';
-True        : 'true';
-False       : 'false';
-Null        : 'null';
 
 Ident
     : ([a-z] | [A-Z] | '_') ([a-z] | [A-Z] | DigitOrUnderscore)*

@@ -9,4 +9,7 @@ public class Options
 
     [Option('v', "verbose", Required = false, HelpText = "Set output to verbose messages.")]
     public bool Verbose { get; set; }
+
+    [Option('m', "monochrome", Required = false, HelpText = "Disable syntax highlighting.")]
+    public bool Monochrome { get; set; }
 }
