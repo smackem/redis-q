@@ -1,4 +1,6 @@
-﻿namespace RedisQ.Core.Runtime;
+﻿using System.Text;
+
+namespace RedisQ.Core.Runtime;
 
 public class FunctionRegistry
 {
@@ -29,6 +31,9 @@ public class FunctionRegistry
         Register(new FunctionDefinition("string", 1, FuncString));
         Register(new FunctionDefinition("lower", 1, FuncLower));
         Register(new FunctionDefinition("upper", 1, FuncUpper));
+        Register(new FunctionDefinition("collect", 1, FuncCollect));
+        Register(new FunctionDefinition("join", 2, FuncJoin));
+        Register(new FunctionDefinition("distinct", 1, FuncDistinct));
     }
 
     private static Task<Value> FuncKeys(Context ctx, Value[] arguments)
@@ -216,6 +221,48 @@ public class FunctionRegistry
 
     private static Task<Value> FuncUpper(Context ctx, Value[] arguments) =>
         Task.FromResult<Value>(new StringValue(arguments[0].AsString().ToUpper()));
+
+    private static async Task<Value> FuncCollect(Context ctx, Value[] arguments) =>
+        arguments[0] switch
+        {
+            EnumerableValue e => new ListValue(await e.Collect(1000).ConfigureAwait(false)),
+            _ => throw new RuntimeException($"collect({arguments[0]}): incompatible operand, enumerable expected"), 
+        };
+
+    private static async Task<Value> FuncJoin(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue separator == false) throw new RuntimeException($"join({arguments[0]}): incompatible operand, string expected");
+        if (arguments[1] is EnumerableValue coll == false) throw new RuntimeException($"join({arguments[1]}): incompatible operand, enumerable expected");
+
+        var sb = new StringBuilder();
+        var count = 0;
+        
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            if (count >= 1000) break;
+            if (count != 0) sb.Append(separator.Value);
+            sb.Append(value.AsString());
+            count++;
+        }
+
+        return new StringValue(sb.ToString());
+    }
+
+    private static Task<Value> FuncDistinct(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"distinct({arguments[0]}): incompatible operand, enumerable expected");
+        var set = new HashSet<Value>();
+
+        async IAsyncEnumerable<Value> Walk()
+        {
+            await foreach (var value in coll.ConfigureAwait(false))
+            {
+                if (set.Add(value)) yield return value;
+            }
+        }
+
+        return Task.FromResult<Value>(new EnumerableValue(Walk()));
+    }
 
     public FunctionDefinition Resolve(string name, int parameterCount)
     {

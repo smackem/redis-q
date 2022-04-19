@@ -2,11 +2,12 @@ namespace RedisQ.Core;
 
 public static class AsyncEnumerable
 {
-    public static async Task<IReadOnlyList<T>> Collect<T>(this IAsyncEnumerable<T> enumerable)
+    public static async Task<IReadOnlyList<T>> Collect<T>(this IAsyncEnumerable<T> enumerable, int? limit = null)
     {
         var items = new List<T>();
         await foreach (var item in enumerable)
         {
+            if (limit.HasValue && limit.Value <= items.Count) break;
             items.Add(item);
         }
         return items;
