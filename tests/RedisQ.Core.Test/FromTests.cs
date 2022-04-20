@@ -295,5 +295,76 @@ select
                     iv => Assert.Equal(IntegerValue.Of(6), iv));
             });
     }
-}
+    
+    [Fact]
+    public async Task SelectLimited()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit 2 select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v));
+    }
 
+    [Fact]
+    public async Task SelectZeroLimited()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit 0 select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Empty(values);
+    }
+
+    [Fact]
+    public async Task SelectLimitedExceedingCount()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit 100 select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
+    }
+
+    [Fact]
+    public async Task SelectLimitedWithOffset()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit 2 offset 1 select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
+    }
+
+    [Fact]
+    public async Task SelectLimitedWithOffsetOutOfRange()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit 2 offset 3 select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Empty(values);
+    }
+}

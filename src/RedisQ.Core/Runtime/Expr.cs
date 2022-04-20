@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
@@ -185,6 +186,13 @@ public record GeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, 
         _ => throw new RuntimeException($"the operator '>=' cannot be applied to the operands {l} and {r}"),
     });
 
+public record RangeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (IntegerValue lv, IntegerValue rv) => new RangeValue(lv.Value, rv.Value),
+        _ => throw new RuntimeException($"the operator '..' can only be applied to integers, not to {l} and {r}"),
+    });
+
 public record PlusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
@@ -347,6 +355,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
                 FromClause @from => CrossJoin(selection, @from, ctx),
                 LetClause @let => Bind(selection, @let, ctx),
                 WhereClause @where => Filter(selection, @where, ctx),
+                LimitClause limit => Limit(selection, limit, ctx),
                 _ => throw new NotImplementedException(),
             };
         }
@@ -407,6 +416,27 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
             yield return value;
         }
     }
+
+    private static async IAsyncEnumerable<Value> Limit(IAsyncEnumerable<Value> coll, LimitClause limit, Context ctx)
+    {
+        var countValue = await limit.Count.Evaluate(ctx).ConfigureAwait(false);
+        var offsetValue = limit.Offset != null
+            ? await limit.Offset.Evaluate(ctx).ConfigureAwait(false)
+            : IntegerValue.Zero;
+        var first = offsetValue is IntegerValue o
+            ? o.Value
+            : throw new RuntimeException("limit clause expected integer arguments");
+        var last = countValue is IntegerValue c
+            ? first + c.Value
+            : throw new RuntimeException("limit clause expected integer arguments");
+        var index = 0;
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            if (index >= last) break;
+            if (index >= first) yield return value;
+            index++;
+        }
+    }
 }
 
 public record EagerFromExpr(FromExpr From) : Expr
@@ -426,6 +456,7 @@ public abstract record NestedClause : Expr
 
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
+public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
 
 public record LetClause(string Ident, Expr Right) : NestedClause
 {

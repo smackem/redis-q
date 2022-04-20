@@ -21,6 +21,7 @@ public class FunctionRegistry
         Register(new FunctionDefinition("lrange", 3, FuncLRange));
         Register(new FunctionDefinition("lindex", 2, FuncLIndex));
         Register(new FunctionDefinition("type", 1, FuncType));
+        Register(new FunctionDefinition("hstrlen", 2, FuncHStrLen));
 
         // util functions
         Register(new FunctionDefinition("size", 1, FuncSize));
@@ -75,6 +76,15 @@ public class FunctionRegistry
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"strlen({arguments[0]}): incompatible operand, RedisKey expected");
         var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
         var val = await db.StringLengthAsync(key.AsRedisKey());
+        return IntegerValue.Of((int) val);
+    }
+
+    private static async Task<Value> FuncHStrLen(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hstrlen({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue field == false) throw new RuntimeException($"hstrlen({arguments[1]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var val = await db.HashStringLengthAsync(key.AsRedisKey(), field.AsRedisValue());
         return IntegerValue.Of((int) val);
     }
 

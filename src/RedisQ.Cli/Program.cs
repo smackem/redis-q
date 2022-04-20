@@ -24,7 +24,7 @@ internal static class Program
         var ctx = Context.Root(redis, functions);
         var compiler = new Compiler();
         var printer = new ValuePrinter();
-        IRepl repl = options.Monochrome
+        IRepl repl = options.Simple
             ? new MonochromeRepl(Terminator)
             : new PrettyRepl(Terminator, compiler);
         while (true)
@@ -34,8 +34,11 @@ internal static class Program
             if (source.StartsWith("#q")) break;
             var value = await Interpret(compiler, source, ctx);
             if (value == null) continue;
-            ctx.Bind("it", value);
             await printer.Print(value, Console.Out);
+            // do not store enumerable: it does not make sense because it has already been depleted by Print
+            ctx.Bind("it", value is EnumerableValue and not ListValue
+                ? NullValue.Instance
+                : value);
         }
     }
 

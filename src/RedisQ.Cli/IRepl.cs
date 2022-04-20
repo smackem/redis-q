@@ -68,6 +68,8 @@ internal class PrettyRepl : IRepl
                 Tokens.In,
                 Tokens.Let,
                 Tokens.Where,
+                Tokens.Limit,
+                Tokens.Offset,
                 Tokens.Select,
                 Tokens.True,
                 Tokens.False,
@@ -106,7 +108,8 @@ internal class PrettyRepl : IRepl
         {
             if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter
             && keyPress.ConsoleKeyInfo.Modifiers == default
-            && string.IsNullOrWhiteSpace(text) == false && text.EndsWith(_terminator) == false)
+            && string.IsNullOrWhiteSpace(text) == false
+            && (text.EndsWith(_terminator) == false || caret < text.Length))
             {
                 return Task.FromResult(SoftEnter);
             }

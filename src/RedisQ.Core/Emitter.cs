@@ -40,13 +40,18 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     }
 
     public override Expr VisitFromClause(RedisQLParser.FromClauseContext context) =>
-        new FromClause(context.Ident().GetText(), context.primary().Accept(this));
+        new FromClause(context.Ident().GetText(), context.ternaryExpr().Accept(this));
 
     public override Expr VisitLetClause(RedisQLParser.LetClauseContext context) =>
         new LetClause(context.Ident().GetText(), context.expr().Accept(this));
 
     public override Expr VisitWhereClause(RedisQLParser.WhereClauseContext context) =>
         new WhereClause(context.ternaryExpr().Accept(this));
+
+    public override Expr VisitLimitClause(RedisQLParser.LimitClauseContext context) =>
+        new LimitClause(
+            context.ternaryExpr(0).Accept(this),
+            context.ternaryExpr().Length > 1 ? context.ternaryExpr(1).Accept(this) : null);
 
     public override Expr VisitTernaryExpr(RedisQLParser.TernaryExprContext context) =>
         context.ternaryExpr() != null
@@ -74,9 +79,9 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitRelationalExpr(RedisQLParser.RelationalExprContext context)
     {
-        if (context.additiveExpr().Length == 1) return base.VisitRelationalExpr(context);
-        var left = context.additiveExpr()[0].Accept(this);
-        var right = context.additiveExpr()[1].Accept(this);
+        if (context.rangeExpr().Length == 1) return base.VisitRelationalExpr(context);
+        var left = context.rangeExpr()[0].Accept(this);
+        var right = context.rangeExpr()[1].Accept(this);
         return context.relationalOp() switch
         {
             var op when op.Eq() != null => new EqExpr(left, right),
@@ -89,6 +94,11 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             _ => throw new CompilationException("syntax does not allow this"),
         };
     }
+
+    public override Expr VisitRangeExpr(RedisQLParser.RangeExprContext context) =>
+        context.FromTo() == null
+            ? context.additiveExpr(0).Accept(this)
+            : new RangeExpr(context.additiveExpr(0).Accept(this), context.additiveExpr(1).Accept(this));
 
     public override Expr VisitAdditiveExpr(RedisQLParser.AdditiveExprContext context)
     {

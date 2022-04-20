@@ -237,3 +237,25 @@ public class BoolValue : ScalarValue<bool>, IRedisValue
     public override bool AsBoolean() => Value;
     public SR.RedisValue AsRedisValue() => Value;
 }
+
+public class RangeValue : EnumerableValue
+{
+    private readonly int _lower, _upper;
+    
+    public RangeValue(int lower, int upper) : base(WalkRange(lower, upper))
+    {
+        _lower = lower;
+        _upper = upper;
+    }
+
+    public override bool AsBoolean() => _upper >= _lower;
+    public override string ToString() => $"[{GetType().Name}[{_lower} .. {_upper}]";
+
+    private static async IAsyncEnumerable<Value> WalkRange(int lower, int upper)
+    {
+        for (; lower <= upper; lower++)
+        {
+            yield return await Task.FromResult(IntegerValue.Of(lower));
+        }
+    }
+}

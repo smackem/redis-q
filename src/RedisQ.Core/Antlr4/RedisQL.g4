@@ -18,10 +18,11 @@ nestedClause
     : fromClause
     | letClause
     | whereClause
+    | limitClause
     ;
 
 fromClause
-    : From Ident In primary
+    : From Ident In ternaryExpr
     ;
 
 letClause
@@ -30,6 +31,10 @@ letClause
 
 whereClause
     : Where ternaryExpr
+    ;
+
+limitClause
+    : Limit ternaryExpr (Offset ternaryExpr)?
     ;
 
 selectClause
@@ -52,8 +57,8 @@ conditionalAndExpr
     ;
 
 relationalExpr
-    : additiveExpr
-    | additiveExpr relationalOp additiveExpr
+    : rangeExpr
+    | rangeExpr relationalOp rangeExpr
     ;
 
 relationalOp
@@ -64,6 +69,11 @@ relationalOp
     | Gt
     | Ge
     | Match
+    ;
+
+rangeExpr
+    : additiveExpr
+    | additiveExpr FromTo additiveExpr
     ;
 
 additiveExpr
@@ -160,6 +170,8 @@ From        : 'from';
 In          : 'in';
 Let         : 'let';
 Where       : 'where';
+Limit       : 'limit';
+Offset      : 'offset';
 Select      : 'select';
 True        : 'true';
 False       : 'false';
@@ -179,6 +191,7 @@ Match       : '~=';
 Or          : '||';
 And         : '&&';
 Not         : '!';
+FromTo      : '..';
 
 Ident
     : ([a-z] | [A-Z] | '_') ([a-z] | [A-Z] | DigitOrUnderscore)*

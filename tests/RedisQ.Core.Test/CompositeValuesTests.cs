@@ -46,4 +46,29 @@ public class CompositeValuesTests : TestBase
             v => Assert.Equal(new RealValue(2.5), v),
             v => Assert.Equal(new StringValue("abc"), v));
     }
+
+    [Fact]
+    public async Task Range()
+    {
+        const string source = "1 .. 3";
+        var expr = Compile(source);
+        var value = await Eval(expr);
+        Assert.IsType<RangeValue>(value);
+        var values = await ((RangeValue)value).Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
+    }
+
+    [Fact]
+    public async Task EmptyRange()
+    {
+        const string source = "1 .. 0";
+        var expr = Compile(source);
+        var value = await Eval(expr);
+        Assert.IsType<RangeValue>(value);
+        var values = await ((RangeValue)value).Collect();
+        Assert.Empty(values);
+    }
 }

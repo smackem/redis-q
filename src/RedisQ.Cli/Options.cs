@@ -10,6 +10,6 @@ public class Options
     [Option('v', "verbose", Required = false, HelpText = "Set output to verbose messages.")]
     public bool Verbose { get; set; }
 
-    [Option('m', "monochrome", Required = false, HelpText = "Disable syntax highlighting.")]
-    public bool Monochrome { get; set; }
+    [Option('s', "simple", Required = false, Default = false, HelpText = "Use a simplistic REPL without syntax highlighting.")]
+    public bool Simple { get; set; }
 }
