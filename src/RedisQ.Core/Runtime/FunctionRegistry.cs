@@ -282,8 +282,6 @@ public class FunctionRegistry
         return function;
     }
 
-    private void Register(FunctionDefinition function)
-    {
+    private void Register(FunctionDefinition function) =>
         _dict.Add(function.Name, function);
-    }
 }

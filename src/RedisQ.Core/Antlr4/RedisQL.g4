@@ -1,8 +1,13 @@
 grammar RedisQL;
 
 main
-    : (expr
+    : (pipelineExpr
     | letClause) EOF
+    ;
+
+pipelineExpr
+    : pipelineExpr '|>' functionInvocation
+    | expr
     ;
 
 expr
@@ -139,7 +144,7 @@ primary
     | functionInvocation
     | tuple
     | list
-    | '(' expr ')'
+    | '(' pipelineExpr ')'
     ;
 
 tuple

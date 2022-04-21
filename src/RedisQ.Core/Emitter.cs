@@ -10,7 +10,14 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     private int _nestingLevel;
 
     public override Expr VisitMain(RedisQLParser.MainContext context) =>
-        (context.expr() as IParseTree ?? context.letClause()).Accept(this);
+        (context.pipelineExpr() as IParseTree ?? context.letClause()).Accept(this);
+
+    public override Expr VisitPipelineExpr(RedisQLParser.PipelineExprContext context)
+    {
+        if (context.functionInvocation() == null) return context.expr().Accept(this);
+        var lastArgument = context.pipelineExpr().Accept(this);
+        return EmitFunctionInvocation(context.functionInvocation(), lastArgument);
+    }
 
     public override Expr VisitFromExpr(RedisQLParser.FromExprContext context)
     {
@@ -182,11 +189,16 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         return new LiteralExpr(value);
     }
 
-    public override Expr VisitFunctionInvocation(RedisQLParser.FunctionInvocationContext context)
+    public override Expr VisitFunctionInvocation(RedisQLParser.FunctionInvocationContext context) =>
+        EmitFunctionInvocation(context, null);
+
+    private Expr EmitFunctionInvocation(RedisQLParser.FunctionInvocationContext context, Expr? lastArgument)
     {
         var ident = context.Ident().GetText();
-        var arguments = context.arguments()?.expr().Select(a => a.Accept(this));
-        return new FunctionExpr(ident, arguments?.ToArray() ?? Array.Empty<Expr>());
+        var arguments = context.arguments()?.expr().Select(a => a.Accept(this))
+            ?? Enumerable.Empty<Expr>();
+        if (lastArgument != null) arguments = arguments.Concat(new[] { lastArgument });
+        return new FunctionExpr(ident, arguments.ToArray());
     }
 
     public override Expr VisitTuple(RedisQLParser.TupleContext context)

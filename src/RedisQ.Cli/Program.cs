@@ -32,7 +32,7 @@ internal static class Program
             var source = TrimSource(await repl.ReadSource());
             if (string.IsNullOrEmpty(source)) continue;
             if (source.StartsWith("#q")) break;
-            var value = await Interpret(compiler, source, ctx);
+            var value = await Interpret(compiler, source, ctx, options);
             if (value == null) continue;
             await printer.Print(value, Console.Out);
             // do not store enumerable: it does not make sense because it has already been depleted by Print
@@ -53,7 +53,7 @@ internal static class Program
         Console.WriteLine("enter #q; to exit...");
     }
 
-    private static async Task<Value?> Interpret(Compiler compiler, string source, Context ctx)
+    private static async Task<Value?> Interpret(Compiler compiler, string source, Context ctx, Options options)
     {
         try
         {
@@ -62,14 +62,17 @@ internal static class Program
         }
         catch (CompilationException e)
         {
-            Console.WriteLine(e);
+            Report(e, options.Verbose);
         }
         catch (RuntimeException e)
         {
-            Console.WriteLine(e);
+            Report(e, options.Verbose);
         }
         return null;
     }
+
+    private static void Report(Exception e, bool verbose) =>
+        Console.WriteLine(verbose ? e : e.Message);
 
     private static string TrimSource(string source) =>
         source.TrimEnd('\r', '\n', ' ', '\t', Terminator);
