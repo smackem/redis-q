@@ -31,7 +31,7 @@ fromClause
     ;
 
 letClause
-    : Let Ident '=' expr
+    : Let Ident '=' pipelineExpr
     ;
 
 whereClause
@@ -116,16 +116,11 @@ unaryOp
 postFixedPrimary
     : primary
     | postFixedPrimary fieldAccessPostfix
-    | postFixedPrimary indirectFieldAccessPostfix
     | postFixedPrimary subscriptPostfix
     ;
 
 fieldAccessPostfix
     : '.' Ident
-    ;
-
-indirectFieldAccessPostfix
-    : '->' Ident
     ;
 
 subscriptPostfix
@@ -148,7 +143,11 @@ primary
     ;
 
 tuple
-    : '(' expr ',' expr (',' expr)* ')'
+    : '(' tupleItem ',' tupleItem (',' tupleItem)* ')'
+    ;
+
+tupleItem
+    : (Ident ':')? expr
     ;
 
 list

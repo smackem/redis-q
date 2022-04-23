@@ -44,7 +44,7 @@ public class IntegrationTestBase : TestBase, IDisposable
         var expr = Compile(source);
         return Eval(expr, redis);
     }
-    
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

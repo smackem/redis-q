@@ -50,7 +50,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         new FromClause(context.Ident().GetText(), context.ternaryExpr().Accept(this));
 
     public override Expr VisitLetClause(RedisQLParser.LetClauseContext context) =>
-        new LetClause(context.Ident().GetText(), context.expr().Accept(this));
+        new LetClause(context.Ident().GetText(), context.pipelineExpr().Accept(this));
 
     public override Expr VisitWhereClause(RedisQLParser.WhereClauseContext context) =>
         new WhereClause(context.ternaryExpr().Accept(this));
@@ -172,8 +172,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         return context switch
         {
             var ctx when ctx.subscriptPostfix() != null => new SubscriptExpr(first, ctx.subscriptPostfix().Accept(this)),
-            var ctx when ctx.fieldAccessPostfix() != null => throw new NotImplementedException(),
-            var ctx when ctx.indirectFieldAccessPostfix() != null => throw new NotImplementedException(),
+            var ctx when ctx.fieldAccessPostfix() != null => new FieldAccessExpr(first, ctx.fieldAccessPostfix().Ident().GetText()),
             _ => throw new CompilationException("syntax does not allow this"),
         };
     }
@@ -203,8 +202,21 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitTuple(RedisQLParser.TupleContext context)
     {
-        var items = context.expr().Select(a => a.Accept(this));
-        return new TupleExpr(items.ToArray());
+        var fieldIndicesByName = new Dictionary<string, int>();
+        var fieldExpressions = new List<Expr>();
+        var index = 0;
+        foreach (var tupleItem in context.tupleItem())
+        {
+            fieldExpressions.Add(tupleItem.expr().Accept(this));
+            var fieldName = tupleItem.Ident()?.GetText();
+            if (fieldName != null)
+            {
+                if (fieldIndicesByName.ContainsKey(fieldName)) throw new RuntimeException($"duplicate field in tuple: {fieldName}");
+                fieldIndicesByName.Add(fieldName, index);
+            }
+            index++;
+        }
+        return new TupleExpr(fieldExpressions, fieldIndicesByName);
     }
 
     public override Expr VisitList(RedisQLParser.ListContext context)

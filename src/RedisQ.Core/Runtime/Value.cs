@@ -96,15 +96,30 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>
 
 public class TupleValue : Value, IEquatable<TupleValue>
 {
-    public TupleValue(IReadOnlyList<Value> items)
+    private static readonly IReadOnlyDictionary<string, int> EmptyFieldMap = new Dictionary<string, int>();
+    private readonly IReadOnlyDictionary<string, int> _fieldIndicesByName;
+
+    public TupleValue(IReadOnlyList<Value> items, IReadOnlyDictionary<string, int> fieldIndicesByName)
     {
         if (items.Count < 2) throw new ArgumentException("a tuple must have at least two items");
+        _fieldIndicesByName = fieldIndicesByName;
         Items = items;
     }
 
     public IReadOnlyList<Value> Items { get; }
 
-    public static TupleValue Of(Value item1, Value item2) => new(new[] { item1, item2 });
+    public Value this[string fieldName] => Items[_fieldIndicesByName[fieldName]];
+
+    public static TupleValue Of(Value item1, Value item2) => new(new[] { item1, item2 }, EmptyFieldMap);
+
+    public static TupleValue Of((string name, Value value) field1, (string name, Value value) field2) =>
+        new(
+            new[] { field1.value, field2.value },
+            new Dictionary<string, int>()
+            {
+                { field1.name, 0 },
+                { field2.name, 1 },
+            });
 
     public override string ToString() =>
         $"{GetType().Name}[{string.Join(", ", Items.Select(v => v.ToString()))}]";

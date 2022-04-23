@@ -57,4 +57,28 @@ select (k, hget(k, ""name""))
         Assert.Contains(coll, v => Equals(v, TupleValue.Of(new RedisKeyValue("hash-3"), new RedisValue("george"))));
         Assert.Contains(coll, v => Equals(v, TupleValue.Of(new RedisKeyValue("hash-5"), new RedisValue("mary"))));
     }
+
+    [Fact]
+    public async Task PipelineWithJson()
+    {
+        const string source = @"
+from k in keys(""user-*"")
+let json = get(k)
+let name = json["".name""]
+where name ~= ""e""
+select (k, json["".login""])
+|> collect()
+";
+        using var redis = Connect();
+        var db = await redis.GetDatabase();
+        db.StringSet("user-1", @"{ ""login"": ""ace"", ""name"":""alice"" }");
+        db.StringSet("user-2", @"{ ""login"": ""bob"", ""name"":""bob"" }");
+        db.StringSet("user-3", @"{ ""login"": ""hey"", ""name"":""henry"" }");
+        var value = await Interpret(source, redis);
+        Assert.True(value is ListValue, "value is not a list");
+        var coll = (ListValue)value;
+        Assert.Equal(2, coll.Count);
+        Assert.Contains(coll, v => Equals(v, TupleValue.Of(new RedisKeyValue("user-1"), new StringValue("ace"))));
+        Assert.Contains(coll, v => Equals(v, TupleValue.Of(new RedisKeyValue("user-3"), new StringValue("hey"))));
+    }
 }

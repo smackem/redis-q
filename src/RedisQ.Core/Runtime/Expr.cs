@@ -30,7 +30,7 @@ public record LiteralExpr(Value Literal) : Expr
     private protected override Task<Value> EvaluateOverride(Context _) => Task.FromResult(Literal);
 }
 
-public record TupleExpr(IReadOnlyList<Expr> Items) : Expr
+public record TupleExpr(IReadOnlyList<Expr> Items, IReadOnlyDictionary<string, int> FieldIndicesByName) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
@@ -40,7 +40,7 @@ public record TupleExpr(IReadOnlyList<Expr> Items) : Expr
             var value = await expr.Evaluate(ctx).ConfigureAwait(false);
             values.Add(value);
         }
-        return new TupleValue(values);
+        return new TupleValue(values, FieldIndicesByName);
     }
 }
 
@@ -318,6 +318,7 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         return (operandValue, subscriptValue) switch
         {
             (ListValue list, IntegerValue index) => list[CoerceIndex(list, index.Value)],
+            (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items, index.Value)],
             (StringValue str, IntegerValue index) => new CharValue(str.Value[CoerceIndex(str.Value, index.Value)]),
             (StringValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (RedisValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
@@ -331,6 +332,19 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
 
     private static int CoerceIndex(string str, int index) =>
         index < 0 ? str.Length + index : index;
+}
+
+public record FieldAccessExpr(Expr Operand, string FieldName) : Expr
+{
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
+    {
+        var operandValue = await Operand.Evaluate(ctx);
+        return operandValue switch
+        {
+            TupleValue tuple => tuple[FieldName],
+            _ => throw new RuntimeException($"incompatible operands for field access expression: {operandValue}[{FieldName}]"),
+        };
+    }
 }
 
 public record TernaryExpr(Expr Condition, Expr TrueCase, Expr FalseCase) : Expr
