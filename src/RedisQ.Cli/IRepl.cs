@@ -130,14 +130,14 @@ internal class PrettyRepl : IRepl
                     Length = token.StopIndex - token.StartIndex + 1,
                 }).Select(t => t switch
                 {
-                    _ when Keywords.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Magenta),
+                    _ when Keywords.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightMagenta),
                     _ when Operators.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightMagenta),
                     _ => t.Type switch
                     {
-                        Tokens.Comment => new FormatSpan(t.StartIndex, t.Length, AnsiColor.White),
-                        Tokens.Integer or RedisQLLexer.Real => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Yellow),
-                        Tokens.StringLiteral or RedisQLLexer.CharLiteral => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Green),
-                        _ => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Rgb(0xc0, 0xc0, 0xc0)),
+                        Tokens.Comment => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Green),
+                        Tokens.Integer or RedisQLLexer.Real => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightYellow),
+                        Tokens.StringLiteral or RedisQLLexer.CharLiteral => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
+                        _ => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightWhite),
                     },
                 });
 
