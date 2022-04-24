@@ -48,6 +48,10 @@ public class FunctionRegistry
         Register(new FunctionDefinition("collect", 1, FuncCollect));
         Register(new FunctionDefinition("join", 2, FuncJoin));
         Register(new FunctionDefinition("distinct", 1, FuncDistinct));
+        Register(new FunctionDefinition("sum", 1, FuncSum));
+        Register(new FunctionDefinition("avg", 1, FuncAvg));
+        Register(new FunctionDefinition("min", 1, FuncMin));
+        Register(new FunctionDefinition("max", 1, FuncMax));
     }
 
     private static async Task<Value> FuncZRank(Context ctx, Value[] arguments)
@@ -384,6 +388,74 @@ public class FunctionRegistry
         }
 
         return Task.FromResult<Value>(new EnumerableValue(Walk()));
+    }
+
+    private static async Task<Value> FuncSum(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"sum({arguments[0]}): incompatible operand, enumerable expected");
+        Value? sum = null;
+
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            if (value is NullValue) continue;
+
+            sum = sum != null ? ValueOperations.Add(sum, value) : value;
+        }
+
+        return sum ?? NullValue.Instance;
+    }
+
+    private static async Task<Value> FuncAvg(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"avg({arguments[0]}): incompatible operand, enumerable expected");
+        var sum = 0.0;
+        var count = 0;
+
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            if (value is IRealValue real == false) continue;
+
+            sum += real.AsRealValue();
+            count++;
+        }
+
+        return count > 0 ? new RealValue(sum / count) : NullValue.Instance;
+    }
+
+    private static async Task<Value> FuncMin(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"avg({arguments[0]}): incompatible operand, enumerable expected");
+        Value? min = null;
+
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            if (min == null)
+            {
+                min = value;
+                continue;
+            }
+            if (ValueComparer.Default.Compare(value, min) < 0) min = value;
+        }
+
+        return min ?? NullValue.Instance;
+    }
+
+    private static async Task<Value> FuncMax(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"avg({arguments[0]}): incompatible operand, enumerable expected");
+        Value? max = null;
+
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            if (max == null)
+            {
+                max = value;
+                continue;
+            }
+            if (ValueComparer.Default.Compare(value, max) > 0) max = value;
+        }
+
+        return max ?? NullValue.Instance;
     }
 
     public FunctionDefinition Resolve(string name, int parameterCount)

@@ -164,22 +164,7 @@ public record RangeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         _ => throw new RuntimeException($"the operator '..' can only be applied to integers, not to {l} and {r}"),
     });
 
-public record PlusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
-    (l, r) switch
-    {
-        (StringValue lv, StringValue rv) => new StringValue(lv.Value + rv.Value),
-        (StringValue lv, _) => new StringValue(lv.Value + r.AsString()),
-        (_, StringValue rv) => new StringValue(l.AsString() + rv.Value),
-        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value + rv.Value),
-        (RealValue lv, RealValue rv) => new RealValue(lv.Value + rv.Value),
-        (IntegerValue lv, RealValue rv) => new RealValue(lv.Value + rv.Value),
-        (RealValue lv, IntegerValue rv) => new RealValue(lv.Value + rv.Value),
-        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value + rv.Value),
-        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value + rv.Value),
-        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value + rv.Value),
-        (NullValue, _) or (_, NullValue) => NullValue.Instance,
-        _ => throw new RuntimeException($"the operator '+' cannot be applied to the operands {l} and {r}"),
-    });
+public record PlusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, ValueOperations.Add);
 
 public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch

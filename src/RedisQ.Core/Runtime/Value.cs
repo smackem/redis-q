@@ -12,32 +12,6 @@ public abstract class Value
     public abstract bool AsBoolean();
 }
 
-internal class ValueComparer : IComparer<Value>
-{
-    private ValueComparer()
-    {}
-
-    public static readonly IComparer<Value> Default = new ValueComparer();
-
-    public int Compare(Value? l, Value? r)
-    {
-        if (ReferenceEquals(l, r)) return 0;
-        if (ReferenceEquals(l, null)) throw new ArgumentNullException(nameof(l));
-        if (ReferenceEquals(r, null)) throw new ArgumentNullException(nameof(r));
-        return (l, r) switch
-        {
-            (StringValue lv, StringValue rv) => string.Compare(lv.Value, rv.Value, StringComparison.Ordinal),
-            (IntegerValue lv, IntegerValue rv) => lv.Value.CompareTo(rv.Value),
-            (RealValue lv, RealValue rv) => lv.Value.CompareTo(rv.Value),
-            (IntegerValue lv, RealValue rv) => ((double) lv.Value).CompareTo(rv.Value),
-            (RealValue lv, IntegerValue rv) => lv.Value.CompareTo(rv.Value),
-            (CharValue lv, CharValue rv) => lv.Value.CompareTo(rv.Value),
-            (IRedisValue lv, IRedisValue rv) => lv.AsRedisValue().CompareTo(rv.AsRedisValue()),
-            _ => throw new RuntimeException($"the operands {l} and {r} cannot be compared to each other"),
-        };
-    }
-}
-
 public class NullValue : Value
 {
     private NullValue()
