@@ -4,6 +4,10 @@ namespace RedisQ.Cli;
 
 internal class ValuePrinter
 {
+    private readonly Options _options;
+
+    public ValuePrinter(Options options) => _options = options;
+    
     public async Task Print(Value value, TextWriter writer, string indent = "")
     {
         switch (value)
@@ -16,8 +20,7 @@ internal class ValuePrinter
                 }
                 break;
             case ListValue list:
-                await writer.WriteAsync($"{indent}{list.Count} element(s): ");
-                await writer.WriteLineAsync($"{indent}{string.Join(", ", list.Select(v => v.AsString()))}");
+                await writer.WriteLineAsync($"{indent}[{string.Join(", ", list.Select(v => v.AsString()))}]");
                 break;
             case EnumerableValue enumerable:
                 var count = 0;
@@ -31,7 +34,7 @@ internal class ValuePrinter
                 }
                 catch (RuntimeException e)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine(_options.Verbose ? e : e.Message);
                 }
                 await writer.WriteLineAsync($"{indent}Found {count} element(s)");
                 break;

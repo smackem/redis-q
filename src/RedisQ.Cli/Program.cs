@@ -23,7 +23,7 @@ internal static class Program
         var functions = new FunctionRegistry();
         var ctx = Context.Root(redis, functions);
         var compiler = new Compiler();
-        var printer = new ValuePrinter();
+        var printer = new ValuePrinter(options);
         IRepl repl = options.Simple
             ? new MonochromeRepl(Terminator)
             : new PrettyRepl(Terminator, compiler);

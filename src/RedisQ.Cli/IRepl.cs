@@ -44,7 +44,7 @@ internal class PrettyRepl : IRepl
 
     public PrettyRepl(char terminator, Compiler compiler)
     {
-        var promptStr = new FormattedString("> ", new FormatSpan(0, 2, AnsiColor.Blue));
+        var promptStr = new FormattedString("> ", new FormatSpan(0, 2, AnsiColor.BrightBlack));
         _prompt = new Prompt(
             configuration: new PromptConfiguration(prompt: promptStr),
             callbacks: new LocalPromptCallbacks(compiler, terminator));
@@ -119,7 +119,7 @@ internal class PrettyRepl : IRepl
 
         protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
         {
-            if (text.StartsWith("#")) return Task.FromResult(new[] { new FormatSpan(0, text.Length, AnsiColor.BrightBlue) } as IReadOnlyCollection<FormatSpan>);
+            if (text.StartsWith("#")) return Task.FromResult(new[] { new FormatSpan(0, text.Length, AnsiColor.Green) } as IReadOnlyCollection<FormatSpan>);
             var tokens = _compiler.Lex(text);
             var spans = tokens
                 .Where(token => token.StartIndex >= 0 && token.StopIndex >= token.StartIndex)

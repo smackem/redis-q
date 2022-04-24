@@ -29,19 +29,12 @@ public class FunctionRegistry
         Register(new FunctionDefinition("sinter", 2, FuncSInter));
         Register(new FunctionDefinition("sunion", 2, FuncSUnion));
         Register(new FunctionDefinition("sismember", 2, FuncSIsMember));
-
-        // zscan
-        // zcard
-        // zcount
-        // zdiff
-        // zinter
-        // zintercard
-        // zrange
-        // zrangebyscore
-        // zrangebylex
-        // zrank
-        // zscore
-        // zunion
+        Register(new FunctionDefinition("zcard", 1, FuncZCard));
+        Register(new FunctionDefinition("zcount", 3, FuncZCount));
+        Register(new FunctionDefinition("zrange", 3, FuncZRange));
+        Register(new FunctionDefinition("zrangebyscore", 3, FuncZRangeByScore));
+        Register(new FunctionDefinition("zrank", 2, FuncZRank));
+        Register(new FunctionDefinition("zscore", 2, FuncZScore));
 
         // util functions
         Register(new FunctionDefinition("size", 1, FuncSize));
@@ -55,6 +48,62 @@ public class FunctionRegistry
         Register(new FunctionDefinition("collect", 1, FuncCollect));
         Register(new FunctionDefinition("join", 2, FuncJoin));
         Register(new FunctionDefinition("distinct", 1, FuncDistinct));
+    }
+
+    private static async Task<Value> FuncZRank(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zrank({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue value == false) throw new RuntimeException($"zrank({arguments[1]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var rank = await db.SortedSetRankAsync(key.AsRedisKey(), value.AsRedisValue()).ConfigureAwait(false);
+        return rank != null ? IntegerValue.Of((int)rank.Value) : NullValue.Instance;
+    }
+
+    private static async Task<Value> FuncZScore(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zscore({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue value == false) throw new RuntimeException($"zscore({arguments[1]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var score = await db.SortedSetScoreAsync(key.AsRedisKey(), value.AsRedisValue()).ConfigureAwait(false);
+        return score != null ? new RealValue(score.Value) : NullValue.Instance;
+    }
+
+    private static async Task<Value> FuncZRangeByScore(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zrangebyscore({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRealValue min == false) throw new RuntimeException($"zrangebyscore({arguments[1]}): incompatible operand, real expected");
+        if (arguments[2] is IRealValue max == false) throw new RuntimeException($"zrangebyscore({arguments[2]}): incompatible operand, real expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var range = await db.SortedSetRangeByScoreAsync(key.AsRedisKey(), min.AsRealValue(), max.AsRealValue()).ConfigureAwait(false);
+        return new ListValue(range.Select(v => new RedisValue(v)).ToArray());
+    }
+
+    private static async Task<Value> FuncZRange(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zrange({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IntegerValue start == false) throw new RuntimeException($"zrange({arguments[1]}): incompatible operand, integer expected");
+        if (arguments[2] is IntegerValue end == false) throw new RuntimeException($"zrange({arguments[2]}): incompatible operand, integer expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var range = await db.SortedSetRangeByRankAsync(key.AsRedisKey(), start.Value, end.Value).ConfigureAwait(false);
+        return new ListValue(range.Select(v => new RedisValue(v)).ToArray());
+    }
+
+    private static async Task<Value> FuncZCount(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zcount({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue min == false) throw new RuntimeException($"zcount({arguments[1]}): incompatible operand, RedisValue expected");
+        if (arguments[2] is IRedisValue max == false) throw new RuntimeException($"zcount({arguments[2]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var count = await db.SortedSetLengthByValueAsync(key.AsRedisKey(), min.AsRedisValue(), max.AsRedisValue()).ConfigureAwait(false);
+        return IntegerValue.Of((int)count);
+    }
+
+    private static async Task<Value> FuncZCard(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zcard({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var card = await db.SortedSetLengthAsync(key.AsRedisKey()).ConfigureAwait(false);
+        return IntegerValue.Of((int)card);
     }
 
     private static async Task<Value> FuncSMembers(Context ctx, Value[] arguments)
@@ -84,8 +133,8 @@ public class FunctionRegistry
 
     private static async Task<Value> CombineSets(Context ctx, Value[] arguments, SetOperation operation)
     {
-        if (arguments[0] is IRedisKey key1 == false) throw new RuntimeException($"sdiff({arguments[0]}): incompatible operand, RedisKey expected");
-        if (arguments[1] is IRedisKey key2 == false) throw new RuntimeException($"sdiff({arguments[1]}): incompatible operand, RedisKey expected");
+        if (arguments[0] is IRedisKey key1 == false) throw new RuntimeException($"set_combine({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisKey key2 == false) throw new RuntimeException($"set_combine({arguments[1]}): incompatible operand, RedisKey expected");
         var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
         var resultSet = await db.SetCombineAsync(operation, key1.AsRedisKey(), key2.AsRedisKey());
         return new ListValue(resultSet.Select(m => new RedisValue(m)).ToArray());

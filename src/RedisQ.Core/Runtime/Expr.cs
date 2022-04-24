@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
@@ -133,57 +132,29 @@ public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
 public record LtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) < 0),
-        (IntegerValue lv, IntegerValue rv) => BoolValue.Of(lv.Value < rv.Value),
-        (RealValue lv, RealValue rv) => BoolValue.Of(lv.Value < rv.Value),
-        (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value < rv.Value),
-        (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value < rv.Value),
-        (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value < rv.Value),
-        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) < 0),
         (NullValue, _) or (_, NullValue) => BoolValue.False,
-        _ => throw new RuntimeException($"the operator '<' cannot be applied to the operands {l} and {r}"),
+        _ => BoolValue.Of(ValueComparer.Default.Compare(l, r) < 0),
     });
 
 public record LeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) <= 0),
-        (IntegerValue lv, IntegerValue rv) => BoolValue.Of(lv.Value <= rv.Value),
-        (RealValue lv, RealValue rv) => BoolValue.Of(lv.Value <= rv.Value),
-        (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value <= rv.Value),
-        (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value <= rv.Value),
-        (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value <= rv.Value),
-        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) <= 0),
         (NullValue, _) or (_, NullValue) => BoolValue.False,
-        _ => throw new RuntimeException($"the operator '<=' cannot be applied to the operands {l} and {r}"),
+        _ => BoolValue.Of(ValueComparer.Default.Compare(l, r) <= 0),
     });
 
 public record GtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) > 0),
-        (IntegerValue lv, IntegerValue rv) => BoolValue.Of(lv.Value > rv.Value),
-        (RealValue lv, RealValue rv) => BoolValue.Of(lv.Value > rv.Value),
-        (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value > rv.Value),
-        (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value > rv.Value),
-        (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value > rv.Value),
-        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) > 0),
         (NullValue, _) or (_, NullValue) => BoolValue.False,
-        _ => throw new RuntimeException($"the operator '>' cannot be applied to the operands {l} and {r}"),
+        _ => BoolValue.Of(ValueComparer.Default.Compare(l, r) > 0),
     });
 
 public record GeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (StringValue lv, StringValue rv) => BoolValue.Of(string.Compare(lv.Value, rv.Value, StringComparison.Ordinal) >= 0),
-        (IntegerValue lv, IntegerValue rv) => BoolValue.Of(lv.Value >= rv.Value),
-        (RealValue lv, RealValue rv) => BoolValue.Of(lv.Value >= rv.Value),
-        (IntegerValue lv, RealValue rv) => BoolValue.Of(lv.Value >= rv.Value),
-        (RealValue lv, IntegerValue rv) => BoolValue.Of(lv.Value >= rv.Value),
-        (CharValue lv, CharValue rv) => BoolValue.Of(lv.Value >= rv.Value),
-        (IRedisValue lv, IRedisValue rv) => BoolValue.Of(lv.AsRedisValue().CompareTo(rv.AsRedisValue()) >= 0),
         (NullValue, _) or (_, NullValue) => BoolValue.False,
-        _ => throw new RuntimeException($"the operator '>=' cannot be applied to the operands {l} and {r}"),
+        _ => BoolValue.Of(ValueComparer.Default.Compare(l, r) >= 0),
     });
 
 public record RangeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>

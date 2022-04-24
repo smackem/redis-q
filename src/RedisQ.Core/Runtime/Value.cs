@@ -12,6 +12,32 @@ public abstract class Value
     public abstract bool AsBoolean();
 }
 
+internal class ValueComparer : IComparer<Value>
+{
+    private ValueComparer()
+    {}
+
+    public static readonly IComparer<Value> Default = new ValueComparer();
+
+    public int Compare(Value? l, Value? r)
+    {
+        if (ReferenceEquals(l, r)) return 0;
+        if (ReferenceEquals(l, null)) throw new ArgumentNullException(nameof(l));
+        if (ReferenceEquals(r, null)) throw new ArgumentNullException(nameof(r));
+        return (l, r) switch
+        {
+            (StringValue lv, StringValue rv) => string.Compare(lv.Value, rv.Value, StringComparison.Ordinal),
+            (IntegerValue lv, IntegerValue rv) => lv.Value.CompareTo(rv.Value),
+            (RealValue lv, RealValue rv) => lv.Value.CompareTo(rv.Value),
+            (IntegerValue lv, RealValue rv) => ((double) lv.Value).CompareTo(rv.Value),
+            (RealValue lv, IntegerValue rv) => lv.Value.CompareTo(rv.Value),
+            (CharValue lv, CharValue rv) => lv.Value.CompareTo(rv.Value),
+            (IRedisValue lv, IRedisValue rv) => lv.AsRedisValue().CompareTo(rv.AsRedisValue()),
+            _ => throw new RuntimeException($"the operands {l} and {r} cannot be compared to each other"),
+        };
+    }
+}
+
 public class NullValue : Value
 {
     private NullValue()
@@ -159,6 +185,11 @@ public interface IRedisValue
     SR.RedisValue AsRedisValue();
 }
 
+public interface IRealValue
+{
+    double AsRealValue();
+}
+
 public class StringValue : ScalarValue<string>, IRedisKey, IRedisValue
 {
     public static readonly StringValue Empty = new(string.Empty);
@@ -198,7 +229,7 @@ public class RedisValue : ScalarValue<SR.RedisValue>, IRedisKey, IRedisValue
     public SR.RedisValue AsRedisValue() => Value;
 }
 
-public class IntegerValue : ScalarValue<int>, IRedisValue
+public class IntegerValue : ScalarValue<int>, IRedisValue, IRealValue
 {
     private static readonly IntegerValue[] CachedValues = Enumerable.Range(0, 100)
         .Select(n => new IntegerValue(n))
@@ -215,9 +246,10 @@ public class IntegerValue : ScalarValue<int>, IRedisValue
     public override string AsString() => Value.ToString();
     public override bool AsBoolean() => Value != 0;
     public SR.RedisValue AsRedisValue() => Value;
+    public double AsRealValue() => Value;
 }
 
-public class RealValue : ScalarValue<double>, IRedisValue
+public class RealValue : ScalarValue<double>, IRedisValue, IRealValue
 {
     public static readonly RealValue Zero = new(0);
 
@@ -227,6 +259,7 @@ public class RealValue : ScalarValue<double>, IRedisValue
     public override string AsString() => Value.ToString(CultureInfo.InvariantCulture);
     public override bool AsBoolean() => Value != 0.0;
     public SR.RedisValue AsRedisValue() => Value;
+    public double AsRealValue() => Value;
 }
 
 public class CharValue : ScalarValue<char>
