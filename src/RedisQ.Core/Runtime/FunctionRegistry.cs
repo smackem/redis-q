@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using StackExchange.Redis;
 
 namespace RedisQ.Core.Runtime;
 
@@ -22,6 +23,25 @@ public class FunctionRegistry
         Register(new FunctionDefinition("lindex", 2, FuncLIndex));
         Register(new FunctionDefinition("type", 1, FuncType));
         Register(new FunctionDefinition("hstrlen", 2, FuncHStrLen));
+        Register(new FunctionDefinition("smembers", 1, FuncSMembers));
+        Register(new FunctionDefinition("scard", 1, FuncSCard));
+        Register(new FunctionDefinition("sdiff", 2, FuncSDiff));
+        Register(new FunctionDefinition("sinter", 2, FuncSInter));
+        Register(new FunctionDefinition("sunion", 2, FuncSUnion));
+        Register(new FunctionDefinition("sismember", 2, FuncSIsMember));
+
+        // zscan
+        // zcard
+        // zcount
+        // zdiff
+        // zinter
+        // zintercard
+        // zrange
+        // zrangebyscore
+        // zrangebylex
+        // zrank
+        // zscore
+        // zunion
 
         // util functions
         Register(new FunctionDefinition("size", 1, FuncSize));
@@ -35,6 +55,49 @@ public class FunctionRegistry
         Register(new FunctionDefinition("collect", 1, FuncCollect));
         Register(new FunctionDefinition("join", 2, FuncJoin));
         Register(new FunctionDefinition("distinct", 1, FuncDistinct));
+    }
+
+    private static async Task<Value> FuncSMembers(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"smembers({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var members = await db.SetMembersAsync(key.AsRedisKey()).ConfigureAwait(false);
+        return new ListValue(members.Select(m => new RedisValue(m)).ToArray());
+    }
+
+    private static async Task<Value> FuncSCard(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"scard({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var card = await db.SetLengthAsync(key.AsRedisKey()).ConfigureAwait(false);
+        return IntegerValue.Of((int)card);
+    }
+
+    private static Task<Value> FuncSDiff(Context ctx, Value[] arguments) =>
+        CombineSets(ctx, arguments, SetOperation.Difference);
+
+    private static Task<Value> FuncSInter(Context ctx, Value[] arguments) =>
+        CombineSets(ctx, arguments, SetOperation.Intersect);
+
+    private static Task<Value> FuncSUnion(Context ctx, Value[] arguments) =>
+        CombineSets(ctx, arguments, SetOperation.Union);
+
+    private static async Task<Value> CombineSets(Context ctx, Value[] arguments, SetOperation operation)
+    {
+        if (arguments[0] is IRedisKey key1 == false) throw new RuntimeException($"sdiff({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisKey key2 == false) throw new RuntimeException($"sdiff({arguments[1]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var resultSet = await db.SetCombineAsync(operation, key1.AsRedisKey(), key2.AsRedisKey());
+        return new ListValue(resultSet.Select(m => new RedisValue(m)).ToArray());
+    }
+
+    private static async Task<Value> FuncSIsMember(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"sismember({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue value == false) throw new RuntimeException($"sismember({arguments[1]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var found = await db.SetContainsAsync(key.AsRedisKey(), value.AsRedisValue()).ConfigureAwait(false);
+        return BoolValue.Of(found);
     }
 
     private static Task<Value> FuncKeys(Context ctx, Value[] arguments)
