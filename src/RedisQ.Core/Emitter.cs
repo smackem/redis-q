@@ -240,6 +240,6 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     private static string ParseString(string s) => s.Trim('\"');
     private static char ParseChar(string s) => s.Trim('\'')[0];
-    private static int ParseInteger(string s) => int.Parse(s.Replace("_", string.Empty));
+    private static long ParseInteger(string s) => long.Parse(s.Replace("_", string.Empty));
     private static double ParseReal(string s) => double.Parse(s.Replace("_", string.Empty), CultureInfo.InvariantCulture);
 }

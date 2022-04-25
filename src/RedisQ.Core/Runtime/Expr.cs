@@ -273,9 +273,9 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         var subscriptValue = await Subscript.Evaluate(ctx).ConfigureAwait(false);
         return (operandValue, subscriptValue) switch
         {
-            (ListValue list, IntegerValue index) => list[CoerceIndex(list, index.Value)],
-            (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items, index.Value)],
-            (StringValue str, IntegerValue index) => new CharValue(str.Value[CoerceIndex(str.Value, index.Value)]),
+            (ListValue list, IntegerValue index) => list[CoerceIndex(list, (int) index.Value)],
+            (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items, (int) index.Value)],
+            (StringValue str, IntegerValue index) => new CharValue(str.Value[CoerceIndex(str.Value, (int) index.Value)]),
             (StringValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (RedisValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (NullValue, _) or (_, NullValue) => NullValue.Instance,

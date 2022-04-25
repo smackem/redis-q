@@ -203,18 +203,18 @@ public class RedisValue : ScalarValue<SR.RedisValue>, IRedisKey, IRedisValue
     public SR.RedisValue AsRedisValue() => Value;
 }
 
-public class IntegerValue : ScalarValue<int>, IRedisValue, IRealValue
+public class IntegerValue : ScalarValue<long>, IRedisValue, IRealValue
 {
     private static readonly IntegerValue[] CachedValues = Enumerable.Range(0, 100)
         .Select(n => new IntegerValue(n))
         .ToArray();
 
-    private IntegerValue(int value) : base(value)
+    private IntegerValue(long value) : base(value)
     {}
 
     public static IntegerValue Zero => CachedValues[0];
 
-    public static IntegerValue Of(int n) =>
+    public static IntegerValue Of(long n) =>
         n >= 0 && n < CachedValues.Length ? CachedValues[n] : new IntegerValue(n);
 
     public override string AsString() => Value.ToString();
@@ -262,9 +262,9 @@ public class BoolValue : ScalarValue<bool>, IRedisValue
 
 public class RangeValue : EnumerableValue
 {
-    private readonly int _lower, _upper;
-    
-    public RangeValue(int lower, int upper) : base(WalkRange(lower, upper))
+    private readonly long _lower, _upper;
+
+    public RangeValue(long lower, long upper) : base(WalkRange(lower, upper))
     {
         _lower = lower;
         _upper = upper;
@@ -273,7 +273,7 @@ public class RangeValue : EnumerableValue
     public override bool AsBoolean() => _upper >= _lower;
     public override string ToString() => $"[{GetType().Name}[{_lower} .. {_upper}]";
 
-    private static async IAsyncEnumerable<Value> WalkRange(int lower, int upper)
+    private static async IAsyncEnumerable<Value> WalkRange(long lower, long upper)
     {
         for (; lower <= upper; lower++)
         {
