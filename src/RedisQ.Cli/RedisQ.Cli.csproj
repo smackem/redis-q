@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="$(CommandLineParser_Version)" />
     <PackageReference Include="PrettyPrompt" Version="$(PrettyPrompt_Version)" />
+    <PackageReference Include="ConsoleTables" Version="$(ConsoleTables_Version)" />
   </ItemGroup>
 
   <ItemGroup>

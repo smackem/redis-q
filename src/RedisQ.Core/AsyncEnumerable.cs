@@ -25,4 +25,21 @@ public static class AsyncEnumerable
 
         return Enumerate();
     }
+
+    public static async IAsyncEnumerable<T[]> Chunk<T>(this IAsyncEnumerable<T> enumerable, int chunkSize)
+    {
+        if (chunkSize <= 0) throw new ArgumentException("must be positive", nameof(chunkSize));
+        var chunk = new List<T>(chunkSize);
+
+        await foreach (var item in enumerable.ConfigureAwait(false))
+        {
+            chunk.Add(item);
+            if (chunk.Count < chunkSize) continue;
+
+            yield return chunk.ToArray();
+            chunk.Clear();
+        }
+
+        if (chunk.Count > 0) yield return chunk.ToArray();
+    }
 }

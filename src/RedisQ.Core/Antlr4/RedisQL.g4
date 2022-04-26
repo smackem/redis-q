@@ -24,7 +24,6 @@ nestedClause
     | letClause
     | whereClause
     | limitClause
-    | orderByClause
     ;
 
 fromClause
@@ -41,10 +40,6 @@ whereClause
 
 limitClause
     : Limit ternaryExpr (Offset ternaryExpr)?
-    ;
-
-orderByClause
-    : OrderBy ternaryExpr (Descending | Ascending)?
     ;
 
 selectClause
@@ -189,9 +184,6 @@ Select      : 'select';
 True        : 'true';
 False       : 'false';
 Null        : 'null';
-OrderBy     : 'orderby';
-Descending  : 'descending' | 'desc';
-Ascending   : 'ascending';
 Plus        : '+';
 Minus       : '-';
 Times       : '*';

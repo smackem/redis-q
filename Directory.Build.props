@@ -14,5 +14,6 @@
         <coverlet_collector_Version>3.1.0</coverlet_collector_Version>
         <Newtonsoft_Json_Version>13.0.1</Newtonsoft_Json_Version>
         <PrettyPrompt_Version>3.0.5</PrettyPrompt_Version>
+        <ConsoleTables_Version>2.4.2</ConsoleTables_Version>
     </PropertyGroup>
 </Project>

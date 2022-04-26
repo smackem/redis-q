@@ -41,12 +41,13 @@ public class UnaryOperatorsTests : TestBase
         Assert.Equal(BoolValue.False, value4);
         var value5 = await Interpret("!!!false");
         Assert.Equal(BoolValue.True, value5);
+        var value6 = await Interpret("![]");
+        Assert.Equal(BoolValue.True, value6);
     }
-    
+
     [Fact]
     public async Task ThrowsOnIncompatibleOperand()
     {
-        await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"![]"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"-[]"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"+[]"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"-(1, 2)"));
