@@ -68,6 +68,8 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>
 {
     private readonly IReadOnlyList<Value> _list;
 
+    public static readonly ListValue Empty = new ListValue(Array.Empty<Value>()); 
+
     public ListValue(IReadOnlyList<Value> collection)
         : base(AsyncEnumerable.FromCollection(collection)) =>
         _list = collection;
@@ -92,6 +94,8 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>
         if (_list.Count > max) sb.Append(", ...");
         return sb.Append(']').ToString();
     }
+
+    public override bool AsBoolean() => Count > 0;
 }
 
 public class TupleValue : Value, IEquatable<TupleValue>
@@ -234,15 +238,6 @@ public class RealValue : ScalarValue<double>, IRedisValue, IRealValue
     public override bool AsBoolean() => Value != 0.0;
     public SR.RedisValue AsRedisValue() => Value;
     public double AsRealValue() => Value;
-}
-
-public class CharValue : ScalarValue<char>
-{
-    public CharValue(char value) : base(value)
-    {}
-
-    public override string AsString() => Value.ToString();
-    public override bool AsBoolean() => Value != 0;
 }
 
 public class BoolValue : ScalarValue<bool>, IRedisValue

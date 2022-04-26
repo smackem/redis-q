@@ -14,9 +14,9 @@ public class PostfixTests : TestBase
         var value2 = await Interpret("[1, 2, 3][-1]");
         Assert.Equal(IntegerValue.Of(3), value2);
         var value3 = await Interpret(@"""abc""[0]");
-        Assert.Equal(new CharValue('a'), value3);
+        Assert.Equal(new StringValue("a"), value3);
         var value4 = await Interpret(@"""abc""[-1]");
-        Assert.Equal(new CharValue('c'), value4);
+        Assert.Equal(new StringValue("c"), value4);
     }
 
     [Fact]

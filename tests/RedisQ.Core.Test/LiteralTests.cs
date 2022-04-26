@@ -39,7 +39,7 @@ public class LiteralTests : TestBase
         const string source = "'a'";
         var expr = Compile(source);
         var value = await Eval(expr);
-        Assert.Equal(new CharValue('a'), value);
+        Assert.Equal(new StringValue("a"), value);
     }
 
     [Fact]
