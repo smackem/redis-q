@@ -135,8 +135,7 @@ subscriptPostfix
 primary
     : Ident
     | number
-    | StringLiteral
-    | CharLiteral
+    | string
     | True
     | False
     | Null
@@ -169,6 +168,11 @@ arguments
 
 number
     : (Plus | Minus)? (Integer | Real | HexInteger)
+    ;
+
+string
+    : DoubleQuotedString
+    | SingleQuotedString
     ;
 
 throwExpr
@@ -233,12 +237,12 @@ HexLiteral
     : ([a-f] | [A-F] | DigitOrUnderscore)
     ;
 
-StringLiteral
-    : '"' ~["\\\r\n]* '"'
+DoubleQuotedString
+    : '"' ~["\r\n]* '"'
     ;
 
-CharLiteral
-    : '\'' ~['\\\r\n] '\''
+SingleQuotedString
+    : '\'' ~['\r\n]* '\''
     ;
 
 Comment

@@ -30,22 +30,6 @@ public class AdditiveOperatorsTests : TestBase
     }
 
     [Fact]
-    public async Task AddIntegerAndChar()
-    {
-        var value1 = await Interpret(@"'a' + 1");
-        Assert.Equal(IntegerValue.Of('a' + 1), value1);
-        var value2 = await Interpret(@"1 + 'a'");
-        Assert.Equal(IntegerValue.Of('a' + 1), value2);
-    }
-
-    [Fact]
-    public async Task AddChars()
-    {
-        var value = await Interpret(@"'a' + 'b'");
-        Assert.Equal(IntegerValue.Of('a' + 'b'), value);
-    }
-    
-    [Fact]
     public async Task AddStrings()
     {
         var value = await Interpret(@"""abc"" + ""_"" + ""def""");
@@ -90,15 +74,6 @@ public class AdditiveOperatorsTests : TestBase
     }
 
     [Fact]
-    public async Task SubtractIntegerAndChar()
-    {
-        var value1 = await Interpret(@"'a' - 1");
-        Assert.Equal(IntegerValue.Of('a' - 1), value1);
-        var value2 = await Interpret(@"1 - 'a'");
-        Assert.Equal(IntegerValue.Of(1 - 'a'), value2);
-    }
-
-    [Fact]
     public async Task LongAdditiveWithIntegers()
     {
         var value = await Interpret(@"1 + 10 - 5 + 4 - 9");
@@ -123,7 +98,6 @@ public class AdditiveOperatorsTests : TestBase
     public async Task ThrowsOnIncompatibleAdditiveOperands()
     {
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"(1, 2) + 1"));
-        await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"'a' + 1.0"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"[1] + 2"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"2 + (1, 2)"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"[] + (1, 2)"));

@@ -12,9 +12,6 @@ internal static class ValueOperations
             (RealValue lv, RealValue rv) => new RealValue(lv.Value + rv.Value),
             (IntegerValue lv, RealValue rv) => new RealValue(lv.Value + rv.Value),
             (RealValue lv, IntegerValue rv) => new RealValue(lv.Value + rv.Value),
-            (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value + rv.Value),
-            (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value + rv.Value),
-            (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value + rv.Value),
             (NullValue, _) or (_, NullValue) => NullValue.Instance,
             _ => throw new RuntimeException($"the operator '+' cannot be applied to the operands {l} and {r}"),
         };
@@ -39,7 +36,6 @@ internal class ValueComparer : IComparer<Value>
             (RealValue lv, RealValue rv) => lv.Value.CompareTo(rv.Value),
             (IntegerValue lv, RealValue rv) => ((double) lv.Value).CompareTo(rv.Value),
             (RealValue lv, IntegerValue rv) => lv.Value.CompareTo(rv.Value),
-            (CharValue lv, CharValue rv) => lv.Value.CompareTo(rv.Value),
             (IRedisValue lv, IRedisValue rv) => lv.AsRedisValue().CompareTo(rv.AsRedisValue()),
             _ => throw new RuntimeException($"the operands {l} and {r} cannot be compared to each other"),
         };

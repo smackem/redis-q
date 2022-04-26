@@ -151,8 +151,6 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     {
         Value? value = context switch
         {
-            var ctx when ctx.StringLiteral() != null => new StringValue(ParseString(ctx.StringLiteral().GetText())),
-            var ctx when ctx.CharLiteral() != null => new CharValue(ParseChar(ctx.CharLiteral().GetText())),
             var ctx when ctx.True() != null => BoolValue.True,
             var ctx when ctx.False() != null => BoolValue.False,
             var ctx when ctx.Null() != null => NullValue.Instance,
@@ -175,6 +173,17 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             var ctx when ctx.fieldAccessPostfix() != null => new FieldAccessExpr(first, ctx.fieldAccessPostfix().Ident().GetText()),
             _ => throw new CompilationException("syntax does not allow this"),
         };
+    }
+
+    public override Expr VisitString(RedisQLParser.StringContext context)
+    {
+        Value value = context switch
+        {
+            var ctx when ctx.SingleQuotedString() != null => new StringValue(ParseString(ctx.SingleQuotedString().GetText())),
+            var ctx when ctx.DoubleQuotedString() != null => new StringValue(ParseString(ctx.DoubleQuotedString().GetText())),
+            _ => throw new CompilationException($"unexpected string literal: {context.GetText()}"),
+        };
+        return new LiteralExpr(value);
     }
 
     public override Expr VisitNumber(RedisQLParser.NumberContext context)
@@ -238,8 +247,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             (_, _) => base.AggregateResult(aggregate!, nextResult!),
         };
 
-    private static string ParseString(string s) => s.Trim('\"');
-    private static char ParseChar(string s) => s.Trim('\'')[0];
+    private static string ParseString(string s) => s.StartsWith("\"") ? s.Trim('\"') : s.Trim('\'');
     private static long ParseInteger(string s) => long.Parse(s.Replace("_", string.Empty));
     private static double ParseReal(string s) => double.Parse(s.Replace("_", string.Empty), CultureInfo.InvariantCulture);
 }

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
 
@@ -22,6 +23,8 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("min", 1, FuncMin));
         Register(new FunctionDefinition("max", 1, FuncMax));
         Register(new FunctionDefinition("reverse", 1, FuncReverse));
+        Register(new FunctionDefinition("sort", 1, FuncSort));
+        Register(new FunctionDefinition("match", 2, FuncMatch));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -53,7 +56,6 @@ public partial class FunctionRegistry
         {
             IntegerValue n => Task.FromResult<Value>(n),
             RealValue real => Task.FromResult<Value>(IntegerValue.Of((long) real.Value)),
-            CharValue ch => Task.FromResult<Value>(IntegerValue.Of(ch.Value)),
             StringValue str => Task.FromResult<Value>(
                 int.TryParse(str.Value, out var n) ? IntegerValue.Of(n) : NullValue.Instance),
             IRedisValue val => Task.FromResult<Value>(
@@ -66,7 +68,6 @@ public partial class FunctionRegistry
         {
             IntegerValue n => Task.FromResult<Value>(new RealValue(n.Value)),
             RealValue real => Task.FromResult<Value>(real),
-            CharValue ch => Task.FromResult<Value>(new RealValue(ch.Value)),
             StringValue str => Task.FromResult<Value>(
                 double.TryParse(str.Value, out var d) ? new RealValue(d) : NullValue.Instance),
             IRedisValue val => Task.FromResult<Value>(
@@ -217,5 +218,27 @@ public partial class FunctionRegistry
         return coll is ListValue
             ? new ListValue(stack.ToArray())
             : new EnumerableValue(AsyncEnumerable.FromCollection(stack));
+    }
+
+    private static async Task<Value> FuncSort(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"reverse({arguments[0]}): incompatible operand, enumerable expected");
+        var list = await coll.Collect();
+
+        if (list is List<Value> l) l.Sort(ValueComparer.Default);
+        else list = list.OrderBy(value => value, ValueComparer.Default).ToArray();
+
+        return new ListValue(list);
+    }
+
+    private static Task<Value> FuncMatch(Context ctx, Value[] arguments)
+    {
+        var input = arguments[0].AsString();
+        var pattern = arguments[1].AsString();
+        var match = Regex.Match(input, pattern);
+        var groupList = match.Success
+            ? new ListValue(match.Groups.Values.Select(g => new StringValue(g.Value)).ToArray())
+            : ListValue.Empty;
+        return Task.FromResult<Value>(groupList);
     }
 }

@@ -173,9 +173,6 @@ public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         (RealValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value - rv.Value),
-        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value - rv.Value),
-        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value - rv.Value),
-        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value - rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
         _ => throw new RuntimeException($"the operator '-' cannot be applied to the operands {l} and {r}"),
     });
@@ -187,9 +184,6 @@ public record TimesExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         (RealValue lv, RealValue rv) => new RealValue(lv.Value * rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value * rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value * rv.Value),
-        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value * rv.Value),
-        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value * rv.Value),
-        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value * rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
         _ => throw new RuntimeException($"the operator '*' cannot be applied to the operands {l} and {r}"),
     });
@@ -201,9 +195,6 @@ public record DivExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l,
         (RealValue lv, RealValue rv) => new RealValue(lv.Value / rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value / rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value / rv.Value),
-        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value / rv.Value),
-        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value / rv.Value),
-        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value / rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
         _ => throw new RuntimeException($"the operator '/' cannot be applied to the operands {l} and {r}"),
     });
@@ -215,9 +206,6 @@ public record ModExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l,
         (RealValue lv, RealValue rv) => new RealValue(lv.Value % rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value % rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value % rv.Value),
-        (CharValue lv, CharValue rv) => IntegerValue.Of(lv.Value % rv.Value),
-        (CharValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value % rv.Value),
-        (IntegerValue lv, CharValue rv) => IntegerValue.Of(lv.Value % rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
         _ => throw new RuntimeException($"the operator '%' cannot be applied to the operands {l} and {r}"),
     });
@@ -243,7 +231,6 @@ public record NegExpr(Expr Operand) : UnaryExpr(Operand, value =>
     {
         IntegerValue v => IntegerValue.Of(-v.Value),
         RealValue v => new RealValue(-v.Value),
-        CharValue v => IntegerValue.Of(-v.Value),
         NullValue => NullValue.Instance,
         _ => throw new RuntimeException($"operator '-' cannot be applied to operand {value}"),
     });
@@ -253,7 +240,6 @@ public record PosExpr(Expr Operand) : UnaryExpr(Operand, value =>
     {
         IntegerValue => value,
         RealValue => value,
-        CharValue => value,
         NullValue => NullValue.Instance,
         _ => throw new RuntimeException($"operator '+' cannot be applied to operand {value}"),
     });
@@ -275,7 +261,7 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         {
             (ListValue list, IntegerValue index) => list[CoerceIndex(list, (int) index.Value)],
             (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items, (int) index.Value)],
-            (StringValue str, IntegerValue index) => new CharValue(str.Value[CoerceIndex(str.Value, (int) index.Value)]),
+            (StringValue str, IntegerValue index) => new StringValue(str.Value[CoerceIndex(str.Value, (int) index.Value)].ToString()),
             (StringValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (RedisValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (NullValue, _) or (_, NullValue) => NullValue.Instance,

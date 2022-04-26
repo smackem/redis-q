@@ -136,7 +136,7 @@ internal class PrettyRepl : IRepl
                     {
                         Tokens.Comment => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Green),
                         Tokens.Integer or RedisQLLexer.Real => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightYellow),
-                        Tokens.StringLiteral or RedisQLLexer.CharLiteral => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
+                        Tokens.SingleQuotedString or RedisQLLexer.DoubleQuotedString => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
                         _ => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightWhite),
                     },
                 });
