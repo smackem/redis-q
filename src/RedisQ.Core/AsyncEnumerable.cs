@@ -13,7 +13,7 @@ public static class AsyncEnumerable
         return items;
     }
 
-    public static IAsyncEnumerable<T> FromCollection<T>(IReadOnlyCollection<T> collection)
+    public static IAsyncEnumerable<T> FromCollection<T>(IEnumerable<T> collection)
     {
         async IAsyncEnumerable<T> Enumerate()
         {

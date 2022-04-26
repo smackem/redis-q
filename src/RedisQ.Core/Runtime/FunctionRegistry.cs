@@ -1,7 +1,4 @@
-﻿using System.Text;
-using StackExchange.Redis;
-
-namespace RedisQ.Core.Runtime;
+﻿namespace RedisQ.Core.Runtime;
 
 public partial class FunctionRegistry
 {
