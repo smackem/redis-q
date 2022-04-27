@@ -26,20 +26,6 @@ internal class ValuePrinter
                 break;
             case EnumerableValue enumerable:
                 await PrintEnumerable(enumerable, writer, indent);
-                // var count = 0;
-                // try
-                // {
-                //     await foreach (var v in enumerable)
-                //     {
-                //         await Print(v, writer, indent + "  ");
-                //         count++;
-                //     }
-                // }
-                // catch (RuntimeException e)
-                // {
-                //     Console.WriteLine(_options.Verbose ? e : e.Message);
-                // }
-                // await writer.WriteLineAsync($"{indent}Found {count} element(s)");
                 break;
             default:
                 await writer.WriteLineAsync($"{indent}{value.AsString()}");
@@ -49,19 +35,58 @@ internal class ValuePrinter
 
     private async Task PrintEnumerable(IAsyncEnumerable<Value> values, TextWriter writer, string indent)
     {
-        var chunks = values.Chunk(100);
+        const int chunkSize = 100;
+        var chunks = values.Chunk(chunkSize);
+        var count = 0;
         await foreach (var chunk in chunks)
         {
-            if (chunk.First() is TupleValue) PrintTuples(chunk, writer, indent);
+            try
+            {
+                if (chunk.First() is TupleValue)
+                {
+                    PrintTuples(chunk, writer, indent);
+                }
+                else
+                {
+                    foreach (var v in chunk)
+                    {
+                        await Print(v, writer, indent + "  ");
+                    }
+                }
+            }
+            catch (RuntimeException e)
+            {
+                Console.WriteLine(_options.Verbose ? e : e.Message);
+            }
+            count += chunk.Length;
+            if (chunk.Length == chunkSize)
+            {
+                if (await PromptContinue(writer, $"{indent}Enumerated {count} element(s)")) break;
+            }
+            else
+            {
+                await writer.WriteLineAsync($"{indent}Enumerated {count} element(s)");
+            }
         }
     }
 
-    private void PrintTuples(IReadOnlyCollection<Value> values, TextWriter writer, string indent)
+    private static async Task<bool> PromptContinue(TextWriter writer, string prompt)
+    {
+        await writer.WriteAsync($"{prompt}. Q to abort, any other key to continue: ");
+        var key = Console.ReadKey(intercept: false);
+        await writer.WriteLineAsync();
+        return key.Key == ConsoleKey.Q;
+    }
+
+    private static void PrintTuples(IReadOnlyCollection<Value> values, TextWriter writer, string indent)
     {
         var firstValue = (TupleValue) values.First();
-        var columns = Enumerable.Range(1, firstValue.Items.Count)
-            .Select(n => n.ToString())
-            .ToArray();
+        var columns = firstValue.FieldNames.Count > 0
+            ? firstValue.FieldNames.ToArray()
+            : Enumerable.Range(0, firstValue.Items.Count)
+                .Select(n => n.ToString())
+                .ToArray();
+
         var table = new ConsoleTable(columns).Configure(o => o.OutputTo = writer);
         foreach (var value in values)
         {

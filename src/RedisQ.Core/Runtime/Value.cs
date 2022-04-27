@@ -107,10 +107,20 @@ public class TupleValue : Value, IEquatable<TupleValue>
     {
         if (items.Count < 2) throw new ArgumentException("a tuple must have at least two items");
         _fieldIndicesByName = fieldIndicesByName;
+
+        var fieldNamesByIndex = new string[fieldIndicesByName.Count];
+        foreach (var (key, value) in fieldIndicesByName)
+        {
+            fieldNamesByIndex[value] = key;
+        }
+
+        FieldNames = fieldNamesByIndex;
         Items = items;
     }
 
     public IReadOnlyList<Value> Items { get; }
+
+    public IReadOnlyList<string> FieldNames { get; }
 
     public Value this[string fieldName] => Items[_fieldIndicesByName[fieldName]];
 
