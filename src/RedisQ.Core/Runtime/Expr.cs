@@ -322,7 +322,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
                 LetClause @let => Bind(selection, @let, ctx),
                 WhereClause @where => Filter(selection, @where, ctx),
                 LimitClause limit => Limit(selection, limit, ctx),
-                OrderByClause orderBy => SelectFromSource(OrderBy(selection, orderBy, ctx), Head.Ident, ctx), 
+                OrderByClause orderBy => OrderBy(selection, orderBy, ctx), 
                 _ => throw new NotImplementedException(),
             };
         }
@@ -404,16 +404,17 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> OrderBy(IAsyncEnumerable<Value> coll, OrderByClause orderBy, Context ctx)
     {
-        var keysAndValues = new List<(Value key, Value value)>();
+        var keysAndValues = new List<(Value key, Value value, Scope closure)>();
         await foreach (var value in coll.ConfigureAwait(false))
         {
             var key = await orderBy.Key.Evaluate(ctx).ConfigureAwait(false);
-            keysAndValues.Add((key, value));
+            keysAndValues.Add((key, value, ctx.CaptureClosure()));
         }
         var ordered = keysAndValues.OrderBy(tuple => tuple.key, ValueComparer.Default);
-        foreach (var tuple in ordered)
+        foreach (var (_, value, closure) in ordered)
         {
-            yield return tuple.value;
+            ctx.BindAll(closure);
+            yield return value;
         }
     }
 }
