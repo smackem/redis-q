@@ -74,6 +74,9 @@ internal class PrettyRepl : IRepl
                 Tokens.True,
                 Tokens.False,
                 Tokens.Null,
+                Tokens.OrderBy,
+                Tokens.Descending,
+                Tokens.Ascending,
             });
         private static readonly ISet<int> Operators = new HashSet<int>(
             new[]

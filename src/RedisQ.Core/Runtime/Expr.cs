@@ -404,13 +404,17 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> OrderBy(IAsyncEnumerable<Value> coll, OrderByClause orderBy, Context ctx)
     {
+        // we need to capture a closure for each element because we change the order of elements,
+        // so when replaying the ordered collection we can reassemble the correct context
         var keysAndValues = new List<(Value key, Value value, Scope closure)>();
         await foreach (var value in coll.ConfigureAwait(false))
         {
             var key = await orderBy.Key.Evaluate(ctx).ConfigureAwait(false);
             keysAndValues.Add((key, value, ctx.CaptureClosure()));
         }
-        var ordered = keysAndValues.OrderBy(tuple => tuple.key, ValueComparer.Default);
+        var ordered = orderBy.IsDescending
+            ? keysAndValues.OrderByDescending(tuple => tuple.key, ValueComparer.Default)
+            : keysAndValues.OrderBy(tuple => tuple.key, ValueComparer.Default);
         foreach (var (_, value, closure) in ordered)
         {
             ctx.BindAll(closure);
@@ -437,7 +441,7 @@ public abstract record NestedClause : Expr
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
 public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
-public record OrderByClause(Expr Key) : NestedClause;
+public record OrderByClause(Expr Key, bool IsDescending) : NestedClause;
 
 public record LetClause(string Ident, Expr Right) : NestedClause
 {

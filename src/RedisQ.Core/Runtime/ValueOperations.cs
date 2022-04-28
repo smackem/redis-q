@@ -37,6 +37,9 @@ internal class ValueComparer : IComparer<Value>
             (IntegerValue lv, RealValue rv) => ((double) lv.Value).CompareTo(rv.Value),
             (RealValue lv, IntegerValue rv) => lv.Value.CompareTo(rv.Value),
             (IRedisValue lv, IRedisValue rv) => lv.AsRedisValue().CompareTo(rv.AsRedisValue()),
+            (NullValue, NullValue) => 0,
+            (NullValue, _) => -1,
+            (_, NullValue) => 1,
             _ => throw new RuntimeException($"the operands {l} and {r} cannot be compared to each other"),
         };
     }

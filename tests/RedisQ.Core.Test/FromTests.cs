@@ -409,6 +409,27 @@ select tuple.pow2;
     }
 
     [Fact]
+    public async Task OrderByDescendingWithBinding()
+    {
+        const string source = @"
+from n in [2,1,5,4,3]
+let tuple = (number: n, pow2: n * n)
+orderby tuple.number descending
+select tuple.pow2;
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(25), v),
+            v => Assert.Equal(IntegerValue.Of(16), v),
+            v => Assert.Equal(IntegerValue.Of(9), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(1), v));
+    }
+
+    [Fact]
     public async Task OrderByWithCrossJoin()
     {
         const string source = @"

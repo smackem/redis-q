@@ -16,10 +16,7 @@ internal class ValuePrinter
         {
             case ListValue list when HasComplexValues(list):
                 await writer.WriteLineAsync($"{indent}{list.Count} element(s):");
-                foreach (var v in list)
-                {
-                    await Print(v, writer, indent + "  ");
-                }
+                await PrintEnumerable(list, writer, indent);
                 break;
             case ListValue list:
                 await writer.WriteLineAsync($"{indent}[{string.Join(", ", list.Select(v => v.AsString()))}]");
