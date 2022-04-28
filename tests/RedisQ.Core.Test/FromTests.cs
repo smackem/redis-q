@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 using RedisQ.Core.Runtime;
 using Xunit;
 using Xunit.Abstractions;
@@ -366,5 +367,66 @@ from x in [1, 2, 3] limit 2 offset 3 select x
         var coll = (EnumerableValue)value;
         var values = await coll.Collect();
         Assert.Empty(values);
+    }
+
+    [Fact]
+    public async Task OrderBySimple()
+    {
+        const string source = @"
+from n in [2,1,5,4,3] orderby n select n;
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(5), v));
+    }
+
+    [Fact]
+    public async Task OrderByWithBinding()
+    {
+        const string source = @"
+from n in [2,1,5,4,3]
+let tuple = (number: n, pow2: n * n)
+orderby tuple.number
+select tuple.pow2;
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(4), v),
+            v => Assert.Equal(IntegerValue.Of(9), v),
+            v => Assert.Equal(IntegerValue.Of(16), v),
+            v => Assert.Equal(IntegerValue.Of(25), v));
+    }
+
+    [Fact]
+    public async Task OrderByWithCrossJoin()
+    {
+        const string source = @"
+from x in [1,2]
+from y in 10..12
+orderby y
+select (x, y, x * y);
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(1), IntegerValue.Of(10), IntegerValue.Of(10)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(2), IntegerValue.Of(10), IntegerValue.Of(20)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(1), IntegerValue.Of(11), IntegerValue.Of(11)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(2), IntegerValue.Of(11), IntegerValue.Of(22)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(1), IntegerValue.Of(12), IntegerValue.Of(12)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(2), IntegerValue.Of(12), IntegerValue.Of(24)), v));
     }
 }

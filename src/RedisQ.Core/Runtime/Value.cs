@@ -124,12 +124,12 @@ public class TupleValue : Value, IEquatable<TupleValue>
 
     public Value this[string fieldName] => Items[_fieldIndicesByName[fieldName]];
 
-    public static TupleValue Of(Value item1, Value item2) => new(new[] { item1, item2 }, EmptyFieldMap);
+    public static TupleValue Of(params Value[] items) => new(items, EmptyFieldMap);
 
     public static TupleValue Of((string name, Value value) field1, (string name, Value value) field2) =>
         new(
             new[] { field1.value, field2.value },
-            new Dictionary<string, int>()
+            new Dictionary<string, int>
             {
                 { field1.name, 0 },
                 { field2.name, 1 },

@@ -304,18 +304,6 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
         ctx = Context.Inherit(ctx);
         var selection = SelectFromSource(Head, ctx);
 
-        foreach (var clause in NestedClauses)
-        {
-            selection = clause switch
-            {
-                FromClause @from => CrossJoin(selection, @from, ctx),
-                LetClause @let => Bind(selection, @let, ctx),
-                WhereClause @where => Filter(selection, @where, ctx),
-                LimitClause limit => Limit(selection, limit, ctx),
-                _ => throw new NotImplementedException(),
-            };
-        }
-
         async IAsyncEnumerable<Value> OuterSelect(IAsyncEnumerable<Value> inner)
         {
             await foreach (var _ in inner.ConfigureAwait(false))
@@ -326,19 +314,39 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
             }
         }
 
+        foreach (var clause in NestedClauses)
+        {
+            selection = clause switch
+            {
+                FromClause @from => CrossJoin(selection, @from, ctx),
+                LetClause @let => Bind(selection, @let, ctx),
+                WhereClause @where => Filter(selection, @where, ctx),
+                LimitClause limit => Limit(selection, limit, ctx),
+                OrderByClause orderBy => OrderBy(selection, orderBy, ctx), 
+                _ => throw new NotImplementedException(),
+            };
+        }
+
         var resultValue = new EnumerableValue(OuterSelect(selection));
         return Task.FromResult(resultValue as Value);
     }
 
-    private static async IAsyncEnumerable<Value> SelectFromSource(FromClause @from,  Context ctx)
+    private static async IAsyncEnumerable<Value> SelectFromSource(FromClause @from, Context ctx)
     {
         var sourceValue = await @from.Source.Evaluate(ctx);
         if (sourceValue is EnumerableValue source == false) throw new RuntimeException($"from: source value {sourceValue} is not enumerable");
 
-        await foreach (var value in source.ConfigureAwait(false))
+        await foreach (var value in SelectFromSource(source, from.Ident, ctx).ConfigureAwait(false))
         {
-            Trace.WriteLine($"SelectSource: {value}");
-            ctx.Bind(from.Ident, value);
+            yield return value;
+        }
+    }
+
+    private static async IAsyncEnumerable<Value> SelectFromSource(IAsyncEnumerable<Value> @from, string ident, Context ctx)
+    {
+        await foreach (var value in @from.ConfigureAwait(false))
+        {
+            ctx.Bind(ident, value);
             yield return value;
         }
     }
@@ -393,6 +401,22 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
             index++;
         }
     }
+
+    private static async IAsyncEnumerable<Value> OrderBy(IAsyncEnumerable<Value> coll, OrderByClause orderBy, Context ctx)
+    {
+        var keysAndValues = new List<(Value key, Value value, Scope closure)>();
+        await foreach (var value in coll.ConfigureAwait(false))
+        {
+            var key = await orderBy.Key.Evaluate(ctx).ConfigureAwait(false);
+            keysAndValues.Add((key, value, ctx.CaptureClosure()));
+        }
+        var ordered = keysAndValues.OrderBy(tuple => tuple.key, ValueComparer.Default);
+        foreach (var (_, value, closure) in ordered)
+        {
+            ctx.BindAll(closure);
+            yield return value;
+        }
+    }
 }
 
 public record EagerFromExpr(FromExpr From) : Expr
@@ -413,6 +437,7 @@ public abstract record NestedClause : Expr
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
 public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
+public record OrderByClause(Expr Key) : NestedClause;
 
 public record LetClause(string Ident, Expr Right) : NestedClause
 {

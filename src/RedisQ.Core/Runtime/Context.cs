@@ -40,4 +40,21 @@ public class Context
 
     public void Bind(string name, Value value) =>
         _scope.Set(name, value);
+
+    public void BindAll(Scope scope) =>
+        _scope.CopyFrom(scope);
+
+    public Scope CaptureClosure()
+    {
+        void Recurse(Context? ctx, Scope targetScope)
+        {
+            if (ctx == null) return;
+            Recurse(ctx._parent, targetScope);
+            targetScope.CopyFrom(ctx._scope);
+        }
+
+        var closure = new Scope();
+        Recurse(this, closure);
+        return closure;
+    }
 }
