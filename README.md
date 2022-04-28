@@ -1,7 +1,7 @@
 # redis-q
 A REPL to run queries against a Redis database using a language similar to C#'s LINQ syntax extension.
 
-![image](doc/screenshot-intro.png)
+![image](doc/screenshot-intro-2.png)
 
 ## Features
 

@@ -22,6 +22,7 @@ internal class ValuePrinter
                 await writer.WriteLineAsync($"{indent}[{string.Join(", ", list.Select(v => v.AsString()))}]");
                 break;
             case EnumerableValue enumerable:
+                await writer.WriteLineAsync();
                 await PrintEnumerable(enumerable, writer, indent);
                 break;
             default:
