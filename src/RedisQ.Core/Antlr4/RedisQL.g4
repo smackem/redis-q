@@ -73,7 +73,7 @@ relationalOp
     | Le
     | Gt
     | Ge
-    | Match
+    | RegexMatch
     ;
 
 rangeExpr
@@ -195,7 +195,7 @@ Gt          : '>';
 Ge          : '>=';
 Eq          : '==';
 Ne          : '!=';
-Match       : '~=';
+RegexMatch  : '~=';
 Or          : '||';
 And         : '&&';
 Not         : '!';

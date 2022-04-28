@@ -89,7 +89,7 @@ internal class PrettyRepl : IRepl
                 Tokens.Ge,
                 Tokens.Eq,
                 Tokens.Ne,
-                Tokens.Match,
+                Tokens.RegexMatch,
                 Tokens.Or,
                 Tokens.And,
                 Tokens.Not,
