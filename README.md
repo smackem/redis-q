@@ -1,6 +1,8 @@
 # redis-q
 A REPL to run queries against a Redis database using a language similar to C#'s LINQ syntax extension.
 
+![image](doc/screenshot-intro.png)
+
 ## Features
 
 Redis-Q
@@ -70,6 +72,23 @@ _pending_
 _pending_
 
 ### Enumerables, List and Ranges
+Enumerables in RedisQL are lazily evaluated, whereas lists are discrete collections (as in dotnet `IEnumerable` vs. `IList` or in `Stream` vs. `Collection` in Java).
+Enumerables and list are displayed differently:
+`1..3` =>
+```
+  1
+  2
+  3
+Enumerated 3 element(s)
+```
+while `[1,2,3];` =>
+```
+[1, 2, 3]
+```
+The expression `1..3` denotes a Range, which is a simple enumerable over an *inclusive* range of integers.
+
+The `from` expression usually produces an Enumerable, except when it is nested in another `from` expression. In the latter case, it always evaluated eagerly and produces a List:
+
 ```csharp
 from x in [1, 2, 3]
 from y in [10, 100, 1000] 
