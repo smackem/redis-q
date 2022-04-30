@@ -171,6 +171,23 @@ x    squared
 30   900    
 ```
 
+Limiting the result set can be achieved with the `limit` clause, which is familiar from SQL:
+```csharp
+from x in [1,2,3,4,5,6,8,9,10] 
+where x % 2 == 0 
+limit 3 offset 1 
+select x;
+```
+```
+  4
+  6
+  8
+```
+
+Note that the `offset` clause is optional and the default offset is 0.
+
+When working with large data sets, including a `limit` clause in all queries against keyspace-scans (like `keys()` or `zscan()`) is good practice.
+
 ### Functions and Pipelining
 redis-q features a collection of built-in functions, which can be invoked as usual in languages like C or Java:
 ```csharp
