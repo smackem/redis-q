@@ -170,6 +170,8 @@ x    squared
 15   225    
 30   900    
 ```
+To reverse the sort order, use the `descending` keyword:
+`from x in 1..10 orderby x descending select x` basically is the same as `1..10 |> reverse()`.
 
 Limiting the result set can be achieved with the `limit` clause, which is familiar from SQL:
 ```csharp
@@ -379,6 +381,7 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `reverse(enumerable) -> enumerable`| Yields all values in the enumerable in reverse order |
 | `sort(enumerable) -> enumerable`| Yields all values in the enumerable sorted, with strings > numbers |
 | `match(input: string, pattern: string) -> list`| Returns a list of all groups matched in input by the regex pattern |
+| `first(enumerable) -> value`| Returns the first value in enumerable or `null` if empty |
 
 ### Redis functions
 
@@ -410,6 +413,9 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `zrank(key, value) -> int` | ZRANK |
 | `zscore(key, value) -> real` | ZSCORE |
 | `zscan(key, pattern: string) -> enumerable` | ZSCAN |
+
+## JSON Support
+_pending_
 
 ## Build and Run
 

@@ -25,6 +25,7 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("reverse", 1, FuncReverse));
         Register(new FunctionDefinition("sort", 1, FuncSort));
         Register(new FunctionDefinition("match", 2, FuncMatch));
+        Register(new FunctionDefinition("first", 1, FuncFirst));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -223,7 +224,7 @@ public partial class FunctionRegistry
 
     private static async Task<Value> FuncSort(Context ctx, Value[] arguments)
     {
-        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"reverse({arguments[0]}): incompatible operand, enumerable expected");
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"sort({arguments[0]}): incompatible operand, enumerable expected");
         var list = await coll.Collect();
 
         if (list is List<Value> l) l.Sort(ValueComparer.Default);
@@ -241,5 +242,17 @@ public partial class FunctionRegistry
             ? new ListValue(match.Groups.Values.Select(g => new StringValue(g.Value)).ToArray())
             : ListValue.Empty;
         return Task.FromResult<Value>(groupList);
+    }
+
+    private static async Task<Value> FuncFirst(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"first({arguments[0]}): incompatible operand, enumerable expected");
+        Value? value = null;
+        await foreach (var v in coll)
+        {
+            value = v;
+            break;
+        }
+        return value ?? NullValue.Instance;
     }
 }
