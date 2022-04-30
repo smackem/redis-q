@@ -73,9 +73,10 @@ RedisQL adds the following language features not supported by C#:
 | --- | ---|
 | F#-like argument pipelining | `[1,2,3] \|> join(',')` |
 | Ranges | `collect(0..100)` |
-| Single-quoted or double-quoted tring literals | `'hello' + ", world"` |
-| Dynamic type system | `let list = [1, true, 'string']` |
+| Single-quoted or double-quoted string literals | `'hello' + ", world"` |
+| List expressions | `[1, true, 'string']` |
 | Regex operator | `"abc" ~= "\w{3}" // true` |
+| Top-level `let` statements | `let x = 1` |
 
 ### Basics and operators
 RedisQL supports the following operators, basically a subset of the common operators found in C, C# or Java:
@@ -111,7 +112,7 @@ The selection may be any expression using any bindings declared by the `from` ex
 
 Nested bindings allow storing of intermediate results withing the `from` expression:
 ```csharp
-from x in 1..3
+from x in [1,2,3]
 let squared = x * x
 select (x, squared);
 ```
@@ -125,7 +126,7 @@ base  squared
 
 Carthesian products ("cross joins" in SQL) can be produced by chaining `from` clauses:
 ```csharp
-from x in 1..3
+from x in [1,2,3]
 from y in [10,11]
 select (x: x, y: y, product: x * y)
 ```
@@ -173,7 +174,7 @@ x    squared
 ### Functions and Pipelining
 redis-q features a collection of built-in functions, which can be invoked as usual in languages like C or Java:
 ```csharp
-count(1..3);
+count([1,2,3]);
 ```
 ```
 3
@@ -182,7 +183,7 @@ All Redis-specific functionality in redis-q is built using functions. A full lis
 
 One feature taken from F# comes in handy for a REPL: the possibility to pipe arguments to a function call using the `|>` operator. The above sample can also be written like this:
 ```csharp
-1..3 |> count()
+[1,2,3] |> count()
 ```
 The operand preceding the `|>` operator is passed as the _last_ argument to the function on the right.
 This enables fluent typing of expressions like
