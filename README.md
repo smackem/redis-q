@@ -224,6 +224,17 @@ RedisQL supports the following scalar data types:
 Redis values are implicitly converted to the type required by the operation.
 Redis keys are implictly convertible to string.
 
+### Conversion to Boolean
+All RedisQL values except tuples and lazy enumerables can be converted to boolean:
+| Type | `false` if |
+| --- | ---|
+| list | empty |
+| string | empty |
+| integer | 0 |
+| real | 0.0 |
+| bool | false |
+| any | null |
+
 ### Enumerables, List and Ranges
 Enumerables in RedisQL are lazily evaluated, whereas lists are discrete collections (as in dotnet `IEnumerable` vs. `IList` or in `Stream` vs. `Collection` in Java).
 Enumerables and lists are displayed differently:
@@ -354,35 +365,36 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 
 ### Redis functions
 
-| Signature | Description |
-| --- | --- |
-| keys(pattern) -> enumerable | SCAN |
-| get(key) -> value | GET |
-| mget(list) -> list | MGET |
-| strlen(key) -> int | STRLEN |
-| getrange(key, start, stop) -> value | GETRANGE |
-| hkeys(key) -> list | HKEYS |
-| hget(key, field: string) -> value | HGET |
-| hgetall(key) -> list of tuples | HGETALL |
-| llen(key) -> int | LLEN |
-| lrange(key, start, stop) -> list | LRANGE |
-| lindex(key, int) -> value | LINDEX |
-| type(key) -> string | TYPE |
-| hstrlen(key, field: string) -> int | HSTRLEN |
-| smembers(key) -> list | SMEMBERS |
-| scard(key) -> int | SCARD |
-| sdiff(key, key) -> list | SDIFF |
-| sinter(key, key) -> list | SINTER |
-| sunion(key, key) -> list | SUNION |
-| sismember(key, value) -> bool | SISMEMBER |
-| zcard(key) -> int | ZCARD |
-| zcount(key, min: real, max: real) | ZCOUNT |
-| zrange(key, start: int, stop: int) -> list | ZRANGE |
-| zrangebyscore(key, min: real, max: real) -> list | ZRANGEBYSCORE |
-| zrank(key, value) -> int | ZRANK |
-| zscore(key, value) -> real | ZSCORE |
-| zscan(key, pattern: string) -> enumerable | ZSCAN |
+See https://redis.io/commands/
 
+| Signature | Matching Redis COMMAND |
+| --- | --- |
+| `keys(pattern) -> enumerable` | SCAN |
+| `get(key) -> value` | GET |
+| `mget(list) -> list` | MGET |
+| `strlen(key) -> int` | STRLEN |
+| `getrange(key, start, stop) -> value` | GETRANGE |
+| `hkeys(key) -> list` | HKEYS |
+| `hget(key, field: string) -> value` | HGET |
+| `hgetall(key) -> list of tuples` | HGETALL |
+| `llen(key) -> int` | LLEN |
+| `lrange(key, start, stop) -> list` | LRANGE |
+| `lindex(key, int) -> value` | LINDEX |
+| `type(key) -> string` | TYPE |
+| `hstrlen(key, field: string) -> int` | HSTRLEN |
+| `smembers(key) -> list` | SMEMBERS |
+| `scard(key) -> int` | SCARD |
+| `sdiff(key, key) -> list` | SDIFF |
+| `sinter(key, key) -> list` | SINTER |
+| `sunion(key, key) -> list` | SUNION |
+| `sismember(key, value) -> bool` | SISMEMBER |
+| `zcard(key) -> int` | ZCARD |
+| `zcount(key, min: real, max: real)` | ZCOUNT |
+| `zrange(key, start: int, stop: int) -> list` | ZRANGE |
+| `zrangebyscore(key, min: real, max: real)` -> list | ZRANGEBYSCORE |
+| `zrank(key, value) -> int` | ZRANK |
+| `zscore(key, value) -> real` | ZSCORE |
+| `zscan(key, pattern: string) -> enumerable` | ZSCAN |
 
 ## Build and Run
 

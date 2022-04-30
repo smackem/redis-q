@@ -78,6 +78,7 @@ public partial class FunctionRegistry
     private static Task<Value> FuncBool(Context ctx, Value[] arguments) =>
         arguments[0] switch
         {
+            ListValue list =>Task.FromResult<Value>(BoolValue.Of(list.AsBoolean())), 
             EnumerableValue or TupleValue => Task.FromResult<Value>(NullValue.Instance),
             var v => Task.FromResult<Value>(BoolValue.Of(v.AsBoolean())),
         };
