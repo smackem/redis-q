@@ -301,7 +301,7 @@ let userName = user[0];
 let userRole = user[1];
 ```
 
-### Type Conversion
+### The `null` value
 _pending_
 
 ## Bindings
@@ -333,24 +333,24 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 ### Common Functions
 | Signature | Description |
 | --- | --- |
-| size(list\|string) -> int| |
-| count(enumerable) -> int| |
-| int(any) -> int| |
-| real(any) -> real| |
-| bool(any) -> bool| |
-| string(any) -> string| |
-| lower(string) -> string| |
-| upper(string) -> string| |
-| collect(enumerable) -> list| |
-| join(separator: string, coll: enumerable) -> string| |
-| distinct(enumerable) -> enumerable| |
-| sum(enumerable) -> value| |
-| avg(enumerable) -> number| |
-| min(enumerable) -> value| |
-| max(enumerable) -> value| |
-| reverse(enumerable) -> enumerable| |
-| sort(enumerable) -> enumerable| |
-| match(input: string, pattern: string) -> list| |
+| `size(list\|string) -> int`| Returns the number of elements in the list or string |
+| `count(enumerable) -> int`| Returns the number of elements produced by the enumerable |
+| `int(any) -> int`| Converts any value to int or returns `null` |
+| `real(any) -> real`| Converts any value to real or returns `null` |
+| `bool(any) -> bool`| Converts any value to bool or returns `null` |
+| `string(any) -> string`| Converts any value to string |
+| `lower(string) -> string`| Converts a string to lower case |
+| `upper(string) -> string`| Converts a string to upper case |
+| `collect(enumerable) -> list`| Enumerates all values in an enumerable and collects them in a list |
+| `join(separator: string, coll: enumerable) -> string`| Enumerates all values in an enumerable and aggregates them in a string, separated by the first argument |
+| `distinct(enumerable) -> enumerable`| Yields all distinct values in an enumerable, removing duplicates |
+| `sum(enumerable) -> value`| Returns the sum of all values in the enumerable |
+| `avg(enumerable) -> number`| Returns the average of all values in the enumerable, which must only contain numbers or `null` values |
+| `min(enumerable)` -> value| Returns the minimum of all values in the enumerable, which must only contain numbers or `null` values |
+| `max(enumerable) -> value`| Returns the maximum of all values in the enumerable, which must only contain numbers or `null` values |
+| `reverse(enumerable) -> enumerable`| Yields all values in the enumerable in reverse order |
+| `sort(enumerable) -> enumerable`| Yields all values in the enumerable sorted, with strings > numbers |
+| `match(input: string, pattern: string) -> list`| Returns a list of all groups matched in input by the regex pattern |
 
 ### Redis functions
 
