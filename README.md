@@ -37,8 +37,10 @@ select (user: userKey, loggedInSince: sessionStart);
 ```
 Response:
 ```
-  (user-2, 2022-04-01 19:22:30)
-  (user-1, 2022-04-01 22:03:54)
+user    loggedInSince      
+---------------------------
+user-2  2022-04-01 19:22:30
+user-1  2022-04-01 22:03:54
 ```
 
 ```csharp
@@ -50,13 +52,15 @@ let openSessionCount =
     select sessionKey 
     |> count()
 where openSessionCount > 0
-let userJson = get(userKey) 
-select (userKey, userJson[".name"]);
+let userJson = GET(userKey) 
+select (key: userKey, name: userJson[".name"]);
 ```
 Response:
 ```
-  (user-2, alice)
-  (user-1, bob)
+key     name 
+-------------
+user-2  alice
+user-1  bob  
 ```
 
 ## Syntax
@@ -65,17 +69,144 @@ redis-q (or more precisly RedisQL, the query language employed by redis-q) uses 
 https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/from-clause
 
 RedisQL adds the following language features not supported by C#:
-- Function pipelining
-- Ranges
-- String literals can be enclosed in either `"` or `'` 
-since there is no `char` type
-- Dynamic type system
+| Feature | Example |
+| --- | ---|
+| F#-like argument pipelining | `[1,2,3] \|> join(',')` |
+| Ranges | `collect(0..100)` |
+| Single-quoted or double-quoted tring literals | `'hello' + ", world"` |
+| Dynamic type system | `let list = [1, true, 'string']` |
+| Regex operator | `"abc" ~= "\w{3}" // true` |
 
-### from and sub-queries
-_pending_
+### Basics and operators
+RedisQL supports the following operators, basically a subset of the common operators found in C, C# or Java:
+| Operator | Description |
+| --- | --- |
+| `condition ? a : b` | a if condition is true, otherwise b |
+| `a == b` | Test for equality |
+| `a != b` | Test for inequality |
+| `a < b` | Less than |
+| `a <= b` | Less than or equal |
+| `a > b` | Greater than |
+| `a >= b` | Greater than or equal |
+| `a ~= b` | String-like value a matches the regex pattern b |
+| `a + b` | Add numbers a and b or concatenate strings, if a or b is a string |
+| `a - b` | Subtract number b from number a |
+| `a * b` | Multiply numbers a and b |
+| `a / b` | Divide number a by number b |
+| `a % b` | Modulo of numbers a and b |
+
+Automatic type conversion: integer is automatically converted to real in expressions like `1 + 2.5`.
+When operators require a string-like type, RedisQL converts operands implicitly to string.
+
+### The `from` expression
+Like C#'s `from` expression, RedisQL's `from` is a lazy iteration construct that enumerates all values in the source collection and binds each value to the iterator identifier.
+
+Simple example: `from x in 1..3 select x` selects the identity of the source range `1..3`, the numbers 1, 2 and 3.
+In this case, the range `1..3` is the source collection and `x` is the iterator identifier.
+
+The source collection may be any enumerable value: ranges, lists and enumerables produced by functions or other `from` expressions.
+
+The selection may be any expression using any bindings declared by the `from` expression, e.g.
+`from x in 1..3 select x + 1`, which selects 2,3 and 4.
+
+Nested bindings allow storing of intermediate results withing the `from` expression:
+```csharp
+from x in 1..3
+let squared = x * x
+select (x, squared);
+```
+```
+base  squared
+-------------
+1     1      
+2     4      
+3     9      
+```
+
+Carthesian products ("cross joins" in SQL) can be produced by chaining `from` clauses:
+```csharp
+from x in 1..3
+from y in [10,11]
+select (x: x, y: y, product: x * y)
+```
+```
+x  y   product
+--------------
+1  10  10     
+1  11  11     
+2  10  20     
+2  11  22     
+3  10  30     
+3  11  33     
+```
+Filtering of enumerables can be achieved using the `where` clause:
+```csharp
+from x in 1..10
+where x % 2 == 0
+select x
+```
+```
+  2
+  4
+  6
+  8
+  10
+```
+
+Ordering of items can be achieved with the `orderby` clause:
+```csharp
+from x in [15, 4, -10, 30, -22]
+let squared = x * x
+orderby x
+select (x: x, squared: squared)
+```
+```
+x    squared
+------------
+-22  484    
+-10  100    
+4    16     
+15   225    
+30   900    
+```
 
 ### Functions and Pipelining
-_pending_
+redis-q features a collection of built-in functions, which can be invoked as usual in languages like C or Java:
+```csharp
+count(1..3);
+```
+```
+3
+```
+All Redis-specific functionality in redis-q is built using functions. A full list of supported functions can be found below.
+
+One feature taken from F# comes in handy for a REPL: the possibility to pipe arguments to a function call using the `|>` operator. The above sample can also be written like this:
+```csharp
+1..3 |> count()
+```
+The operand preceding the `|>` operator is passed as the _last_ argument to the function on the right.
+This enables fluent typing of expressions like
+```csharp
+from x in [1,2,3,2,1]
+select x
+|> distinct();
+```
+```
+1
+2
+3
+```
+or the following:
+```csharp
+from x in [15, 4, -10, 30, -22]
+let squared = x * x
+orderby x
+select squared
+|> join("+");
+```
+```
+484+100+16+225+900
+```
 
 ## Data Types
 RedisQL is a dynamically-typed language supporting scalar values like integers or strings as well as composite values like lists, enumerables and tuples.
@@ -89,18 +220,20 @@ RedisQL supports the following scalar data types:
 | string | unicode string of arbitrary length | `"hello"` or `'world'` |
 | bool | boolean value | `true` or `false` |
 
+Redis values are implicitly converted to the type required by the operation.
+Redis keys are implictly convertible to string.
 
 ### Enumerables, List and Ranges
 Enumerables in RedisQL are lazily evaluated, whereas lists are discrete collections (as in dotnet `IEnumerable` vs. `IList` or in `Stream` vs. `Collection` in Java).
 Enumerables and lists are displayed differently:
-`1..3` =>
+`1..3` evaluates to
 ```
   1
   2
   3
 Enumerated 3 element(s)
 ```
-while `[1,2,3];` =>
+while `[1,2,3];` evaluates to
 ```
 [1, 2, 3]
 ```
@@ -113,7 +246,6 @@ from x in [1, 2, 3]
 from y in [10, 100, 1000] 
 select x * y;
 ```
-yields the result:
 ```
   10
   100
@@ -125,7 +257,7 @@ yields the result:
   300
   3000
 ```
-whereas
+Whereas:
 ```csharp
 from x in [1, 2, 3]
 let m =
@@ -133,7 +265,6 @@ let m =
     select x * y
 select m;
 ```
-yields
 ```
   [10, 100, 1000]
   [20, 200, 2000]
@@ -154,6 +285,19 @@ name   role
 ------------
 bob    admin
 alice  guest
+```
+
+Tuple fields can be accessed either by index or by name (if the tuple has named fields):
+```
+let user = (name: "bob", role: "admin");
+let userName = user.name;
+let userRole = user.role;
+```
+or
+```
+let user = (name: "bob", role: "admin");
+let userName = user[0];
+let userRole = user[1];
 ```
 
 ### Type Conversion
@@ -184,7 +328,60 @@ The last evaluation's result can be recalled using the identifier `it`:
 It's best to bind top-level values to discrete lists instead of enumerations so the value can be iterated multiple times using the `it` identifier. This is why the `collect()` function is used in the preceding samples.
 
 ## Built-in Functions
-_pending_
+
+### Common Functions
+| Signature | Description |
+| --- | --- |
+| size(list\|string) -> int| |
+| count(enumerable) -> int| |
+| int(any) -> int| |
+| real(any) -> real| |
+| bool(any) -> bool| |
+| string(any) -> string| |
+| lower(string) -> string| |
+| upper(string) -> string| |
+| collect(enumerable) -> list| |
+| join(separator: string, coll: enumerable) -> string| |
+| distinct(enumerable) -> enumerable| |
+| sum(enumerable) -> value| |
+| avg(enumerable) -> number| |
+| min(enumerable) -> value| |
+| max(enumerable) -> value| |
+| reverse(enumerable) -> enumerable| |
+| sort(enumerable) -> enumerable| |
+| match(input: string, pattern: string) -> list| |
+
+### Redis functions
+
+| Signature | Description |
+| --- | --- |
+| keys(pattern) -> enumerable | SCAN |
+| get(key) -> value | GET |
+| mget(list) -> list | MGET |
+| strlen(key) -> int | STRLEN |
+| getrange(key, start, stop) -> value | GETRANGE |
+| hkeys(key) -> list | HKEYS |
+| hget(key, field: string) -> value | HGET |
+| hgetall(key) -> list of tuples | HGETALL |
+| llen(key) -> int | LLEN |
+| lrange(key, start, stop) -> list | LRANGE |
+| lindex(key, int) -> value | LINDEX |
+| type(key) -> string | TYPE |
+| hstrlen(key, field: string) -> int | HSTRLEN |
+| smembers(key) -> list | SMEMBERS |
+| scard(key) -> int | SCARD |
+| sdiff(key, key) -> list | SDIFF |
+| sinter(key, key) -> list | SINTER |
+| sunion(key, key) -> list | SUNION |
+| sismember(key, value) -> bool | SISMEMBER |
+| zcard(key) -> int | ZCARD |
+| zcount(key, min: real, max: real) | ZCOUNT |
+| zrange(key, start: int, stop: int) -> list | ZRANGE |
+| zrangebyscore(key, min: real, max: real) -> list | ZRANGEBYSCORE |
+| zrank(key, value) -> int | ZRANK |
+| zscore(key, value) -> real | ZSCORE |
+| zscan(key, pattern: string) -> enumerable | ZSCAN |
+
 
 ## Build and Run
 
