@@ -382,9 +382,7 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 
 ### Redis functions
 
-See https://redis.io/commands/
-
-| Signature | Matching Redis COMMAND |
+| Signature | Matching Redis COMMAND, see https://redis.io/commands/ for reference |
 | --- | --- |
 | `keys(pattern) -> enumerable` | SCAN |
 | `get(key) -> value` | GET |
