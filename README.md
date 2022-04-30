@@ -319,20 +319,64 @@ alice  guest
 ```
 
 Tuple fields can be accessed either by index or by name (if the tuple has named fields):
-```
+```csharp
 let user = (name: "bob", role: "admin");
 let userName = user.name;
 let userRole = user.role;
 ```
 or
-```
+```csharp
 let user = (name: "bob", role: "admin");
 let userName = user[0];
 let userRole = user[1];
 ```
 
 ### The `null` value
-_pending_
+The `null` literal signals the absence of a value.
+
+```csharp
+let george =
+    from k in keys('user-*')
+    where get(k)[".name"] == "george"
+    select k
+    |> first();
+```
+```csharp
+// user george does not exist, so first() returns null
+null
+```
+
+Arithmetic operators applied to at least one `null` operand yield `null` as result:
+```csharp
+1 + null == null;
+```
+```
+True
+```
+
+In string concatenation, `null` is equivalent to the empty string `""`:
+```csharp
+"abc" + null == "abc";
+```
+```
+True
+```
+
+Aggregation function like `sum` or `avg` ignore `null` values in enumerables.
+
+`null` converted to bool is `false`.
+
+## JSON Support
+redis-q supports querying JSON objects using JSONPath (see https://github.com/json-path/JsonPath) and the subscript syntax for strings:
+
+```csharp
+let json = "{ foo: 'bar', answer: 42 }";
+
+json["$.answer"];
+```
+```
+42
+```
 
 ## Bindings
 Bind values anytime in the REPL's top most scope using the `let` statement:
@@ -413,9 +457,6 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `zrank(key, value) -> int` | ZRANK |
 | `zscore(key, value) -> real` | ZSCORE |
 | `zscan(key, pattern: string) -> enumerable` | ZSCAN |
-
-## JSON Support
-_pending_
 
 ## Build and Run
 

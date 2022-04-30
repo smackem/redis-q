@@ -247,12 +247,11 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncFirst(Context ctx, Value[] arguments)
     {
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"first({arguments[0]}): incompatible operand, enumerable expected");
-        Value? value = null;
         await foreach (var v in coll)
         {
-            value = v;
-            break;
+            if (v is NullValue) continue;
+            return v;
         }
-        return value ?? NullValue.Instance;
+        return NullValue.Instance;
     }
 }
