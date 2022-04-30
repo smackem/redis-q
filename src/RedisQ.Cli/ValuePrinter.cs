@@ -15,11 +15,11 @@ internal class ValuePrinter
         switch (value)
         {
             case ListValue list when HasComplexValues(list):
-                await writer.WriteLineAsync($"{indent}{list.Count} element(s):");
+                await writer.WriteLineAsync();
                 await PrintEnumerable(list, writer, indent);
                 break;
             case ListValue list:
-                await writer.WriteLineAsync($"{indent}[{string.Join(", ", list.Select(v => v.AsString()))}]");
+                await writer.WriteLineAsync($"{indent}{JoinList(list, null)}");
                 break;
             case EnumerableValue enumerable:
                 await writer.WriteLineAsync();
@@ -30,6 +30,11 @@ internal class ValuePrinter
                 break;
         }
     }
+
+    private static string JoinList(ListValue list, int? max) =>
+        list.Count > max
+            ? $"[{string.Join(", ", list.Select(v => v.AsString()).Take(max.Value))}, ...]"
+            : $"[{string.Join(", ", list.Select(v => v.AsString()))}]";
 
     private async Task PrintEnumerable(IAsyncEnumerable<Value> values, TextWriter writer, string indent)
     {
@@ -88,11 +93,19 @@ internal class ValuePrinter
         var table = new ConsoleTable(columns).Configure(o => o.OutputTo = writer);
         foreach (var value in values)
         {
-            if (value is TupleValue tuple) table.AddRow(tuple.Items.Select(item => item.AsString() as object).ToArray());
+            if (value is TupleValue tuple) table.AddRow(tuple.Items.Select(item => ToCellString(item) as object).ToArray());
             else table.AddRow(value.AsString());
         }
         table.Write(Format.Minimal);
     }
+
+    private static string ToCellString(Value value) =>
+        value switch
+        {
+            ListValue list => JoinList(list, 100),
+            EnumerableValue _ => "(enumerable)",
+            _ => value.AsString(),
+        };
 
     private static bool HasComplexValues(ListValue list) =>
         list.Any(IsComplexValue);

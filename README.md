@@ -1,5 +1,5 @@
 # redis-q
-A REPL to run queries against a Redis database using a language similar to C#'s LINQ syntax extension.
+A REPL to run queries against a Redis database using a language similar to C#'s `from` clause.
 
 ![image](doc/screenshot-intro-2.png)
 
@@ -60,6 +60,16 @@ Response:
 ```
 
 ## Syntax
+redis-q (or more precisly RedisQL, the query language employed by redis-q) uses a slightly extended subset of C#'s LINQ syntax extension:
+
+https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/from-clause
+
+RedisQL adds the following language features not supported by C#:
+- Function pipelining
+- Ranges
+- String literals can be enclosed in either `"` or `'` 
+since there is no `char` type
+- Dynamic type system
 
 ### from and sub-queries
 _pending_
@@ -68,12 +78,21 @@ _pending_
 _pending_
 
 ## Data Types
+RedisQL is a dynamically-typed language supporting scalar values like integers or strings as well as composite values like lists, enumerables and tuples.
+
 ### Scalar types
-_pending_
+RedisQL supports the following scalar data types:
+| Name | Description | Literal |
+| --- | --- | --- |
+| int | 64 bit signed integer | `100` |
+| real | 64 bit floating point | `12.5` |
+| string | unicode string of arbitrary length | `"hello"` or `'world'` |
+| bool | boolean value | `true` or `false` |
+
 
 ### Enumerables, List and Ranges
 Enumerables in RedisQL are lazily evaluated, whereas lists are discrete collections (as in dotnet `IEnumerable` vs. `IList` or in `Stream` vs. `Collection` in Java).
-Enumerables and list are displayed differently:
+Enumerables and lists are displayed differently:
 `1..3` =>
 ```
   1
@@ -122,10 +141,47 @@ yields
 ```
 
 ### Tuples
-_pending_
+Tuples are composite values consisting of at least two elements like `(1, "abc")`.
+In contrast to lists, tuple elements are called fields and can be named:
+```csharp
+let user = (name: "bob", role: "admin");
+```
+redis-q displays collections of uniform tuples in tables:
+```csharp
+> let users = [(name: "bob", role: "admin"), (name: "alice", role: "guest")];
+
+name   role 
+------------
+bob    admin
+alice  guest
+```
 
 ### Type Conversion
 _pending_
+
+## Bindings
+Bind values anytime in the REPL's top most scope using the `let` statement:
+```csharp
+> let multiplier = 100;
+100
+> let numbers = [1, 2, 3];
+[1, 2, 3]
+> let products = from n in numbers select n * multiplier |> collect();
+[100, 200, 300]
+> let userNames = from k in keys("user-*") select get(k)[".name"] |> collect();    
+[alice, bob]
+```
+The last evaluation's result can be recalled using the identifier `it`:
+```csharp
+> 1 + 1;
+2
+> it;
+2
+> it + 1;
+3
+```
+
+It's best to bind top-level values to discrete lists instead of enumerations so the value can be iterated multiple times using the `it` identifier. This is why the `collect()` function is used in the preceding samples.
 
 ## Built-in Functions
 _pending_
