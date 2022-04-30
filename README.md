@@ -425,7 +425,8 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `reverse(enumerable) -> enumerable`| Yields all values in the enumerable in reverse order |
 | `sort(enumerable) -> enumerable`| Yields all values in the enumerable sorted, with strings > numbers |
 | `match(input: string, pattern: string) -> list`| Returns a list of all groups matched in input by the regex pattern |
-| `first(enumerable) -> value`| Returns the first value in enumerable or `null` if empty |
+| `first(enumerable) -> value`| Returns the first non-null value in enumerable or `null` if none found |
+| `any(enumerable) -> bool`| Returns `true` if there is at least one non-null value in enumerable, otherwise `false` |
 
 ### Redis functions
 

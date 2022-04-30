@@ -26,6 +26,7 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("sort", 1, FuncSort));
         Register(new FunctionDefinition("match", 2, FuncMatch));
         Register(new FunctionDefinition("first", 1, FuncFirst));
+        Register(new FunctionDefinition("any", 1, FuncAny));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -253,5 +254,16 @@ public partial class FunctionRegistry
             return v;
         }
         return NullValue.Instance;
+    }
+
+    private static async Task<Value> FuncAny(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"any({arguments[0]}): incompatible operand, enumerable expected");
+        await foreach (var v in coll)
+        {
+            if (v is NullValue) continue;
+            return BoolValue.True;
+        }
+        return BoolValue.False;
     }
 }
