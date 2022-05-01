@@ -1,4 +1,7 @@
 # redis-q
+
+![build](https://github.com/smackem/redis-q/actions/workflows/build.yml/badge.svg)
+
 A REPL to run queries against a Redis database using a language similar to C#'s `from` clause.
 
 ![image](doc/screenshot-intro-2.png)
