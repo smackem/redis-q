@@ -50,7 +50,8 @@ internal static class Program
         Console.WriteLine($"***** redis-q v{version}");
         Console.WriteLine($"redis @ {options.ConnectionString}");
         Console.WriteLine("terminate expressions with ;");
-        Console.WriteLine("enter #q; to exit...");
+        Console.WriteLine("enter #q; to quit...");
+        Console.WriteLine();
     }
 
     private static async Task<Value?> Interpret(Compiler compiler, string source, Context ctx, Options options)

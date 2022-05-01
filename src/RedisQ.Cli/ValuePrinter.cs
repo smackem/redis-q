@@ -55,6 +55,7 @@ internal class ValuePrinter
                     {
                         await Print(v, writer, indent + "  ");
                     }
+                    await writer.WriteLineAsync();
                 }
             }
             catch (RuntimeException e)

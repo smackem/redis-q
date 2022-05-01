@@ -8,8 +8,9 @@
       disabled warnings (produced by antlr generated source):
       CS2002 source file specified multiple times;
       CS3021 ClsCompliant class in assembly that is not ClsCompliant;
+      NU1605 package downgrade produced by netstandard 1.3 references (ANTLR)
     -->
-    <NoWarn>CS2002;CS3021</NoWarn>
+    <NoWarn>CS2002;CS3021;NU1605</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

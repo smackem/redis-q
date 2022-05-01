@@ -52,7 +52,7 @@ let openSessionCount =
     select sessionKey 
     |> count()
 where openSessionCount > 0
-let userJson = GET(userKey) 
+let userJson = get(userKey) 
 select (key: userKey, name: userJson[".name"]);
 ```
 Response:
@@ -377,6 +377,8 @@ json["$.answer"];
 ```
 42
 ```
+
+Values extracted from JSON are translated to their corresponding RedisQL types, so a JSON integer values becomes a RedisQL integer, a JSON array becomes a RedisQL list etc.
 
 ## Bindings
 Bind values anytime in the REPL's top most scope using the `let` statement:

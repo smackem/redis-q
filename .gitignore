@@ -353,4 +353,5 @@ MigrationBackup/
 .idea
 
 dump.rdb
-publish*
+publish-*
+*.zip

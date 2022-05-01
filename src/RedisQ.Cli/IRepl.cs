@@ -45,17 +45,23 @@ internal class PrettyRepl : IRepl
     public PrettyRepl(char terminator, Compiler compiler)
     {
         var promptStr = new FormattedString("> ", new FormatSpan(0, 2, AnsiColor.BrightBlack));
+        var historyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".redis-q-history");
         _prompt = new Prompt(
             configuration: new PromptConfiguration(prompt: promptStr),
-            callbacks: new LocalPromptCallbacks(compiler, terminator));
+            callbacks: new LocalPromptCallbacks(compiler, terminator),
+            persistentHistoryFilepath: historyPath);
     }
 
     public async Task<string> ReadSource()
     {
-        var response = await _prompt.ReadLineAsync();
-        return response.IsSuccess
-            ? response.Text
-            : string.Empty;
+        var response = await _prompt.ReadLineAsync().ConfigureAwait(false);
+        if (!response.IsSuccess) return string.Empty;
+        if (response is KeyPressCallbackResult callbackOutput)
+        {
+            Console.WriteLine(Environment.NewLine + callbackOutput.Output);
+            return string.Empty;
+        }
+        return response.Text;
     }
     
     private class LocalPromptCallbacks : PromptCallbacks
@@ -122,7 +128,7 @@ internal class PrettyRepl : IRepl
 
         protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
         {
-            if (text.StartsWith("#")) return Task.FromResult(new[] { new FormatSpan(0, text.Length, AnsiColor.Green) } as IReadOnlyCollection<FormatSpan>);
+            if (text.StartsWith("#")) return Task.FromResult(new[] { new FormatSpan(0, text.Length, AnsiColor.Magenta) } as IReadOnlyCollection<FormatSpan>);
             var tokens = _compiler.Lex(text);
             var spans = tokens
                 .Where(token => token.StartIndex >= 0 && token.StopIndex >= token.StartIndex)
@@ -133,13 +139,12 @@ internal class PrettyRepl : IRepl
                     Length = token.StopIndex - token.StartIndex + 1,
                 }).Select(t => t switch
                 {
-                    _ when Keywords.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightMagenta),
-                    _ when Operators.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightMagenta),
+                    _ when Keywords.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
+                    //_ when Operators.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
                     _ => t.Type switch
                     {
-                        Tokens.Comment => new FormatSpan(t.StartIndex, t.Length, AnsiColor.Green),
                         Tokens.Integer or RedisQLLexer.Real => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightYellow),
-                        Tokens.SingleQuotedString or RedisQLLexer.DoubleQuotedString => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
+                        Tokens.SingleQuotedString or RedisQLLexer.DoubleQuotedString => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightGreen),
                         _ => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightWhite),
                     },
                 });
