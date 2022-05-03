@@ -21,13 +21,16 @@ public class IntegrationTestBase : TestBase, IDisposable
             RedirectStandardOutput = true,
         };
         _redisProcess = Process.Start(psi)!;
-        WaitUntilReady(_redisProcess.StandardOutput);
+        WaitUntilReady(_redisProcess.StandardOutput).Wait();
     }
 
-    private static void WaitUntilReady(TextReader reader)
+    private static async Task WaitUntilReady(TextReader reader)
     {
-        while (reader.ReadLine()?.Contains("Ready to accept connections") == false)
+        var timeout = TimeSpan.FromSeconds(10);
+        while (true)
         {
+            var line = await reader.ReadLineAsync().WaitAsync(timeout);
+            if (line?.Contains("Ready to accept connections") == true) break;
         }
     }
 
