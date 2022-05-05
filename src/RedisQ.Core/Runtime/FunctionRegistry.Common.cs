@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RedisQ.Core.Runtime;
@@ -28,6 +29,7 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("first", 1, FuncFirst));
         Register(new FunctionDefinition("any", 1, FuncAny));
         Register(new FunctionDefinition("enumerate", 1, FuncEnumerate));
+        Register(new FunctionDefinition("timestamp", 2, FuncTimestamp));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -272,5 +274,13 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"enumerate({arguments[0]}): incompatible operand, enumerable expected");
         return Task.FromResult<Value>(new EnumerableValue(coll));
+    }
+
+    private static Task<Value> FuncTimestamp(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue s == false) throw new RuntimeException($"timestamp({arguments[0]}): incompatible operand, string expected");
+        if (arguments[1] is StringValue format == false) throw new RuntimeException($"timestamp({arguments[1]}): incompatible operand, string expected");
+        var time = DateTimeOffset.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture);
+        return Task.FromResult<Value>(new TimestampValue(time));
     }
 }

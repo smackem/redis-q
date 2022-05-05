@@ -286,3 +286,17 @@ public class RangeValue : EnumerableValue
         }
     }
 }
+
+public class TimestampValue : ScalarValue<DateTimeOffset>, IRedisValue
+{
+    private const string StandardFormat = "yyyy-MM-dd HH:mm:ss zz";
+
+    public TimestampValue(DateTimeOffset value) : base(value)
+    {}
+
+    public override string AsString() =>
+        Value.ToString(StandardFormat);
+
+    public override bool AsBoolean() => Value.ToUnixTimeSeconds() != 0;
+    public SR.RedisValue AsRedisValue() => AsString();
+}
