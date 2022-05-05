@@ -12,22 +12,29 @@ internal class ValuePrinter
     
     public async Task Print(Value value, TextWriter writer, string indent = "")
     {
-        switch (value)
+        try
         {
-            case ListValue list when HasComplexValues(list):
-                await writer.WriteLineAsync();
-                await PrintEnumerable(list, writer, indent);
-                break;
-            case ListValue list:
-                await writer.WriteLineAsync($"{indent}{JoinList(list, null)}");
-                break;
-            case EnumerableValue enumerable:
-                await writer.WriteLineAsync();
-                await PrintEnumerable(enumerable, writer, indent);
-                break;
-            default:
-                await writer.WriteLineAsync($"{indent}{value.AsString()}");
-                break;
+            switch (value)
+            {
+                case ListValue list when HasComplexValues(list):
+                    await writer.WriteLineAsync();
+                    await PrintEnumerable(list, writer, indent);
+                    break;
+                case ListValue list:
+                    await writer.WriteLineAsync($"{indent}{JoinList(list, null)}");
+                    break;
+                case EnumerableValue enumerable:
+                    await writer.WriteLineAsync();
+                    await PrintEnumerable(enumerable, writer, indent);
+                    break;
+                default:
+                    await writer.WriteLineAsync($"{indent}{value.AsString()}");
+                    break;
+            }
+        }
+        catch (RuntimeException e)
+        {
+            Console.WriteLine(_options.Verbose ? e : e.Message);
         }
     }
 
