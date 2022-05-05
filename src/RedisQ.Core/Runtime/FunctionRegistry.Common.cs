@@ -27,6 +27,7 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("match", 2, FuncMatch));
         Register(new FunctionDefinition("first", 1, FuncFirst));
         Register(new FunctionDefinition("any", 1, FuncAny));
+        Register(new FunctionDefinition("enumerate", 1, FuncEnumerate));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -265,5 +266,11 @@ public partial class FunctionRegistry
             return BoolValue.True;
         }
         return BoolValue.False;
+    }
+
+    private static Task<Value> FuncEnumerate(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"enumerate({arguments[0]}): incompatible operand, enumerable expected");
+        return Task.FromResult<Value>(new EnumerableValue(coll));
     }
 }
