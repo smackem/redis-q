@@ -25,7 +25,7 @@
     <Antlr4 Include="Antlr4\RedisQL.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>RedisQ.Core.Lang</CustomToolNamespace>
-      <Listener>False</Listener>
+      <Listener>True</Listener>
       <Visitor>True</Visitor>
     </Antlr4>
   </ItemGroup>
