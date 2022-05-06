@@ -108,7 +108,10 @@ public class TupleValue : Value, IEquatable<TupleValue>
         if (items.Count < 2) throw new ArgumentException("a tuple must have at least two items");
         _fieldIndicesByName = fieldIndicesByName;
 
-        var fieldNamesByIndex = new string[fieldIndicesByName.Max(kvp => kvp.Value) + 1];
+        var maxIndex = fieldIndicesByName.Count > 0
+            ? fieldIndicesByName.Max(kvp => kvp.Value) + 1
+            : 0;
+        var fieldNamesByIndex = new string[maxIndex];
         foreach (var (key, value) in fieldIndicesByName)
         {
             fieldNamesByIndex[value] = key;
@@ -146,7 +149,7 @@ public class TupleValue : Value, IEquatable<TupleValue>
         '(' + string.Join(", ", Items.Select(FormatField)) + ')';
 
     private string FormatField(Value value, int index) =>
-        string.IsNullOrEmpty(FieldNames[index])
+        index < 0 || index >= FieldNames.Count || string.IsNullOrEmpty(FieldNames[index])
             ? value.AsString()
             : $"{FieldNames[index]}: {value.AsString()}";
     
