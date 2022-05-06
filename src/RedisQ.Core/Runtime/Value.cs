@@ -108,7 +108,7 @@ public class TupleValue : Value, IEquatable<TupleValue>
         if (items.Count < 2) throw new ArgumentException("a tuple must have at least two items");
         _fieldIndicesByName = fieldIndicesByName;
 
-        var fieldNamesByIndex = new string[fieldIndicesByName.Count];
+        var fieldNamesByIndex = new string[fieldIndicesByName.Max(kvp => kvp.Value) + 1];
         foreach (var (key, value) in fieldIndicesByName)
         {
             fieldNamesByIndex[value] = key;
@@ -126,21 +126,30 @@ public class TupleValue : Value, IEquatable<TupleValue>
 
     public static TupleValue Of(params Value[] items) => new(items, EmptyFieldMap);
 
-    public static TupleValue Of((string name, Value value) field1, (string name, Value value) field2) =>
-        new(
-            new[] { field1.value, field2.value },
-            new Dictionary<string, int>
-            {
-                { field1.name, 0 },
-                { field2.name, 1 },
-            });
+    public static TupleValue Of(params (string name, Value value)[] fields)
+    {
+        var values = new Value[fields.Length];
+        var fieldIndicesByName = new Dictionary<string, int>();
+        for (var i = 0; i < fields.Length; i++)
+        {
+            values[i] = fields[i].value;
+            fieldIndicesByName[fields[i].name] = i;
+        }
+
+        return new TupleValue(values, fieldIndicesByName);
+    }
 
     public override string ToString() =>
         $"{GetType().Name}[{string.Join(", ", Items.Select(v => v.ToString()))}]";
 
     public override string AsString() =>
-        $"({string.Join(", ", Items.Select(v => v.AsString()))})";
+        '(' + string.Join(", ", Items.Select(FormatField)) + ')';
 
+    private string FormatField(Value value, int index) =>
+        string.IsNullOrEmpty(FieldNames[index])
+            ? value.AsString()
+            : $"{FieldNames[index]}: {value.AsString()}";
+    
     public override bool AsBoolean() => true;
 
     public bool Equals(TupleValue? other)
@@ -298,5 +307,16 @@ public class TimestampValue : ScalarValue<DateTimeOffset>, IRedisValue
         Value.ToString(StandardFormat);
 
     public override bool AsBoolean() => Value.ToUnixTimeSeconds() != 0;
+    public SR.RedisValue AsRedisValue() => AsString();
+}
+
+public class DurationValue : ScalarValue<TimeSpan>, IRedisValue
+{
+    public DurationValue(TimeSpan value) : base(value)
+    {}
+
+    public override string AsString() => Value.ToString("g"); // "general short" = d.HH.mm.ss.ttt
+
+    public override bool AsBoolean() => Value != TimeSpan.Zero;
     public SR.RedisValue AsRedisValue() => AsString();
 }

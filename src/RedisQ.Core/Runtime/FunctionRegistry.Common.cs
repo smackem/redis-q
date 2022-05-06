@@ -6,6 +6,8 @@ namespace RedisQ.Core.Runtime;
 
 public partial class FunctionRegistry
 {
+    private static readonly Random Rng = new();
+
     private void RegisterCommonFunctions()
     {
         Register(new FunctionDefinition("size", 1, FuncSize));
@@ -30,6 +32,10 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("any", 1, FuncAny));
         Register(new FunctionDefinition("enumerate", 1, FuncEnumerate));
         Register(new FunctionDefinition("timestamp", 2, FuncTimestamp));
+        Register(new FunctionDefinition("deconstruct", 1, FuncDeconstruct));
+        Register(new FunctionDefinition("duration", 2, FuncDuration));
+        Register(new FunctionDefinition("convert", 2, FuncConvert));
+        Register(new FunctionDefinition("random", 2, FuncRandom));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -282,5 +288,58 @@ public partial class FunctionRegistry
         if (arguments[1] is StringValue format == false) throw new RuntimeException($"timestamp({arguments[1]}): incompatible operand, string expected");
         var time = DateTimeOffset.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture);
         return Task.FromResult<Value>(new TimestampValue(time));
+    }
+
+    private static Task<Value> FuncDeconstruct(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is TimestampValue tsv == false) throw new RuntimeException($"deconstruct({arguments[0]}): incompatible operand, timestamp expected");
+        var ts = tsv.Value;
+        var tuple = TupleValue.Of(
+            ("year", IntegerValue.Of(ts.Year)),
+            ("month", IntegerValue.Of(ts.Month)),
+            ("day", IntegerValue.Of(ts.Day)),
+            ("hour", IntegerValue.Of(ts.Hour)),
+            ("minute", IntegerValue.Of(ts.Minute)),
+            ("second", IntegerValue.Of(ts.Second)),
+            ("millisecond", IntegerValue.Of(ts.Millisecond)));
+        return Task.FromResult<Value>(tuple);
+    }
+
+    private static Task<Value> FuncDuration(Context ctx, Value[] arguments)
+    {
+        var timeSpan = (arguments[0], arguments[1]) switch
+        {
+            (IntegerValue n, StringValue {Value: "ms" or "milliseconds"}) => TimeSpan.FromMilliseconds(n.Value),
+            (IntegerValue n, StringValue {Value: "s" or "seconds"}) => TimeSpan.FromSeconds(n.Value),
+            (RealValue r, StringValue {Value: "s" or "seconds"}) => TimeSpan.FromSeconds(r.Value),
+            (IntegerValue n, StringValue {Value: "m" or "minutes"}) => TimeSpan.FromMinutes(n.Value),
+            (RealValue r, StringValue {Value: "m" or "minutes"}) => TimeSpan.FromMinutes(r.Value),
+            (IntegerValue n, StringValue {Value: "h" or "hours"}) => TimeSpan.FromHours(n.Value),
+            (RealValue r, StringValue {Value: "h" or "hours"}) => TimeSpan.FromHours(r.Value),
+            (StringValue s, StringValue format) => TimeSpan.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture),
+            _ => throw new RuntimeException($"duration({arguments[0]}, {arguments[1]}): incompatible operands, (string, string) expected"),
+        };
+        return Task.FromResult<Value>(new DurationValue(timeSpan));
+    }
+
+    private static Task<Value> FuncConvert(Context ctx, Value[] arguments)
+    {
+        var value = (arguments[0], arguments[1]) switch
+        {
+            (StringValue {Value: "ms" or "milliseconds"}, DurationValue duration) => new RealValue(duration.Value.TotalMilliseconds),
+            (StringValue {Value: "s" or "seconds"}, DurationValue duration) => new RealValue(duration.Value.TotalSeconds),
+            (StringValue {Value: "m" or "minutes"}, DurationValue duration) => new RealValue(duration.Value.TotalMinutes),
+            (StringValue {Value: "h" or "hours"}, DurationValue duration) => new RealValue(duration.Value.TotalHours),
+            _ => throw new RuntimeException($"convert({arguments[0]}, {arguments[1]}): incompatible operands, (string, duration) expected"),
+        };
+        return Task.FromResult<Value>(value);
+    }
+
+    private static Task<Value> FuncRandom(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue min == false) throw new RuntimeException($"random({arguments[0]}): incompatible operand, integer expected");
+        if (arguments[1] is IntegerValue max == false) throw new RuntimeException($"random({arguments[1]}): incompatible operand, integer expected");
+        var number = Rng.NextInt64(min.Value, max.Value);
+        return Task.FromResult<Value>(IntegerValue.Of(number));
     }
 }

@@ -173,6 +173,8 @@ public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         (RealValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value - rv.Value),
+        (TimestampValue lv, DurationValue rv) => new TimestampValue(lv.Value - rv.Value),
+        (DurationValue lv, DurationValue rv) => new DurationValue(lv.Value - rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
         _ => throw new RuntimeException($"the operator '-' cannot be applied to the operands {l} and {r}"),
     });
