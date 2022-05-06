@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
     <!--
       disabled warnings (produced by antlr generated source):
       CS2002 source file specified multiple times;
@@ -27,7 +25,7 @@
     <Antlr4 Include="Antlr4\RedisQL.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>RedisQ.Core.Lang</CustomToolNamespace>
-      <Listener>True</Listener>
+      <Listener>False</Listener>
       <Visitor>True</Visitor>
     </Antlr4>
   </ItemGroup>

@@ -2,6 +2,12 @@
     <PropertyGroup>
         <VersionPrefix>0.2.0</VersionPrefix>
         <VersionSuffix>snapshot</VersionSuffix>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <DefaultTargetFramework>net6.0</DefaultTargetFramework>
     </PropertyGroup>
 
     <PropertyGroup>
