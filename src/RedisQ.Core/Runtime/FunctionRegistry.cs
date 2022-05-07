@@ -18,6 +18,6 @@ public partial class FunctionRegistry
         return function;
     }
 
-    private void Register(FunctionDefinition function) =>
+    public void Register(FunctionDefinition function) =>
         _dict.Add(function.Name, function);
 }

@@ -19,7 +19,7 @@ public static class JsonPath
             JTokenType.Float => new RealValue(token.ToObject<double>()),
             JTokenType.String => new StringValue(token.ToObject<string>() ?? string.Empty),
             JTokenType.Array => new ListValue(token.Select(Convert).ToArray()),
-            null => NullValue.Instance,
+            JTokenType.Null or null => NullValue.Instance,
             _ => new StringValue(token.ToString()),
         };
 }

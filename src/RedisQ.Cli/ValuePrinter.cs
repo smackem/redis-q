@@ -12,29 +12,22 @@ internal class ValuePrinter
     
     public async Task Print(Value value, TextWriter writer, string indent = "")
     {
-        try
+        switch (value)
         {
-            switch (value)
-            {
-                case ListValue list when HasComplexValues(list):
-                    await writer.WriteLineAsync();
-                    await PrintEnumerable(list, writer, indent);
-                    break;
-                case ListValue list:
-                    await writer.WriteLineAsync($"{indent}{JoinList(list, null)}");
-                    break;
-                case EnumerableValue enumerable:
-                    await writer.WriteLineAsync();
-                    await PrintEnumerable(enumerable, writer, indent);
-                    break;
-                default:
-                    await writer.WriteLineAsync($"{indent}{value.AsString()}");
-                    break;
-            }
-        }
-        catch (RuntimeException e)
-        {
-            Console.WriteLine(_options.Verbose ? e : e.Message);
+            case ListValue list when HasComplexValues(list):
+                await writer.WriteLineAsync();
+                await PrintEnumerable(list, writer, indent);
+                break;
+            case ListValue list:
+                await writer.WriteLineAsync($"{indent}{JoinList(list, null)}");
+                break;
+            case EnumerableValue enumerable:
+                await writer.WriteLineAsync();
+                await PrintEnumerable(enumerable, writer, indent);
+                break;
+            default:
+                await writer.WriteLineAsync($"{indent}{value.AsString()}");
+                break;
         }
     }
 
@@ -50,25 +43,19 @@ internal class ValuePrinter
         var count = 0;
         await foreach (var chunk in chunks)
         {
-            try
+            if (chunk.First() is TupleValue)
             {
-                if (chunk.First() is TupleValue)
-                {
-                    PrintTuples(chunk, writer, indent);
-                }
-                else
-                {
-                    foreach (var v in chunk)
-                    {
-                        await Print(v, writer, indent + "  ");
-                    }
-                    await writer.WriteLineAsync();
-                }
+                PrintTuples(chunk, writer, indent);
             }
-            catch (RuntimeException e)
+            else
             {
-                Console.WriteLine(_options.Verbose ? e : e.Message);
+                foreach (var v in chunk)
+                {
+                    await Print(v, writer, indent + "  ");
+                }
+                await writer.WriteLineAsync();
             }
+
             count += chunk.Length;
             if (chunk.Length == chunkSize)
             {

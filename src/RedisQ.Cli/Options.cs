@@ -2,7 +2,7 @@ using CommandLine;
 
 namespace RedisQ.Cli;
 
-public class Options
+public record Options
 {
     [Value(0, MetaName = "connectionString", Default = "localhost:6379", HelpText = "Redis connection string")]
     public string ConnectionString { get; set; } = "localhost:6379";
