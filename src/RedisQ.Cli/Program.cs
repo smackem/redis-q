@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
 using CommandLine;
+using ConsoleTables;
 using RedisQ.Core;
 using RedisQ.Core.Redis;
 using RedisQ.Core.Runtime;
@@ -58,14 +59,38 @@ internal static class Program
                 Console.WriteLine(Environment.CurrentDirectory);
                 break;
             case "ls":
-                var entries = Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory);
-                foreach (var path in entries)
-                {
-                    Console.WriteLine(Path.GetFileName(path));
-                }
+                PrintFiles();
+                break;
+            case "cd" when match.Groups.Count >= 2:
+                Directory.SetCurrentDirectory(
+                    Path.IsPathRooted(match.Groups[2].Value)
+                        ? match.Groups[2].Value
+                        : Path.Combine(Directory.GetCurrentDirectory(), match.Groups[2].Value));
+                Console.WriteLine(Environment.CurrentDirectory);
                 break;
         }
         return false;
+    }
+
+    private static void PrintFiles()
+    {
+        var baseDir = Environment.CurrentDirectory;
+        var files = Directory.GetDirectories(baseDir)
+            .OrderBy(path => path)
+            .Select(path => new
+            {
+                LastModified = "<DIR>",
+                Name = Path.GetFileName(path),
+            }).Concat(
+                Directory.GetFiles(baseDir)
+                    .Select(path => new FileInfo(path))
+                    .OrderByDescending(file => file.LastAccessTime)
+                    .Select(file => new
+                    {
+                        LastModified = file.LastAccessTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        Name = file.Name,
+                    }));
+        ConsoleTable.From(files).Write(Format.Minimal);
     }
 
     private static void PrintBanner(Options options)
