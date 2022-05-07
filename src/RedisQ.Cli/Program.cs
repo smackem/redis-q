@@ -26,7 +26,7 @@ internal static class Program
         CliFunctions.Register(functions);
         var ctx = Context.Root(redis, functions);
         var compiler = new Compiler();
-        var printer = new ValuePrinter(options);
+        var printer = new ValuePrinter(options, PromptContinue);
         IRepl repl = options.Simple
             ? new MonochromeRepl(Terminator)
             : new PrettyRepl(Terminator, compiler);
@@ -46,30 +46,51 @@ internal static class Program
         }
     }
 
+    private static async Task<bool> PromptContinue(string prompt)
+    {
+        await Console.Out.WriteAsync($"{prompt}. Q to abort, any other key to continue: ");
+        var key = Console.ReadKey(intercept: false);
+        await Console.Out.WriteLineAsync();
+        return key.Key == ConsoleKey.Q;
+    }
+
     private static bool HandleShellCommand(string source, out bool handled)
     {
         handled = false;
-        var match = Regex.Match(source, @"#(\w+)\b\s?(.*);?$");
-        if (match.Success == false) return false;
-        handled = true;
-        switch (match.Groups[1].Value)
+        try
         {
-            case "q": return true;
-            case "pwd":
-                Console.WriteLine(Environment.CurrentDirectory);
-                break;
-            case "ls":
-                PrintFiles();
-                break;
-            case "cd" when match.Groups.Count >= 2:
-                Directory.SetCurrentDirectory(
-                    Path.IsPathRooted(match.Groups[2].Value)
-                        ? match.Groups[2].Value
-                        : Path.Combine(Directory.GetCurrentDirectory(), match.Groups[2].Value));
-                Console.WriteLine(Environment.CurrentDirectory);
-                break;
+            var match = Regex.Match(source, @"#(\w+)\b\s?(.*);?$");
+            if (match.Success == false) return false;
+            handled = true;
+            switch (match.Groups[1].Value)
+            {
+                case "q": return true;
+                case "pwd":
+                    Console.WriteLine(Environment.CurrentDirectory);
+                    break;
+                case "ls":
+                    PrintFiles();
+                    break;
+                case "cd" when match.Groups.Count >= 2:
+                    ChangeDirectory(match.Groups[2].Value);
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Report(e, false);
+            handled = true;
         }
         return false;
+    }
+
+    private static void ChangeDirectory(string directory)
+    {
+        Directory.SetCurrentDirectory(
+            Path.IsPathRooted(directory)
+                ? directory
+                : Path.Combine(Directory.GetCurrentDirectory(), directory));
+        Console.WriteLine(Environment.CurrentDirectory);
     }
 
     private static void PrintFiles()
@@ -130,7 +151,7 @@ internal static class Program
         }
         catch (RuntimeException e)
         {
-            // Evaluate translates all exceptions into RuntimeExceptions, so
+            // Evaluate() translates all exceptions into RuntimeExceptions, so
             // we don't need a catch-all clause
             Report(e, options.Verbose);
         }

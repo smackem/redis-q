@@ -7,9 +7,14 @@ namespace RedisQ.Cli;
 internal class ValuePrinter
 {
     private readonly Options _options;
+    private readonly Func<string, Task<bool>>? _continuePrompt;
 
-    public ValuePrinter(Options options) => _options = options;
-    
+    public ValuePrinter(Options options, Func<string, Task<bool>>? continuePrompt)
+    {
+        _options = options;
+        _continuePrompt = continuePrompt;
+    }
+
     public async Task Print(Value value, TextWriter writer, string indent = "")
     {
         switch (value)
@@ -38,8 +43,7 @@ internal class ValuePrinter
 
     private async Task PrintEnumerable(IAsyncEnumerable<Value> values, TextWriter writer, string indent)
     {
-        const int chunkSize = 100;
-        var chunks = values.Chunk(chunkSize);
+        var chunks = values.Chunk(_options.ChunkSize);
         var count = 0;
         await foreach (var chunk in chunks)
         {
@@ -57,23 +61,15 @@ internal class ValuePrinter
             }
 
             count += chunk.Length;
-            if (chunk.Length == chunkSize)
+            if (_continuePrompt != null && chunk.Length == _options.ChunkSize)
             {
-                if (await PromptContinue(writer, $"{indent}Enumerated {count} element(s)")) break;
+                if (await _continuePrompt($"{indent}Enumerated {count} element(s)")) break;
             }
             else
             {
                 await writer.WriteLineAsync($"{indent}Enumerated {count} element(s)");
             }
         }
-    }
-
-    private static async Task<bool> PromptContinue(TextWriter writer, string prompt)
-    {
-        await writer.WriteAsync($"{prompt}. Q to abort, any other key to continue: ");
-        var key = Console.ReadKey(intercept: false);
-        await writer.WriteLineAsync();
-        return key.Key == ConsoleKey.Q;
     }
 
     private static void PrintTuples(IReadOnlyCollection<Value> values, TextWriter writer, string indent)
