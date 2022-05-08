@@ -6,35 +6,38 @@ public partial class FunctionRegistry
 {
     private void RegisterRedisFunctions()
     {
-        Register(new FunctionDefinition("keys", 1, FuncKeys));
-        Register(new FunctionDefinition("scan", 1, FuncKeys));
-        Register(new FunctionDefinition("get", 1, FuncGet));
-        Register(new FunctionDefinition("mget", 1, FuncMGet));
-        Register(new FunctionDefinition("strlen", 1, FuncStrLen));
-        Register(new FunctionDefinition("getrange", 3, FuncGetRange));
-        Register(new FunctionDefinition("exists", 1, FuncExists));
-        Register(new FunctionDefinition("randomkey", 0, FuncRandomKey));
-        Register(new FunctionDefinition("hkeys", 1, FuncHKeys));
-        Register(new FunctionDefinition("hget", 2, FuncHGet));
-        Register(new FunctionDefinition("hgetall", 1, FuncHGetAll));
-        Register(new FunctionDefinition("llen", 1, FuncLLen));
-        Register(new FunctionDefinition("lrange", 3, FuncLRange));
-        Register(new FunctionDefinition("lindex", 2, FuncLIndex));
-        Register(new FunctionDefinition("type", 1, FuncType));
-        Register(new FunctionDefinition("hstrlen", 2, FuncHStrLen));
-        Register(new FunctionDefinition("smembers", 1, FuncSMembers));
-        Register(new FunctionDefinition("scard", 1, FuncSCard));
-        Register(new FunctionDefinition("sdiff", 2, FuncSDiff));
-        Register(new FunctionDefinition("sinter", 2, FuncSInter));
-        Register(new FunctionDefinition("sunion", 2, FuncSUnion));
-        Register(new FunctionDefinition("sismember", 2, FuncSIsMember));
-        Register(new FunctionDefinition("zcard", 1, FuncZCard));
-        Register(new FunctionDefinition("zcount", 3, FuncZCount));
-        Register(new FunctionDefinition("zrange", 3, FuncZRange));
-        Register(new FunctionDefinition("zrangebyscore", 3, FuncZRangeByScore));
-        Register(new FunctionDefinition("zrank", 2, FuncZRank));
-        Register(new FunctionDefinition("zscore", 2, FuncZScore));
-        Register(new FunctionDefinition("zscan", 2, FuncZScan));
+        Register(new FunctionDefinition("KEYS", 1, FuncKeys));
+        Register(new FunctionDefinition("SCAN", 1, FuncKeys));
+        Register(new FunctionDefinition("GET", 1, FuncGet));
+        Register(new FunctionDefinition("MGET", 1, FuncMGet));
+        Register(new FunctionDefinition("STRLEN", 1, FuncStrLen));
+        Register(new FunctionDefinition("GETRANGE", 3, FuncGetRange));
+        Register(new FunctionDefinition("TYPE", 1, FuncType));
+        Register(new FunctionDefinition("EXISTS", 1, FuncExists));
+        Register(new FunctionDefinition("RANDOMKEY", 0, FuncRandomKey));
+        Register(new FunctionDefinition("HKEYS", 1, FuncHKeys));
+        Register(new FunctionDefinition("HGET", 2, FuncHGet));
+        Register(new FunctionDefinition("HGETALL", 1, FuncHGetAll));
+        Register(new FunctionDefinition("HSTRLEN", 2, FuncHStrLen));
+        Register(new FunctionDefinition("HEXISTS", 2, FuncHExists));
+        Register(new FunctionDefinition("HLEN", 1, FuncHLen));
+        Register(new FunctionDefinition("HMGET", 2, FuncHMGet));
+        Register(new FunctionDefinition("LLEN", 1, FuncLLen));
+        Register(new FunctionDefinition("LRANGE", 3, FuncLRange));
+        Register(new FunctionDefinition("LINDEX", 2, FuncLIndex));
+        Register(new FunctionDefinition("SMEMBERS", 1, FuncSMembers));
+        Register(new FunctionDefinition("SCARD", 1, FuncSCard));
+        Register(new FunctionDefinition("SDIFF", 2, FuncSDiff));
+        Register(new FunctionDefinition("SINTER", 2, FuncSInter));
+        Register(new FunctionDefinition("SUNION", 2, FuncSUnion));
+        Register(new FunctionDefinition("SISMEMBER", 2, FuncSIsMember));
+        Register(new FunctionDefinition("ZCARD", 1, FuncZCard));
+        Register(new FunctionDefinition("ZCOUNT", 3, FuncZCount));
+        Register(new FunctionDefinition("ZRANGE", 3, FuncZRange));
+        Register(new FunctionDefinition("ZRANGEBYSCORE", 3, FuncZRangeByScore));
+        Register(new FunctionDefinition("ZRANK", 2, FuncZRank));
+        Register(new FunctionDefinition("ZSCORE", 2, FuncZScore));
+        Register(new FunctionDefinition("ZSCAN", 2, FuncZScan));
     }
 
     private static async Task<Value> FuncExists(Context ctx, Value[] arguments)
@@ -190,6 +193,20 @@ public partial class FunctionRegistry
         return new RedisValue(val);
     }
 
+    private static async Task<Value> FuncHMGet(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hmget({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is ListValue list == false) throw new RuntimeException($"hmget({arguments[1]}): incompatible operand, List expected");
+        var fields = list.Select(v => v switch
+        {
+            IRedisValue k => k.AsRedisValue(),
+            _ => throw new RuntimeException($"hmget(): unexpected value in argument list: {v}. RedisValue expected."),
+        }).ToArray();
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var values = await db.HashGetAsync(key.AsRedisKey(), fields);
+        return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
+    }
+
     private static async Task<Value> FuncMGet(Context ctx, Value[] arguments)
     {
         if (arguments[0] is ListValue list == false) throw new RuntimeException($"mget({arguments[0]}): incompatible operand, List expected");
@@ -247,6 +264,15 @@ public partial class FunctionRegistry
         return new RedisValue(val);
     }
 
+    private static async Task<Value> FuncHExists(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hexists({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue field == false) throw new RuntimeException($"hexists({arguments[1]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var flag = await db.HashExistsAsync(key.AsRedisKey(), field.AsRedisValue());
+        return BoolValue.Of(flag);
+    }
+
     private static async Task<Value> FuncHGetAll(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hgetall({arguments[0]}): incompatible operand, RedisKey expected");
@@ -257,6 +283,14 @@ public partial class FunctionRegistry
             .Cast<Value>()
             .ToArray();
         return new ListValue(tuples);
+    }
+
+    private static async Task<Value> FuncHLen(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hlen({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var length = await db.HashLengthAsync(key.AsRedisKey());
+        return IntegerValue.Of(length);
     }
 
     private static async Task<Value> FuncLLen(Context ctx, Value[] arguments)
