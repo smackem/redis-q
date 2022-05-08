@@ -22,6 +22,7 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("HEXISTS", 2, FuncHExists));
         Register(new FunctionDefinition("HLEN", 1, FuncHLen));
         Register(new FunctionDefinition("HMGET", 2, FuncHMGet));
+        Register(new FunctionDefinition("HSCAN", 2, FuncHScan));
         Register(new FunctionDefinition("LLEN", 1, FuncLLen));
         Register(new FunctionDefinition("LRANGE", 3, FuncLRange));
         Register(new FunctionDefinition("LINDEX", 2, FuncLIndex));
@@ -283,6 +284,26 @@ public partial class FunctionRegistry
             .Cast<Value>()
             .ToArray();
         return new ListValue(tuples);
+    }
+
+    private static async Task<Value> FuncHScan(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hscan({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is IRedisValue pattern == false) throw new RuntimeException($"hscan({arguments[1]}): incompatible operand, RedisValue expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var entries = db.HashScanAsync(key.AsRedisKey(), pattern.AsRedisValue()).ConfigureAwait(false);
+
+        async IAsyncEnumerable<Value> Scan()
+        {
+            await foreach (var entry in entries)
+            {
+                yield return TupleValue.Of(
+                    ("name", new StringValue(entry.Name)),
+                    ("value", new RedisValue(entry.Value)));
+            }
+        }
+
+        return new EnumerableValue(Scan());
     }
 
     private static async Task<Value> FuncHLen(Context ctx, Value[] arguments)
