@@ -26,7 +26,6 @@ public static class CliFunctions
     {
         if (arguments[0] is StringValue path == false) throw new RuntimeException($"save({arguments[0]}): incompatible operand, string expected");
         await using var stream = File.Create(path.Value);
-        var options = new Options();
         if (arguments[1] is RedisValue value)
         {
             await stream.WriteAsync(value.Value);
@@ -35,6 +34,7 @@ public static class CliFunctions
         else
         {
             var writer = new StreamWriter(stream);
+            var options = new Options();
             var printer = new ValuePrinter(options, null);
             await printer.Print(arguments[1], writer);
             await writer.FlushAsync();

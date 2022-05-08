@@ -7,10 +7,13 @@ public partial class FunctionRegistry
     private void RegisterRedisFunctions()
     {
         Register(new FunctionDefinition("keys", 1, FuncKeys));
+        Register(new FunctionDefinition("scan", 1, FuncKeys));
         Register(new FunctionDefinition("get", 1, FuncGet));
         Register(new FunctionDefinition("mget", 1, FuncMGet));
         Register(new FunctionDefinition("strlen", 1, FuncStrLen));
         Register(new FunctionDefinition("getrange", 3, FuncGetRange));
+        Register(new FunctionDefinition("exists", 1, FuncExists));
+        Register(new FunctionDefinition("randomkey", 0, FuncRandomKey));
         Register(new FunctionDefinition("hkeys", 1, FuncHKeys));
         Register(new FunctionDefinition("hget", 2, FuncHGet));
         Register(new FunctionDefinition("hgetall", 1, FuncHGetAll));
@@ -32,6 +35,21 @@ public partial class FunctionRegistry
         Register(new FunctionDefinition("zrank", 2, FuncZRank));
         Register(new FunctionDefinition("zscore", 2, FuncZScore));
         Register(new FunctionDefinition("zscan", 2, FuncZScan));
+    }
+
+    private static async Task<Value> FuncExists(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"exists({arguments[0]}): incompatible operand, RedisKey expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var flag = await db.KeyExistsAsync(key.AsRedisKey());
+        return BoolValue.Of(flag);
+    }
+
+    private static async Task<Value> FuncRandomKey(Context ctx, Value[] arguments)
+    {
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var key = await db.KeyRandomAsync();
+        return new RedisKeyValue(key);
     }
 
     private static async Task<Value> FuncZScan(Context ctx, Value[] arguments)
