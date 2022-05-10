@@ -20,4 +20,7 @@ public record Options
 
     [Option("chunksize", Required = false, Default = 100, HelpText = "The number of rows to print per chunk when displaying lists")]
     public int ChunkSize { get; set; } = 100;
+
+    [Option('c', "caseSensitive", Required = false, Default = false, HelpText = "Function lookup is case-sensitive")]
+    public bool IsCaseSensitive { get; set; }
 }

@@ -22,7 +22,7 @@ internal static class Program
     {
         PrintBanner(options);
         var redis = new RedisConnection(options.ConnectionString);
-        var functions = new FunctionRegistry();
+        var functions = new FunctionRegistry(options.IsCaseSensitive == false);
         CliFunctions.Register(functions);
         var ctx = Context.Root(redis, functions);
         var compiler = new Compiler();

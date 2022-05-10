@@ -2,10 +2,14 @@
 
 public partial class FunctionRegistry
 {
-    private readonly IDictionary<string, FunctionDefinition> _dict = new Dictionary<string, FunctionDefinition>();
+    private readonly IDictionary<string, FunctionDefinition> _dict;
 
-    public FunctionRegistry()
+    public FunctionRegistry(bool ignoreCase)
     {
+        var comparer = ignoreCase
+            ? StringComparer.InvariantCultureIgnoreCase
+            : StringComparer.InvariantCulture;
+        _dict = new Dictionary<string, FunctionDefinition>(comparer);
         RegisterCommonFunctions();
         RegisterRedisFunctions();
     }
