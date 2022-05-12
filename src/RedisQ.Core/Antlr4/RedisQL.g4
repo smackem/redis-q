@@ -79,6 +79,7 @@ relationalOp
     | Gt
     | Ge
     | RegexMatch
+    | NullCoalesce
     ;
 
 rangeExpr
@@ -179,35 +180,36 @@ throwExpr
     : 'throw' expr
     ;
 
-From        : 'from';
-In          : 'in';
-Let         : 'let';
-Where       : 'where';
-Limit       : 'limit';
-Offset      : 'offset';
-Select      : 'select';
-True        : 'true';
-False       : 'false';
-Null        : 'null';
-OrderBy     : 'orderby';
-Descending  : 'descending' | 'desc';
-Ascending   : 'ascending';
-Plus        : '+';
-Minus       : '-';
-Times       : '*';
-Div         : '/';
-Mod         : '%';
-Lt          : '<';
-Le          : '<=';
-Gt          : '>';
-Ge          : '>=';
-Eq          : '==';
-Ne          : '!=';
-RegexMatch  : '~=';
-Or          : '||';
-And         : '&&';
-Not         : '!';
-FromTo      : '..';
+From            : 'from';
+In              : 'in';
+Let             : 'let';
+Where           : 'where';
+Limit           : 'limit';
+Offset          : 'offset';
+Select          : 'select';
+True            : 'true';
+False           : 'false';
+Null            : 'null';
+OrderBy         : 'orderby';
+Descending      : 'descending' | 'desc';
+Ascending       : 'ascending';
+Plus            : '+';
+Minus           : '-';
+Times           : '*';
+Div             : '/';
+Mod             : '%';
+Lt              : '<';
+Le              : '<=';
+Gt              : '>';
+Ge              : '>=';
+Eq              : '==';
+Ne              : '!=';
+RegexMatch      : '~=';
+Or              : '||';
+And             : '&&';
+Not             : '!';
+FromTo          : '..';
+NullCoalesce    : '??';
 
 Ident
     : ([a-z] | [A-Z] | '_') ([a-z] | [A-Z] | DigitOrUnderscore)*

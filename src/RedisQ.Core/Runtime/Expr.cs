@@ -129,6 +129,9 @@ public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())),
     });
 
+public record NullCoalescingExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    l is NullValue ? r : l);
+
 public record LtExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {

@@ -153,4 +153,21 @@ public class RelationalOperatorsTests : TestBase
         var value6 = await compiler.Compile(@"a == """"").Evaluate(ctx);
         Assert.Equal(BoolValue.False, value6);
     }
+
+    [Fact]
+    public async Task NullCoalescingTest()
+    {
+        var value1 = await Interpret(@"null ?? null");
+        Assert.Equal(NullValue.Instance, value1);
+        var value2 = await Interpret(@"null ?? 1");
+        Assert.Equal(IntegerValue.Of(1), value2);
+        var value3 = await Interpret(@"2 ?? 1");
+        Assert.Equal(IntegerValue.Of(2), value3);
+        var value4 = await Interpret(@"2 ?? null");
+        Assert.Equal(IntegerValue.Of(2), value4);
+        var value5 = await Interpret(@"1 + null ?? 2");
+        Assert.Equal(IntegerValue.Of(2), value5);
+        var value6 = await Interpret(@"null ?? 1 + 2");
+        Assert.Equal(IntegerValue.Of(3), value6);
+    }
 }

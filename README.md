@@ -20,14 +20,14 @@ Redis-Q
 
 Assume you create a sample data set in your redis instance consisting of users and sessions, where one user is associated to n sessions:
 ```redis-cli
-set user-1 '{ "name":"bob" }'
-set user-2 '{ "name":"alice" }'
-hset "session-1" user-key "user-1" "status" "open" "startTime" "2022-04-01 22:03:54"
-hset "session-2" user-key "user-1" "status" "closed" "startTime" "2022-03-30 21:03:51"
-hset "session-2" user-key "user-1" "status" "closed" "startTime" "2022-03-29 20:14:02"
-hset "session-3" user-key "user-1" "status" "closed" "startTime" "2022-03-30 21:03:51"
-hset "session-4" user-key "user-2" "status" "closed" "startTime" "2022-03-30 19:22:51"
-hset "session-5" user-key "user-2" "status" "open" "startTime" "2022-04-01 19:22:30"
+SET user-1 '{ "name":"bob" }'
+SET user-2 '{ "name":"alice" }'
+HSET "session-1" user-key "user-1" "status" "open" "startTime" "2022-04-01 22:03:54"
+HSET "session-2" user-key "user-1" "status" "closed" "startTime" "2022-03-30 21:03:51"
+HSET "session-2" user-key "user-1" "status" "closed" "startTime" "2022-03-29 20:14:02"
+HSET "session-3" user-key "user-1" "status" "closed" "startTime" "2022-03-30 21:03:51"
+HSET "session-4" user-key "user-2" "status" "closed" "startTime" "2022-03-30 19:22:51"
+HSET "session-5" user-key "user-2" "status" "open" "startTime" "2022-04-01 19:22:30"
 ```
 
 ```csharp
@@ -463,6 +463,24 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `zrank(key, value) -> int` | ZRANK |
 | `zscore(key, value) -> real` | ZSCORE |
 | `zscan(key, pattern: string) -> enumerable` | ZSCAN |
+
+## More language features
+
+### `throw` Expressions
+
+Just like C#, RedisQL supports the `throw` expression:
+
+```csharp
+(keys("sysinfo-*") |> any()) || throw "no sysinfo found!"
+```
+Any value can be thrown, though it is best practice to throw strings, since the thrown value
+will be presented to the user.
+
+In contrast to c#, throw expressions may appear anywhere, not just in ternary expressions or on the right side of the null-coalescing operator.
+
+So this is possible, though it does not make too much sense:
+
+`1 + throw "why not?"`
 
 ## Build and Run
 
