@@ -8,16 +8,16 @@ using Tokens = RedisQ.Core.Lang.RedisQLLexer;
 
 namespace RedisQ.Cli;
 
-internal interface IRepl
+internal interface ISourcePrompt
 {
     Task<string> ReadSource();
 }
 
-internal class MonochromeRepl : IRepl
+internal class MonochromeSourcePrompt : ISourcePrompt
 {
     private readonly char _terminator;
 
-    public MonochromeRepl(char terminator) => _terminator = terminator;
+    public MonochromeSourcePrompt(char terminator) => _terminator = terminator;
     
     public Task<string> ReadSource()
     {
@@ -38,11 +38,11 @@ internal class MonochromeRepl : IRepl
     }
 }
 
-internal class PrettyRepl : IRepl
+internal class PrettySourcePrompt : ISourcePrompt
 {
     private readonly IPrompt _prompt;
 
-    public PrettyRepl(char terminator, Compiler compiler)
+    public PrettySourcePrompt(char terminator, Compiler compiler)
     {
         var promptStr = new FormattedString("> ", new FormatSpan(0, 2, AnsiColor.BrightBlack));
         var historyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".redis-q-history");
