@@ -4,7 +4,7 @@
 
 A REPL to run queries against a Redis database using a language similar to C#'s `from` clause.
 
-![image](doc/screenshot-intro-2.png)
+![image](doc/screenshot-intro-3.png)
 
 ## Features
 
