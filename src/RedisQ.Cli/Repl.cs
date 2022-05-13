@@ -36,9 +36,9 @@ public class Repl
             if (string.IsNullOrEmpty(source)) continue;
             if (HandleShellCommand(source, out var handled)) return;
             if (handled) continue;
-            var value = await Interpret(compiler, source, ctx, _options);
+            var value = await Interpret(compiler, source, ctx);
             if (value == null) continue;
-            await Print(printer, Console.Out, value, _options);
+            await Print(printer, Console.Out, value);
             // do not store enumerable: it does not make sense because it has already been depleted by Print
             ctx.Bind("it", value is EnumerableValue and not ListValue
                 ? NullValue.Instance
@@ -51,10 +51,10 @@ public class Repl
         await Console.Out.WriteAsync($"{prompt}. Q to abort, any other key to continue: ");
         var key = Console.ReadKey(intercept: false);
         await Console.Out.WriteLineAsync();
-        return key.Key == ConsoleKey.Q;
+        return key.Key != ConsoleKey.Q;
     }
 
-    private static bool HandleShellCommand(string source, out bool handled)
+    private bool HandleShellCommand(string source, out bool handled)
     {
         handled = false;
         try
@@ -74,7 +74,7 @@ public class Repl
                 case "cd" when match.Groups.Count >= 2:
                     ChangeDirectory(match.Groups[2].Value);
                     break;
-                case "?" or "help":
+                case "h" or "help":
                     PrintHelp();
                     break;
             }
@@ -87,9 +87,18 @@ public class Repl
         return false;
     }
 
-    private static void PrintHelp()
+    private void PrintHelp()
     {
-        throw new NotImplementedException();
+        var functions = _functions
+            .Select(f =>
+                new
+                {
+                    FunctionName = f.Name,
+                    Signature = f.HelpText,
+                })
+            .OrderBy(f => f.FunctionName, StringComparer.Ordinal);
+
+        ConsoleTable.From(functions).Write(Format.Minimal);
     }
 
     private static void ChangeDirectory(string directory)
@@ -134,7 +143,7 @@ public class Repl
         Console.WriteLine();
     }
 
-    private static async Task Print(ValuePrinter printer, TextWriter writer, Value value, Options options)
+    private async Task Print(ValuePrinter printer, TextWriter writer, Value value)
     {
         try
         {
@@ -142,11 +151,11 @@ public class Repl
         }
         catch (Exception e)
         {
-            Report(e, options.Verbose);
+            Report(e, _options.Verbose);
         }
     }
 
-    private static async Task<Value?> Interpret(Compiler compiler, string source, Context ctx, Options options)
+    private async Task<Value?> Interpret(Compiler compiler, string source, Context ctx)
     {
         try
         {
@@ -155,13 +164,13 @@ public class Repl
         }
         catch (CompilationException e)
         {
-            Report(e, options.Verbose);
+            Report(e, _options.Verbose);
         }
         catch (RuntimeException e)
         {
             // Evaluate() translates all exceptions into RuntimeExceptions, so
             // we don't need a catch-all clause
-            Report(e, options.Verbose);
+            Report(e, _options.Verbose);
         }
         return null;
     }

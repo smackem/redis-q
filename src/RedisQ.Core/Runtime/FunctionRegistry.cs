@@ -1,6 +1,8 @@
-﻿namespace RedisQ.Core.Runtime;
+﻿using System.Collections;
 
-public partial class FunctionRegistry
+namespace RedisQ.Core.Runtime;
+
+public partial class FunctionRegistry : IEnumerable<FunctionDefinition>
 {
     private readonly IDictionary<string, FunctionDefinition> _dict;
 
@@ -24,4 +26,10 @@ public partial class FunctionRegistry
 
     public void Register(FunctionDefinition function) =>
         _dict.Add(function.Name, function);
+
+    public IEnumerator<FunctionDefinition> GetEnumerator() =>
+        _dict.Values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() =>
+        _dict.Values.GetEnumerator();
 }

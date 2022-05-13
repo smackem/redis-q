@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -8,34 +9,35 @@ public partial class FunctionRegistry
 {
     private static readonly Random Rng = new();
 
+    [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
     private void RegisterCommonFunctions()
     {
-        Register(new FunctionDefinition("size", 1, FuncSize));
-        Register(new FunctionDefinition("count", 1, FuncCount));
-        Register(new FunctionDefinition("int", 1, FuncInt));
-        Register(new FunctionDefinition("real", 1, FuncReal));
-        Register(new FunctionDefinition("bool", 1, FuncBool));
-        Register(new FunctionDefinition("string", 1, FuncString));
-        Register(new FunctionDefinition("lower", 1, FuncLower));
-        Register(new FunctionDefinition("upper", 1, FuncUpper));
-        Register(new FunctionDefinition("collect", 1, FuncCollect));
-        Register(new FunctionDefinition("join", 2, FuncJoin));
-        Register(new FunctionDefinition("distinct", 1, FuncDistinct));
-        Register(new FunctionDefinition("sum", 1, FuncSum));
-        Register(new FunctionDefinition("avg", 1, FuncAvg));
-        Register(new FunctionDefinition("min", 1, FuncMin));
-        Register(new FunctionDefinition("max", 1, FuncMax));
-        Register(new FunctionDefinition("reverse", 1, FuncReverse));
-        Register(new FunctionDefinition("sort", 1, FuncSort));
-        Register(new FunctionDefinition("match", 2, FuncMatch));
-        Register(new FunctionDefinition("first", 1, FuncFirst));
-        Register(new FunctionDefinition("any", 1, FuncAny));
-        Register(new FunctionDefinition("enumerate", 1, FuncEnumerate));
-        Register(new FunctionDefinition("timestamp", 2, FuncTimestamp));
-        Register(new FunctionDefinition("deconstruct", 1, FuncDeconstruct));
-        Register(new FunctionDefinition("duration", 2, FuncDuration));
-        Register(new FunctionDefinition("convert", 2, FuncConvert));
-        Register(new FunctionDefinition("random", 2, FuncRandom));
+        Register(new("size", 1, FuncSize, "(list or string) -> int"));
+        Register(new("count", 1, FuncCount, "(enumerable) -> int"));
+        Register(new("int", 1, FuncInt, "(any) -> int or null"));
+        Register(new("real", 1, FuncReal, "(any) -> real or null"));
+        Register(new("bool", 1, FuncBool, "(any) -> bool or null"));
+        Register(new("string", 1, FuncString, "(any) -> string"));
+        Register(new("lower", 1, FuncLower, "(string) -> string"));
+        Register(new("upper", 1, FuncUpper, "(string) -> string"));
+        Register(new("collect", 1, FuncCollect, "(enumerable) -> list"));
+        Register(new("join", 2, FuncJoin, "(separator: string, enumerable) -> string"));
+        Register(new("distinct", 1, FuncDistinct, "(enumerable) -> enumerable"));
+        Register(new("sum", 1, FuncSum, "(enumerable) -> number or null"));
+        Register(new("avg", 1, FuncAvg, "(enumerable) -> number or null"));
+        Register(new("min", 1, FuncMin, "(enumerable) -> number or null"));
+        Register(new("max", 1, FuncMax, "(enumerable) -> number or null"));
+        Register(new("reverse", 1, FuncReverse, "(enumerable) -> enumerable"));
+        Register(new("sort", 1, FuncSort, "(enumerable) -> enumerable"));
+        Register(new("match", 2, FuncMatch, "(input: string, pattern: string) -> list of matched groups"));
+        Register(new("first", 1, FuncFirst, "(enumerable) -> any"));
+        Register(new("any", 1, FuncAny, "(enumerable) -> bool"));
+        Register(new("enumerate", 1, FuncEnumerate, "(list) -> enumerable"));
+        Register(new("timestamp", 2, FuncTimestamp, "(input: string, format: string) -> timestamp"));
+        Register(new("deconstruct", 1, FuncDeconstruct, "(timestamp) -> tuple of (year, month, day, hour, minute, second, millisecond)"));
+        Register(new("duration", 2, FuncDuration, "(input: string, format: string) -> duration"));
+        Register(new("convert", 2, FuncConvert, "(unit: 'h' or 'm' or 's' or 'ms', duration) -> real"));
+        Register(new("random", 2, FuncRandom, "(minInclusive: int, maxExclusive: int) -> int"));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>

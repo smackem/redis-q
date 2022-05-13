@@ -63,7 +63,7 @@ internal class ValuePrinter
             count += chunk.Length;
             if (_continuePrompt != null && chunk.Length == _options.ChunkSize)
             {
-                if (await _continuePrompt($"{indent}Enumerated {count} element(s)")) break;
+                if (await _continuePrompt($"{indent}Enumerated {count} element(s)") == false) break;
             }
             else
             {

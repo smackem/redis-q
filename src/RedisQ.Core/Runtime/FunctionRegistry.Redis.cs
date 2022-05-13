@@ -10,42 +10,42 @@ public partial class FunctionRegistry
     [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
     private void RegisterRedisFunctions()
     {
-        Register(new("KEYS", 1, FuncKeys));
-        Register(new("SCAN", 1, FuncKeys));
-        Register(new("GET", 1, FuncGet));
-        Register(new("MGET", 1, FuncMGet));
-        Register(new("STRLEN", 1, FuncStrLen));
-        Register(new("GETRANGE", 3, FuncGetRange));
-        Register(new("TYPE", 1, FuncType));
-        Register(new("EXISTS", 1, FuncExists));
-        Register(new("RANDOMKEY", 0, FuncRandomKey));
-        Register(new("HKEYS", 1, FuncHKeys));
-        Register(new("HGET", 2, FuncHGet));
-        Register(new("HGETALL", 1, FuncHGetAll));
-        Register(new("HSTRLEN", 2, FuncHStrLen));
-        Register(new("HEXISTS", 2, FuncHExists));
-        Register(new("HLEN", 1, FuncHLen));
-        Register(new("HMGET", 2, FuncHMGet));
-        Register(new("HSCAN", 2, FuncHScan));
-        Register(new("HVALS", 1, FuncHVals));
-        Register(new("LLEN", 1, FuncLLen));
-        Register(new("LRANGE", 3, FuncLRange));
-        Register(new("LINDEX", 2, FuncLIndex));
-        Register(new("SMEMBERS", 1, FuncSMembers));
-        Register(new("SCARD", 1, FuncSCard));
-        Register(new("SDIFF", 2, FuncSDiff));
-        Register(new("SINTER", 2, FuncSInter));
-        Register(new("SUNION", 2, FuncSUnion));
-        Register(new("SISMEMBER", 2, FuncSIsMember));
-        Register(new("SSCAN", 2, FuncSScan));
-        Register(new("SRANDOMMEMBER", 1, FuncSRandomMember));
-        Register(new("ZCARD", 1, FuncZCard));
-        Register(new("ZCOUNT", 3, FuncZCount));
-        Register(new("ZRANGE", 3, FuncZRange));
-        Register(new("ZRANGEBYSCORE", 3, FuncZRangeByScore));
-        Register(new("ZRANK", 2, FuncZRank));
-        Register(new("ZSCORE", 2, FuncZScore));
-        Register(new("ZSCAN", 2, FuncZScan));
+        Register(new("KEYS", 1, FuncKeys, "(pattern) -> enumerable"));
+        Register(new("SCAN", 1, FuncKeys, "(pattern) -> enumerable"));
+        Register(new("GET", 1, FuncGet, "(key) -> value"));
+        Register(new("MGET", 1, FuncMGet, "(list of keys) -> list of values"));
+        Register(new("STRLEN", 1, FuncStrLen, "(key) -> int"));
+        Register(new("GETRANGE", 3, FuncGetRange, "(key, start: int, end: int) -> value"));
+        Register(new("TYPE", 1, FuncType, "(key) -> string"));
+        Register(new("EXISTS", 1, FuncExists, "(key) -> bool"));
+        Register(new("RANDOMKEY", 0, FuncRandomKey, "() -> key"));
+        Register(new("HKEYS", 1, FuncHKeys, "(key) -> list of keys"));
+        Register(new("HGET", 2, FuncHGet, "(key, field: value) -> value"));
+        Register(new("HGETALL", 1, FuncHGetAll, "(key) -> list of tuple(name: string, value: value)"));
+        Register(new("HSTRLEN", 2, FuncHStrLen, "(key, field: value) -> int"));
+        Register(new("HEXISTS", 2, FuncHExists, "(key, field: value) -> bool"));
+        Register(new("HLEN", 1, FuncHLen, "(key) -> int"));
+        Register(new("HMGET", 2, FuncHMGet, "(key, list of field: value) -> list of value"));
+        Register(new("HSCAN", 2, FuncHScan, "(key, pattern: value) -> enumerable"));
+        Register(new("HVALS", 1, FuncHVals, "(key) -> list of value"));
+        Register(new("LLEN", 1, FuncLLen, "(key) -> int"));
+        Register(new("LRANGE", 3, FuncLRange, "(key, start: int, end: int) -> list"));
+        Register(new("LINDEX", 2, FuncLIndex, "(key, index: int) -> value"));
+        Register(new("SMEMBERS", 1, FuncSMembers, "(key) -> list of value"));
+        Register(new("SCARD", 1, FuncSCard, "(key) -> int"));
+        Register(new("SDIFF", 2, FuncSDiff, "(key, key) -> list of value"));
+        Register(new("SINTER", 2, FuncSInter, "(key, key) -> list of value"));
+        Register(new("SUNION", 2, FuncSUnion, "(key, key) -> list of value"));
+        Register(new("SISMEMBER", 2, FuncSIsMember, "(key, value) -> bool"));
+        Register(new("SSCAN", 2, FuncSScan, "(key, pattern: value) -> enumerable"));
+        Register(new("SRANDOMMEMBER", 1, FuncSRandomMember, "(key) -> value"));
+        Register(new("ZCARD", 1, FuncZCard, "(key) -> int"));
+        Register(new("ZCOUNT", 3, FuncZCount, "(key, minScore: real, maxScore: real) -> int"));
+        Register(new("ZRANGE", 3, FuncZRange, "(key, start: int, end: int) -> list of value"));
+        Register(new("ZRANGEBYSCORE", 3, FuncZRangeByScore, "(key, minScore: real, maxScore: real) -> list of value"));
+        Register(new("ZRANK", 2, FuncZRank, "(key, value) -> int"));
+        Register(new("ZSCORE", 2, FuncZScore, "(key, value) -> real"));
+        Register(new("ZSCAN", 2, FuncZScan, "(key, pattern: value) -> enumerable"));
     }
 
     private static async Task<Value> FuncExists(Context ctx, Value[] arguments)

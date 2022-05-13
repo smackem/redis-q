@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using RedisQ.Core.Runtime;
 using TextCopy;
 
@@ -5,15 +6,16 @@ namespace RedisQ.Cli;
 
 public static class CliFunctions
 {
+    [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
     public static void Register(FunctionRegistry registry)
     {
-        registry.Register(new FunctionDefinition("clip", 1, FuncClip));
-        registry.Register(new FunctionDefinition("save", 2, FuncSave));
+        registry.Register(new("clip", 1, FuncClip, "(any) -> dummy: string"));
+        registry.Register(new("save", 2, FuncSave, "(path: string, value: any) -> dummy: string"));
     }
 
     private static async Task<Value> FuncClip(Context ctx, Value[] arguments)
     {
-        var options = new Options();
+        var options = new Options(); // override options
         var printer = new ValuePrinter(options, null);
         await using var writer = new StringWriter();
         await printer.Print(arguments[0], writer);
@@ -34,7 +36,7 @@ public static class CliFunctions
         else
         {
             var writer = new StreamWriter(stream);
-            var options = new Options();
+            var options = new Options(); // override options
             var printer = new ValuePrinter(options, null);
             await printer.Print(arguments[1], writer);
             await writer.FlushAsync();
