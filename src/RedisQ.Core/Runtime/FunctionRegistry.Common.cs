@@ -40,8 +40,10 @@ public partial class FunctionRegistry
         Register(new("random", 2, FuncRandom, "(minInclusive: int, maxExclusive: int) -> int"));
         Register(new("pow", 2, FuncPow, "(base: real, exponent: real) -> real"));
         Register(new("exp", 1, FuncExp, "(x: real) -> real"));
-        Register(new("abs", 1, FuncAbs, "(x: number) -> number"));
-        Register(new("sign", 1, FuncSign, "(x: real) -> int"));
+        Register(new("abs", 1, FuncAbs, "(number) -> number"));
+        Register(new("sign", 1, FuncSign, "(number) -> int"));
+        Register(new("hypot", 2, FuncHypot, "(real, real) -> real"));
+        Register(new("sqrt", 1, FuncSqrt, "(real) -> real"));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -374,5 +376,19 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRealValue a == false) throw new RuntimeException($"sign({arguments[0]}): incompatible operand, number expected");
         return Task.FromResult<Value>(IntegerValue.Of(Math.Sign(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncHypot(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"hypot({arguments[0]}): incompatible operand, number expected");
+        if (arguments[1] is IRealValue b == false) throw new RuntimeException($"hypot({arguments[1]}): incompatible operand, number expected");
+        var (ra, rb) = (a.AsRealValue(), b.AsRealValue());
+        return Task.FromResult<Value>(new RealValue(Math.Sqrt(ra * ra + rb * rb)));
+    }
+
+    private static Task<Value> FuncSqrt(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"sqrt({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Sqrt(a.AsRealValue())));
     }
 }
