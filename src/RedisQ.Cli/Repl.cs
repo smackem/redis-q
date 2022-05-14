@@ -157,10 +157,15 @@ public class Repl
 
     private async Task<Value?> Interpret(Compiler compiler, string source, Context ctx)
     {
+        var timeSpan = TimeSpan.FromMilliseconds(_options.EvaluationTimeout);
         try
         {
             var expr = compiler.Compile(source);
-            return await expr.Evaluate(ctx);
+            return await expr.Evaluate(ctx).WaitAsync(timeSpan);
+        }
+        catch (OperationCanceledException e)
+        {
+            Report(e, _options.Verbose);
         }
         catch (CompilationException e)
         {

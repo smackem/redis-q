@@ -23,4 +23,7 @@ public record Options
 
     [Option('c', "case-sensitive", Required = false, Default = false, HelpText = "Function lookup is case-sensitive")]
     public bool IsCaseSensitive { get; set; }
+
+    [Option('t', "timeout", Required = false, Default = 1000, HelpText = "The maximum duration of an evaluation in milliseconds")]
+    public int EvaluationTimeout { get; set; }
 }

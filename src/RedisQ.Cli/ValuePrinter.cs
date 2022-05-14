@@ -45,7 +45,8 @@ internal class ValuePrinter
     {
         var chunks = values.Chunk(_options.ChunkSize);
         var count = 0;
-        await foreach (var chunk in chunks)
+        var cts = new CancellationTokenSource(_options.EvaluationTimeout);
+        await foreach (var chunk in chunks.WithCancellation(cts.Token))
         {
             if (chunk.First() is TupleValue)
             {
