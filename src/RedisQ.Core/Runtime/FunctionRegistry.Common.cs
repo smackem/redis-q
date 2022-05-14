@@ -38,6 +38,10 @@ public partial class FunctionRegistry
         Register(new("duration", 2, FuncDuration, "(input: string, format: string) -> duration"));
         Register(new("convert", 2, FuncConvert, "(unit: 'h' or 'm' or 's' or 'ms', duration) -> real"));
         Register(new("random", 2, FuncRandom, "(minInclusive: int, maxExclusive: int) -> int"));
+        Register(new("pow", 2, FuncPow, "(base: real, exponent: real) -> real"));
+        Register(new("exp", 1, FuncExp, "(x: real) -> real"));
+        Register(new("abs", 1, FuncAbs, "(x: number) -> number"));
+        Register(new("sign", 1, FuncSign, "(x: real) -> int"));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -343,5 +347,32 @@ public partial class FunctionRegistry
         if (arguments[1] is IntegerValue max == false) throw new RuntimeException($"random({arguments[1]}): incompatible operand, integer expected");
         var number = Rng.NextInt64(min.Value, max.Value);
         return Task.FromResult<Value>(IntegerValue.Of(number));
+    }
+
+    private static Task<Value> FuncPow(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue b == false) throw new RuntimeException($"pow({arguments[0]}): incompatible operand, number expected");
+        if (arguments[1] is IRealValue e == false) throw new RuntimeException($"pow({arguments[1]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Pow(b.AsRealValue(), e.AsRealValue())));
+    }
+
+    private static Task<Value> FuncExp(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"exp({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Exp(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncAbs(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(arguments[0] switch
+        {
+            IntegerValue n => IntegerValue.Of(Math.Abs(n.Value)),
+            RealValue r => new RealValue(Math.Abs(r.Value)),
+            _ => throw new RuntimeException($"abs({arguments[0]}): incompatible operand, number expected"),
+        });
+
+    private static Task<Value> FuncSign(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"sign({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(IntegerValue.Of(Math.Sign(a.AsRealValue())));
     }
 }
