@@ -31,11 +31,11 @@ HSET "session-5" user-key "user-2" "status" "open" "startTime" "2022-04-01 19:22
 ```
 
 ```csharp
-from userKey in keys("user-*")
-from sessionKey in keys("session-*") 
-where hget(sessionKey, "user-key") == userKey 
-   && hget(sessionKey, "status") == "open"
-let sessionStart = hget(sessionKey, "startTime")
+from userKey in SCAN("user-*")
+from sessionKey in SCAN("session-*") 
+where HGET(sessionKey, "user-key") == userKey 
+   && HGET(sessionKey, "status") == "open"
+let sessionStart = HGET(sessionKey, "startTime")
 select (user: userKey, loggedInSince: sessionStart);
 ```
 Response:
@@ -47,15 +47,15 @@ user-1  2022-04-01 22:03:54
 ```
 
 ```csharp
-from userKey in keys("user-*")
+from userKey in SCAN("user-*")
 let openSessionCount = 
-    from sessionKey in keys("session-*") 
-    where hget(sessionKey, "user-key") == userKey 
-    where hget(sessionKey, "status") == "open" 
+    from sessionKey in SCAN("session-*") 
+    where HGET(sessionKey, "user-key") == userKey 
+    where HGET(sessionKey, "status") == "open" 
     select sessionKey 
     |> count()
 where openSessionCount > 0
-let userJson = get(userKey) 
+let userJson = GET(userKey) 
 select (key: userKey, name: userJson[".name"]);
 ```
 Response:
@@ -80,6 +80,7 @@ RedisQL adds the following language features not supported by C#:
 | List expressions | `[1, true, 'string']` |
 | Regex operator | `"abc" ~= "\w{3}" // true` |
 | Top-level `let` statements | `let x = 1` |
+| The `limit` clause | `from ... limit 10 offset 1 ...` |
 
 ### Basics and operators
 RedisQL supports the following operators, basically a subset of the common operators found in C, C# or Java:
@@ -98,6 +99,7 @@ RedisQL supports the following operators, basically a subset of the common opera
 | `a * b` | Multiply numbers a and b |
 | `a / b` | Divide number a by number b |
 | `a % b` | Modulo of numbers a and b |
+| `a ?? b` | a if not null, otherwise b |
 
 Automatic type conversion: integer is automatically converted to real in expressions like `1 + 2.5`.
 When operators require a string-like type, RedisQL converts operands implicitly to string.
@@ -242,6 +244,8 @@ RedisQL supports the following scalar data types:
 | real | 64 bit floating point | `12.5` or `1_125.000_001` |
 | string | unicode string of arbitrary length | `"hello"` or `'world'` |
 | bool | boolean value | `true` or `false` |
+| timestamp | date and time | see below |
+| duration | a time span | see below |
 
 Redis values are implicitly converted to the type required by the operation.
 Redis keys are implictly convertible to string.
@@ -339,8 +343,8 @@ The `null` literal signals the absence of a value.
 
 ```csharp
 let george =
-    from k in keys('user-*')
-    where get(k)[".name"] == "george"
+    from k in KEYS('user-*')
+    where GET(k)[".name"] == "george"
     select k
     |> first();
 ```
@@ -369,6 +373,36 @@ Aggregation function like `sum` or `avg` ignore `null` values in enumerables.
 
 `null` converted to bool is `false`.
 
+### Timestamp and duration values (since v0.2.0)
+
+The function `timestamp("2022-05-01 12:04:55.123", "yyyy-MM-dd HH:mm:ss.fff")` creates a value of type `timestamp`.
+`deconstruct(ts)` returns a tuple that allows access to year, month, day etc:
+```
+> timestamp("2022-05-01 12:04:55.123", "yyyy-MM-dd HH:mm:ss.fff");
+2022-05-01 12:04:55 +02
+> deconstruct(it);
+(year: 2022, month: 5, day: 1, hour: 12, minute: 4, second: 55, millisecond: 123)
+```
+
+The function `duration(1, 's')` can be used to create duration values:
+```
+> duration(1, 's');
+0:00:01
+> duration(10, 'ms');
+0:00:00.01
+```
+
+Use `convert(unit, value)` to convert durations into total hours, seconds or milliseconds:
+```
+> duration(10, "ms");                                             
+0:00:00.01
+> convert("ms", it);
+10
+```
+
+Additive operations work on timestamp and duration values: You can add durations to timestamps and to other durations.
+
+
 ## JSON Support
 redis-q supports querying JSON objects using JSONPath (see https://github.com/json-path/JsonPath) and the subscript syntax for strings:
 
@@ -392,7 +426,7 @@ Bind values anytime in the REPL's top most scope using the `let` statement:
 [1, 2, 3]
 > let products = from n in numbers select n * multiplier |> collect();
 [100, 200, 300]
-> let userNames = from k in keys("user-*") select get(k)[".name"] |> collect();    
+> let userNames = from k in SCAN("user-*") select GET(k)[".name"] |> collect();    
 [alice, bob]
 ```
 The last evaluation's result can be recalled using the identifier `it`:
@@ -407,9 +441,22 @@ The last evaluation's result can be recalled using the identifier `it`:
 
 It's best to bind top-level values to discrete lists instead of enumerations so the value can be iterated multiple times using the `it` identifier. This is why the `collect()` function is used in the preceding samples.
 
-## Built-in Functions
+## REPL shell commands (since v0.2.0)
 
-### Common Functions
+| Command | Description |
+| --- | --- |
+| `#q;` | Quits the REPL |
+| `#h;` | Displays all available functions |
+| `#pwd;` | Displays the current directory |
+| `#cd <DIR>;` | Changes to the directory `<DIR>` |
+| `#ls;` | Lists all file system entries in the current directory |
+| `#dump;` | Prints all top-level bindings |
+
+## Built-in functions
+
+Note that from v0.2.0 on, function names are case-insensitive. Redis functions are defined in upper-case and common functions in lower case. Case sensitivity can be enforced with a new command line parameter `-c`.
+
+### Common functions
 | Signature | Description |
 | --- | --- |
 | `size(list\|string) -> int`| Returns the number of elements in the list or string |
@@ -433,36 +480,49 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `reverse(enumerable) -> enumerable`| Yields all values in the enumerable in reverse order |
 | `sort(enumerable) -> enumerable`| Yields all values in the enumerable sorted, with strings > numbers |
 
+v0.2.0 adds a lot of functions, see the inline help by entering `#h;` in the REPL for more.
+Highlights include functions to create and convert `timestamp` and `duration` values, standard math functions and `clip` (copy to clipboard) as well as `save` (save value to file).
+
 ### Redis functions
 
-| Signature | Matching Redis COMMAND, see https://redis.io/commands/ for reference |
+| Redis Command, see https://redis.io/commands/ | Signature |
 | --- | --- |
-| `keys(pattern) -> enumerable` | SCAN |
-| `get(key) -> value` | GET |
-| `mget(list) -> list` | MGET |
-| `strlen(key) -> int` | STRLEN |
-| `getrange(key, start, stop) -> value` | GETRANGE |
-| `hkeys(key) -> list` | HKEYS |
-| `hget(key, field: string) -> value` | HGET |
-| `hgetall(key) -> list of tuples` | HGETALL |
-| `llen(key) -> int` | LLEN |
-| `lrange(key, start, stop) -> list` | LRANGE |
-| `lindex(key, int) -> value` | LINDEX |
-| `type(key) -> string` | TYPE |
-| `hstrlen(key, field: string) -> int` | HSTRLEN |
-| `smembers(key) -> list` | SMEMBERS |
-| `scard(key) -> int` | SCARD |
-| `sdiff(key, key) -> list` | SDIFF |
-| `sinter(key, key) -> list` | SINTER |
-| `sunion(key, key) -> list` | SUNION |
-| `sismember(key, value) -> bool` | SISMEMBER |
-| `zcard(key) -> int` | ZCARD |
-| `zcount(key, min: real, max: real)` | ZCOUNT |
-| `zrange(key, start: int, stop: int) -> list` | ZRANGE |
-| `zrangebyscore(key, min: real, max: real)` -> list | ZRANGEBYSCORE |
-| `zrank(key, value) -> int` | ZRANK |
-| `zscore(key, value) -> real` | ZSCORE |
-| `zscan(key, pattern: string) -> enumerable` | ZSCAN |
+| EXISTS        | (key) -> bool                                          |
+| GET           | (key) -> value                                         |
+| GETRANGE      | (key, start: int, end: int) -> value                   |
+| HEXISTS       | (key, field: value) -> bool                            |
+| HGET          | (key, field: value) -> value                           |
+| HGETALL       | (key) -> list of tuple(name: string, value: value)     |
+| HKEYS         | (key) -> list of keys                                  |
+| HLEN          | (key) -> int                                           |
+| HMGET         | (key, list of field: value) -> list of value           |
+| HSCAN         | (key, pattern: value) -> enumerable                    |
+| HSTRLEN       | (key, field: value) -> int                             |
+| HVALS         | (key) -> list of value                                 |
+| KEYS          | (pattern) -> enumerable                                |
+| LINDEX        | (key, index: int) -> value                             |
+| LLEN          | (key) -> int                                           |
+| LRANGE        | (key, start: int, end: int) -> list                    |
+| MGET          | (list of keys) -> list of values                       |
+| RANDOMKEY     | () -> key                                              |
+| SCAN          | (pattern) -> enumerable                                |
+| SCARD         | (key) -> int                                           |
+| SDIFF         | (key, key) -> list of value                            |
+| SINTER        | (key, key) -> list of value                            |
+| SISMEMBER     | (key, value) -> bool                                   |
+| SMEMBERS      | (key) -> list of value                                 |
+| SRANDOMMEMBER | (key) -> value                                         |
+| SSCAN         | (key, pattern: value) -> enumerable                    |
+| STRLEN        | (key) -> int                                           |
+| SUNION        | (key, key) -> list of value                            |
+| TYPE          | (key) -> string                                        |
+| ZCARD         | (key) -> int                                           |
+| ZCOUNT        | (key, minScore: real, maxScore: real) -> int           |
+| ZRANGE        | (key, start: int, end: int) -> list of value           |
+| ZRANGEBYSCORE | (key, minScore: real, maxScore: real) -> list of value |
+| ZRANK         | (key, value) -> int                                    |
+| ZSCAN         | (key, pattern: value) -> enumerable                    |
+| ZSCORE        | (key, value) -> real                                   |
 
 ## More language features
 

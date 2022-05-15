@@ -34,6 +34,7 @@ public partial class FunctionRegistry
         Register(new("any", 1, FuncAny, "(enumerable) -> bool"));
         Register(new("enumerate", 1, FuncEnumerate, "(list) -> enumerable"));
         Register(new("timestamp", 2, FuncTimestamp, "(input: string, format: string) -> timestamp"));
+        Register(new("now", 0, FuncNow, "() -> timestamp"));
         Register(new("deconstruct", 1, FuncDeconstruct, "(timestamp) -> tuple of (year, month, day, hour, minute, second, millisecond)"));
         Register(new("duration", 2, FuncDuration, "(input: string, format: string) -> duration"));
         Register(new("convert", 2, FuncConvert, "(unit: 'h' or 'm' or 's' or 'ms', duration) -> real"));
@@ -454,4 +455,7 @@ public partial class FunctionRegistry
         if (arguments[0] is IRealValue a == false) throw new RuntimeException($"atan({arguments[0]}): incompatible operand, number expected");
         return Task.FromResult<Value>(new RealValue(Math.Atan(a.AsRealValue())));
     }
+
+    private static Task<Value> FuncNow(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(new TimestampValue(DateTimeOffset.Now));
 }
