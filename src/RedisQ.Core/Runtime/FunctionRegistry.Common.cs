@@ -138,7 +138,7 @@ public partial class FunctionRegistry
 
         var sb = new StringBuilder();
         var count = 0;
-        
+
         await foreach (var value in coll.ConfigureAwait(false))
         {
             if (count >= 1000) break;

@@ -12,19 +12,20 @@ public class Repl
     private const char Terminator = ';';
     private readonly FunctionRegistry _functions;
     private readonly Options _options;
+    private readonly Context _ctx;
 
     public Repl(Options options)
     {
         _options = options;
         _functions = new FunctionRegistry(options.IsCaseSensitive == false);
         CliFunctions.Register(_functions);
+        var redis = new RedisConnection(_options.ConnectionString);
+        _ctx = Context.Root(redis, _functions);
     }
 
     public async Task Run()
     {
         PrintBanner(_options);
-        var redis = new RedisConnection(_options.ConnectionString);
-        var ctx = Context.Root(redis, _functions);
         var compiler = new Compiler();
         var printer = new ValuePrinter(_options, PromptContinue);
         ISourcePrompt sourcePrompt = _options.Simple
@@ -36,11 +37,11 @@ public class Repl
             if (string.IsNullOrEmpty(source)) continue;
             if (HandleShellCommand(source, out var handled)) return;
             if (handled) continue;
-            var value = await Interpret(compiler, source, ctx);
+            var value = await Interpret(compiler, source, _ctx);
             if (value == null) continue;
             await Print(printer, Console.Out, value);
             // do not store enumerable: it does not make sense because it has already been depleted by Print
-            ctx.Bind("it", value is EnumerableValue and not ListValue
+            _ctx.Bind("it", value is EnumerableValue and not ListValue
                 ? NullValue.Instance
                 : value);
         }
@@ -77,6 +78,9 @@ public class Repl
                 case "h" or "help":
                     PrintHelp();
                     break;
+                case "dump":
+                    PrintContext();
+                    break;
             }
         }
         catch (Exception e)
@@ -85,6 +89,24 @@ public class Repl
             handled = true;
         }
         return false;
+    }
+
+    private void PrintContext()
+    {
+        string PrintValue(ValuePrinter p, Value v)
+        {
+            using var writer = new StringWriter();
+            p.Print(v, writer).Wait();
+            return writer.ToString().Trim();
+        }
+        var printer = new ValuePrinter(new Options(), null);
+        var scope = _ctx.CaptureClosure().Bindings
+            .Select(b => new
+            {
+                Name = b.Key,
+                Value = PrintValue(printer, b.Value),
+            });
+        ConsoleTable.From(scope).Write(Format.Minimal);
     }
 
     private void PrintHelp()
