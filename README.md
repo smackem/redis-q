@@ -16,6 +16,13 @@ Redis-Q
 - is able to extract JSON values using JSON-Path
 - works on any desktop platform
 
+## Installation
+
+* Download and extract the [release zip file](https://github.com/smackem/redis-q/releases) fitting your platform to any directory
+* From this directory, run `redis-q` to connect to redis at localhost:6379
+* To connect to a different host or port, enter `redis-q <hostname>:<port>`
+* `redis-q --help` shows all command-line options
+
 ## Samples
 
 Assume you create a sample data set in your redis instance consisting of users and sessions, where one user is associated to n sessions:
