@@ -119,8 +119,8 @@ The selection may be any expression using any bindings declared by the `from` ex
 Nested bindings allow storing of intermediate results withing the `from` expression:
 ```csharp
 from x in [1,2,3]
-let squared = x * x
-select (x, squared);
+let s = x * x
+select (base: x, squared: s);
 ```
 ```
 base  squared
@@ -261,6 +261,7 @@ All RedisQL values except tuples and lazy enumerables can be converted to boolea
 | real | 0.0 |
 | bool | false |
 | any | null |
+| duration | zero |
 
 ### Enumerables, List and Ranges
 Enumerables in RedisQL are lazily evaluated, whereas lists are discrete collections (as in dotnet `IEnumerable` vs. `IList` or in `Stream` vs. `Collection` in Java).
