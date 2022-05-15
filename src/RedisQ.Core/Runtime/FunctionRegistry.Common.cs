@@ -44,6 +44,15 @@ public partial class FunctionRegistry
         Register(new("sign", 1, FuncSign, "(number) -> int"));
         Register(new("hypot", 2, FuncHypot, "(real, real) -> real"));
         Register(new("sqrt", 1, FuncSqrt, "(real) -> real"));
+        Register(new("log", 1, FuncLog, "(real) -> real"));
+        Register(new("log2", 1, FuncLog2, "(real) -> real"));
+        Register(new("log10", 1, FuncLog10, "(real) -> real"));
+        Register(new("sin", 1, FuncSin, "(real) -> real"));
+        Register(new("cos", 1, FuncCos, "(real) -> real"));
+        Register(new("tan", 1, FuncTan, "(real) -> real"));
+        Register(new("asin", 1, FuncAsin, "(real) -> real"));
+        Register(new("acos", 1, FuncAcos, "(real) -> real"));
+        Register(new("atan", 1, FuncAtan, "(real) -> real"));
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -390,5 +399,59 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRealValue a == false) throw new RuntimeException($"sqrt({arguments[0]}): incompatible operand, number expected");
         return Task.FromResult<Value>(new RealValue(Math.Sqrt(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncLog(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"log({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Log(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncLog2(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"log2({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Log2(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncLog10(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"log10({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Log10(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncSin(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"sin({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Sin(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncCos(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"cos({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Cos(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncTan(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"tan({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Tan(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncAsin(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"asin({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Asin(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncAcos(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"acos({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Acos(a.AsRealValue())));
+    }
+
+    private static Task<Value> FuncAtan(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IRealValue a == false) throw new RuntimeException($"atan({arguments[0]}): incompatible operand, number expected");
+        return Task.FromResult<Value>(new RealValue(Math.Atan(a.AsRealValue())));
     }
 }

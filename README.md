@@ -238,8 +238,8 @@ RedisQL is a dynamically-typed language supporting scalar values like integers o
 RedisQL supports the following scalar data types:
 | Name | Description | Literal |
 | --- | --- | --- |
-| int | 64 bit signed integer | `100` |
-| real | 64 bit floating point | `12.5` |
+| int | 64 bit signed integer | `100` or `1_000_000` |
+| real | 64 bit floating point | `12.5` or `1_125.000_001` |
 | string | unicode string of arbitrary length | `"hello"` or `'world'` |
 | bool | boolean value | `true` or `false` |
 
