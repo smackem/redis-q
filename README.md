@@ -81,6 +81,7 @@ RedisQL adds the following language features not supported by C#:
 | Regex operator | `"abc" ~= "\w{3}" // true` |
 | Top-level `let` statements | `let x = 1` |
 | The `limit` clause | `from ... limit 10 offset 1 ...` |
+| Case-insensitive function names | `SCAN('*')` is the same as `scan('*')` |
 
 ### Basics and operators
 RedisQL supports the following operators, basically a subset of the common operators found in C, C# or Java:
