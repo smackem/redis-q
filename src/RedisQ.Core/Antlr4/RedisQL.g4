@@ -25,6 +25,7 @@ nestedClause
     | whereClause
     | limitClause
     | orderByClause
+    | groupByClause
     ;
 
 fromClause
@@ -45,6 +46,10 @@ limitClause
 
 orderByClause
     : OrderBy ternaryExpr (Descending | Ascending)?
+    ;
+
+groupByClause
+    : Group ternaryExpr By ternaryExpr Into Ident
     ;
 
 selectClause
@@ -186,6 +191,9 @@ Let             : 'let';
 Where           : 'where';
 Limit           : 'limit';
 Offset          : 'offset';
+Group           : 'group';
+By              : 'by';
+Into            : 'into';
 Select          : 'select';
 True            : 'true';
 False           : 'false';

@@ -60,6 +60,12 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             context.ternaryExpr(0).Accept(this),
             context.ternaryExpr().Length > 1 ? context.ternaryExpr(1).Accept(this) : null);
 
+    public override Expr VisitGroupByClause(RedisQLParser.GroupByClauseContext context) =>
+        new GroupByClause(
+            context.ternaryExpr(0).Accept(this),
+            context.ternaryExpr(1).Accept(this),
+            context.Ident().GetText());
+
     public override Expr VisitOrderByClause(RedisQLParser.OrderByClauseContext context) =>
         new OrderByClause(context.ternaryExpr().Accept(this), context.Descending() != null);
 

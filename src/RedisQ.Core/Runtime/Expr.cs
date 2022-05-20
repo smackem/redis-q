@@ -327,7 +327,8 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
                 LetClause @let => Bind(selection, @let, ctx),
                 WhereClause @where => Filter(selection, @where, ctx),
                 LimitClause limit => Limit(selection, limit, ctx),
-                OrderByClause orderBy => OrderBy(selection, orderBy, ctx), 
+                OrderByClause orderBy => OrderBy(selection, orderBy, ctx),
+                GroupByClause groupBy => GroupBy(selection, groupBy, ctx),
                 _ => throw new NotImplementedException(),
             };
         }
@@ -426,6 +427,11 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
             yield return value;
         }
     }
+
+    private static IAsyncEnumerable<Value> GroupBy(IAsyncEnumerable<Value> coll, GroupByClause groupBy, Context ctx)
+    {
+        return coll;
+    }
 }
 
 public record EagerFromExpr(FromExpr From) : Expr
@@ -447,6 +453,7 @@ public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
 public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
 public record OrderByClause(Expr Key, bool IsDescending) : NestedClause;
+public record GroupByClause(Expr Value, Expr Key, string Ident) : NestedClause;
 
 public record LetClause(string Ident, Expr Right) : NestedClause
 {
