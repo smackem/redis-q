@@ -2,9 +2,11 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Fody;
 
 namespace RedisQ.Core.Runtime;
 
+[ConfigureAwait(false)]
 public partial class FunctionRegistry
 {
     private static readonly Random Rng = new();
@@ -69,14 +71,14 @@ public partial class FunctionRegistry
         arguments[0] switch
         {
             ListValue list => IntegerValue.Of(list.Count),
-            EnumerableValue enumerable => IntegerValue.Of(await CountEnumerable(enumerable).ConfigureAwait(false)),
+            EnumerableValue enumerable => IntegerValue.Of(await CountEnumerable(enumerable)),
             _ => NullValue.Instance,
         };
 
     private static async Task<int> CountEnumerable(EnumerableValue enumerable)
     {
         var count = 0;
-        await foreach (var _ in enumerable.ConfigureAwait(false)) count++;
+        await foreach (var _ in enumerable) count++;
         return count;
     }
     
@@ -128,7 +130,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncCollect(Context ctx, Value[] arguments) =>
         arguments[0] switch
         {
-            EnumerableValue e => new ListValue(await e.Collect(1000).ConfigureAwait(false)),
+            EnumerableValue e => new ListValue(await e.Collect(1000)),
             _ => throw new RuntimeException($"collect({arguments[0]}): incompatible operand, enumerable expected"), 
         };
 
@@ -140,7 +142,7 @@ public partial class FunctionRegistry
         var sb = new StringBuilder();
         var count = 0;
 
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             if (count >= 1000) break;
             if (count != 0) sb.Append(separator.Value);
@@ -158,7 +160,7 @@ public partial class FunctionRegistry
 
         async IAsyncEnumerable<Value> Walk()
         {
-            await foreach (var value in coll.ConfigureAwait(false))
+            await foreach (var value in coll)
             {
                 if (set.Add(value)) yield return value;
             }
@@ -172,7 +174,7 @@ public partial class FunctionRegistry
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"sum({arguments[0]}): incompatible operand, enumerable expected");
         Value? sum = null;
 
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             if (value is NullValue) continue;
 
@@ -188,7 +190,7 @@ public partial class FunctionRegistry
         var sum = 0.0;
         var count = 0;
 
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             if (value is IRealValue real == false) continue;
 
@@ -204,7 +206,7 @@ public partial class FunctionRegistry
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"avg({arguments[0]}): incompatible operand, enumerable expected");
         Value? min = null;
 
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             if (min == null)
             {
@@ -222,7 +224,7 @@ public partial class FunctionRegistry
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"avg({arguments[0]}): incompatible operand, enumerable expected");
         Value? max = null;
 
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             if (max == null)
             {
@@ -240,7 +242,7 @@ public partial class FunctionRegistry
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"reverse({arguments[0]}): incompatible operand, enumerable expected");
         var stack = new Stack<Value>();
 
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             stack.Push(value);
         }

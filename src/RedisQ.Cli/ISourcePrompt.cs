@@ -54,7 +54,7 @@ internal class PrettySourcePrompt : ISourcePrompt
 
     public async Task<string> ReadSource()
     {
-        var response = await _prompt.ReadLineAsync().ConfigureAwait(false);
+        var response = await _prompt.ReadLineAsync();
         if (!response.IsSuccess) return string.Empty;
         if (response is KeyPressCallbackResult callbackOutput)
         {

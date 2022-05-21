@@ -19,7 +19,7 @@ public static class AsyncEnumerable
         {
             foreach (var value in collection)
             {
-                yield return await ValueTask.FromResult(value).ConfigureAwait(false);
+                yield return await ValueTask.FromResult(value);
             }
         }
 
@@ -31,7 +31,7 @@ public static class AsyncEnumerable
         if (chunkSize <= 0) throw new ArgumentException("must be positive", nameof(chunkSize));
         var chunk = new List<T>(chunkSize);
 
-        await foreach (var item in enumerable.ConfigureAwait(false))
+        await foreach (var item in enumerable)
         {
             chunk.Add(item);
             if (chunk.Count < chunkSize) continue;

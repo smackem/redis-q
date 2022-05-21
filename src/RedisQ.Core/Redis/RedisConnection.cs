@@ -24,20 +24,20 @@ public class RedisConnection : IRedisConnection
     
     public async Task<IDatabase> GetDatabase()
     {
-        var redis = await Connect().ConfigureAwait(false);
+        var redis = await Connect();
         return redis.GetDatabase();
     }
 
     public async IAsyncEnumerable<RedisKey> ScanKeys(RedisValue pattern)
     {
-        var redis = await Connect().ConfigureAwait(false);
+        var redis = await Connect();
         var endPoints = redis.GetEndPoints();
 
         foreach (var endPoint in endPoints)
         {
             var server = redis.GetServer(endPoint);
 
-            await foreach (var key in server.KeysAsync(pattern: pattern).ConfigureAwait(false))
+            await foreach (var key in server.KeysAsync(pattern: pattern))
             {
                 yield return key;
             }
@@ -51,12 +51,12 @@ public class RedisConnection : IRedisConnection
         {
             try
             {
-                await _semaphore.WaitAsync().ConfigureAwait(false);
+                await _semaphore.WaitAsync();
 
                 // ReSharper disable once ConvertIfStatementToNullCoalescingAssignment
                 if (_redis == null)
                 {
-                    _redis = await ConnectionMultiplexer.ConnectAsync(_connectionString).ConfigureAwait(false);
+                    _redis = await ConnectionMultiplexer.ConnectAsync(_connectionString);
                 }
             }
             finally

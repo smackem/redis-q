@@ -51,14 +51,14 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncExists(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"exists({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var flag = await db.KeyExistsAsync(key.AsRedisKey());
         return BoolValue.Of(flag);
     }
 
     private static async Task<Value> FuncRandomKey(Context ctx, Value[] arguments)
     {
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var key = await db.KeyRandomAsync();
         return new RedisKeyValue(key);
     }
@@ -67,11 +67,11 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zscan({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is StringValue pattern == false) throw new RuntimeException($"zscan({arguments[1]}): incompatible operand, string expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
 
         async IAsyncEnumerable<Value> Walk(IAsyncEnumerable<SortedSetEntry> entries)
         {
-            await foreach (var entry in entries.ConfigureAwait(false))
+            await foreach (var entry in entries)
             {
                 yield return TupleValue.Of(("member", new RedisValue(entry.Element)), ("score", new RealValue(entry.Score)));
             }
@@ -85,8 +85,8 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zrank({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue value == false) throw new RuntimeException($"zrank({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var rank = await db.SortedSetRankAsync(key.AsRedisKey(), value.AsRedisValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var rank = await db.SortedSetRankAsync(key.AsRedisKey(), value.AsRedisValue());
         return rank != null ? IntegerValue.Of(rank.Value) : NullValue.Instance;
     }
 
@@ -94,8 +94,8 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zscore({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue value == false) throw new RuntimeException($"zscore({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var score = await db.SortedSetScoreAsync(key.AsRedisKey(), value.AsRedisValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var score = await db.SortedSetScoreAsync(key.AsRedisKey(), value.AsRedisValue());
         return score != null ? new RealValue(score.Value) : NullValue.Instance;
     }
 
@@ -104,8 +104,8 @@ public partial class FunctionRegistry
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zrangebyscore({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRealValue min == false) throw new RuntimeException($"zrangebyscore({arguments[1]}): incompatible operand, real expected");
         if (arguments[2] is IRealValue max == false) throw new RuntimeException($"zrangebyscore({arguments[2]}): incompatible operand, real expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var range = await db.SortedSetRangeByScoreAsync(key.AsRedisKey(), min.AsRealValue(), max.AsRealValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var range = await db.SortedSetRangeByScoreAsync(key.AsRedisKey(), min.AsRealValue(), max.AsRealValue());
         return new ListValue(range.Select(v => new RedisValue(v)).ToArray());
     }
 
@@ -114,8 +114,8 @@ public partial class FunctionRegistry
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zrange({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IntegerValue start == false) throw new RuntimeException($"zrange({arguments[1]}): incompatible operand, integer expected");
         if (arguments[2] is IntegerValue end == false) throw new RuntimeException($"zrange({arguments[2]}): incompatible operand, integer expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var range = await db.SortedSetRangeByRankAsync(key.AsRedisKey(), start.Value, end.Value).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var range = await db.SortedSetRangeByRankAsync(key.AsRedisKey(), start.Value, end.Value);
         return new ListValue(range.Select(v => new RedisValue(v)).ToArray());
     }
 
@@ -124,32 +124,32 @@ public partial class FunctionRegistry
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zcount({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue min == false) throw new RuntimeException($"zcount({arguments[1]}): incompatible operand, RedisValue expected");
         if (arguments[2] is IRedisValue max == false) throw new RuntimeException($"zcount({arguments[2]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var count = await db.SortedSetLengthByValueAsync(key.AsRedisKey(), min.AsRedisValue(), max.AsRedisValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var count = await db.SortedSetLengthByValueAsync(key.AsRedisKey(), min.AsRedisValue(), max.AsRedisValue());
         return IntegerValue.Of(count);
     }
 
     private static async Task<Value> FuncZCard(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"zcard({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var card = await db.SortedSetLengthAsync(key.AsRedisKey()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var card = await db.SortedSetLengthAsync(key.AsRedisKey());
         return IntegerValue.Of(card);
     }
 
     private static async Task<Value> FuncSMembers(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"smembers({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var members = await db.SetMembersAsync(key.AsRedisKey()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var members = await db.SetMembersAsync(key.AsRedisKey());
         return new ListValue(members.Select(m => new RedisValue(m)).ToArray());
     }
 
     private static async Task<Value> FuncSCard(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"scard({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var card = await db.SetLengthAsync(key.AsRedisKey()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var card = await db.SetLengthAsync(key.AsRedisKey());
         return IntegerValue.Of(card);
     }
 
@@ -166,7 +166,7 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key1 == false) throw new RuntimeException($"set_combine({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisKey key2 == false) throw new RuntimeException($"set_combine({arguments[1]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var resultSet = await db.SetCombineAsync(operation, key1.AsRedisKey(), key2.AsRedisKey());
         return new ListValue(resultSet.Select(m => new RedisValue(m)).ToArray());
     }
@@ -175,16 +175,16 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"sismember({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue value == false) throw new RuntimeException($"sismember({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var found = await db.SetContainsAsync(key.AsRedisKey(), value.AsRedisValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var found = await db.SetContainsAsync(key.AsRedisKey(), value.AsRedisValue());
         return BoolValue.Of(found);
     }
 
     private static async Task<Value> FuncSRandomMember(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"srandommember({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var value = await db.SetRandomMemberAsync(key.AsRedisKey()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var value = await db.SetRandomMemberAsync(key.AsRedisKey());
         return new RedisValue(value);
     }
 
@@ -204,7 +204,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncGet(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"get({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.StringGetAsync(key.AsRedisKey());
         return new RedisValue(val);
     }
@@ -219,7 +219,7 @@ public partial class FunctionRegistry
             IRedisValue k => k.AsRedisValue(),
             _ => throw new RuntimeException($"hmget(): unexpected value in argument list: {v}. RedisValue expected."),
         }).ToArray();
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var values = await db.HashGetAsync(key.AsRedisKey(), fields);
         return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
     }
@@ -232,15 +232,15 @@ public partial class FunctionRegistry
             IRedisKey k => k.AsRedisKey(),
             _ => throw new RuntimeException($"mget(): unexpected value in argument list: {v}. RedisKey expected."),
         }).ToArray();
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var values = await db.StringGetAsync(keys).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var values = await db.StringGetAsync(keys);
         return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
     }
 
     private static async Task<Value> FuncStrLen(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"strlen({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.StringLengthAsync(key.AsRedisKey());
         return IntegerValue.Of(val);
     }
@@ -249,7 +249,7 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hstrlen({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue field == false) throw new RuntimeException($"hstrlen({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.HashStringLengthAsync(key.AsRedisKey(), field.AsRedisValue());
         return IntegerValue.Of(val);
     }
@@ -259,7 +259,7 @@ public partial class FunctionRegistry
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"getrange({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IntegerValue start == false) throw new RuntimeException($"getrange({arguments[1]}): incompatible operand, Integer expected");
         if (arguments[2] is IntegerValue end == false) throw new RuntimeException($"getrange({arguments[2]}): incompatible operand, Integer expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.StringGetRangeAsync(key.AsRedisKey(), start.Value, end.Value);
         return new RedisValue(val);
     }
@@ -267,8 +267,8 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncHKeys(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hkeys({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var values = await db.HashKeysAsync(key.AsRedisKey()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var values = await db.HashKeysAsync(key.AsRedisKey());
         return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
     }
 
@@ -276,8 +276,8 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncHVals(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hkeys({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var values = await db.HashValuesAsync(key.AsRedisKey()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var values = await db.HashValuesAsync(key.AsRedisKey());
         return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
     }
 
@@ -285,7 +285,7 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hget({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue field == false) throw new RuntimeException($"hget({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.HashGetAsync(key.AsRedisKey(), field.AsRedisValue());
         return new RedisValue(val);
     }
@@ -294,7 +294,7 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hexists({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue field == false) throw new RuntimeException($"hexists({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var flag = await db.HashExistsAsync(key.AsRedisKey(), field.AsRedisValue());
         return BoolValue.Of(flag);
     }
@@ -302,7 +302,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncHGetAll(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hgetall({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var entries = await db.HashGetAllAsync(key.AsRedisKey());
         var tuples = entries
             .Select(entry => TupleValue.Of(("name", new RedisValue(entry.Name)), ("value", new RedisValue(entry.Value))))
@@ -315,8 +315,8 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hscan({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue pattern == false) throw new RuntimeException($"hscan({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var entries = db.HashScanAsync(key.AsRedisKey(), pattern.AsRedisValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var entries = db.HashScanAsync(key.AsRedisKey(), pattern.AsRedisValue());
 
         async IAsyncEnumerable<Value> Scan()
         {
@@ -335,8 +335,8 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"sscan({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IRedisValue pattern == false) throw new RuntimeException($"sscan({arguments[1]}): incompatible operand, RedisValue expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
-        var values = db.SetScanAsync(key.AsRedisKey(), pattern.AsRedisValue()).ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
+        var values = db.SetScanAsync(key.AsRedisKey(), pattern.AsRedisValue());
 
         async IAsyncEnumerable<Value> Scan()
         {
@@ -349,7 +349,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncHLen(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"hlen({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var length = await db.HashLengthAsync(key.AsRedisKey());
         return IntegerValue.Of(length);
     }
@@ -357,7 +357,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncLLen(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"llen({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var length = await db.ListLengthAsync(key.AsRedisKey());
         return IntegerValue.Of(length);
     }
@@ -367,7 +367,7 @@ public partial class FunctionRegistry
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"llen({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IntegerValue start == false) throw new RuntimeException($"llen({arguments[1]}): incompatible operand, Integer expected");
         if (arguments[2] is IntegerValue stop == false) throw new RuntimeException($"llen({arguments[2]}): incompatible operand, Integer expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var values = await db.ListRangeAsync(key.AsRedisKey(), start.Value, stop.Value);
         return new ListValue(values.Select(v => new RedisValue(v)).ToArray());
     }
@@ -376,7 +376,7 @@ public partial class FunctionRegistry
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"lindex({arguments[0]}): incompatible operand, RedisKey expected");
         if (arguments[1] is IntegerValue index == false) throw new RuntimeException($"lindex({arguments[1]}): incompatible operand, Integer expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.ListGetByIndexAsync(key.AsRedisKey(), index.Value);
         return new RedisValue(val);
     }
@@ -384,7 +384,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncType(Context ctx, Value[] arguments)
     {
         if (arguments[0] is IRedisKey key == false) throw new RuntimeException($"type({arguments[0]}): incompatible operand, RedisKey expected");
-        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var db = await ctx.Redis.GetDatabase();
         var val = await db.KeyTypeAsync(key.AsRedisKey());
         return new StringValue(val.ToString().ToLower());
     }

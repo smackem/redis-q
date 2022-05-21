@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using RedisQ.Core.Runtime;
 using Xunit;
 

@@ -36,7 +36,7 @@ public record TupleExpr(IReadOnlyList<Expr> Items, IReadOnlyDictionary<string, i
         var values = new List<Value>();
         foreach (var expr in Items)
         {
-            var value = await expr.Evaluate(ctx).ConfigureAwait(false);
+            var value = await expr.Evaluate(ctx);
             values.Add(value);
         }
         return new TupleValue(values, FieldIndicesByName);
@@ -69,11 +69,11 @@ public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
         var arguments = new List<Value>();
         foreach (var arg in Arguments)
         {
-            var value = await arg.Evaluate(ctx).ConfigureAwait(false);
+            var value = await arg.Evaluate(ctx);
             arguments.Add(value);
         }
 
-        return await function.Invoke(ctx, arguments.ToArray()).ConfigureAwait(false);
+        return await function.Invoke(ctx, arguments.ToArray());
     }
 }
 
@@ -96,8 +96,8 @@ public record SimpleBinaryExpr(Expr Left, Expr Right, Func<Value, Value, Value> 
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var l = await Left.Evaluate(ctx).ConfigureAwait(false);
-        var r = await Right.Evaluate(ctx).ConfigureAwait(false);
+        var l = await Left.Evaluate(ctx);
+        var r = await Right.Evaluate(ctx);
         return EvalFunc(l, r);
     }
 }
@@ -228,7 +228,7 @@ public record UnaryExpr : Expr
     public Expr Operand { get; }
 
     private protected override async Task<Value> EvaluateOverride(Context ctx) =>
-        _evalFunc(await Operand.Evaluate(ctx).ConfigureAwait(false));
+        _evalFunc(await Operand.Evaluate(ctx));
 }
 
 public record NegExpr(Expr Operand) : UnaryExpr(Operand, value =>
@@ -260,8 +260,8 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var operandValue = await Operand.Evaluate(ctx).ConfigureAwait(false);
-        var subscriptValue = await Subscript.Evaluate(ctx).ConfigureAwait(false);
+        var operandValue = await Operand.Evaluate(ctx);
+        var subscriptValue = await Subscript.Evaluate(ctx);
         return (operandValue, subscriptValue) switch
         {
             (ListValue list, IntegerValue index) => list[CoerceIndex(list, (int) index.Value)],
@@ -311,9 +311,9 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
         async IAsyncEnumerable<Value> OuterSelect(IAsyncEnumerable<Value> inner)
         {
-            await foreach (var _ in inner.ConfigureAwait(false))
+            await foreach (var _ in inner)
             {
-                var value = await Selection.Evaluate(ctx).ConfigureAwait(false);
+                var value = await Selection.Evaluate(ctx);
                 Trace.WriteLine($"SelectSource: {value}");
                 yield return value;
             }
@@ -342,7 +342,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
         var sourceValue = await @from.Source.Evaluate(ctx);
         if (sourceValue is EnumerableValue source == false) throw new RuntimeException($"from: source value {sourceValue} is not enumerable");
 
-        await foreach (var value in SelectFromSource(source, from.Ident, ctx).ConfigureAwait(false))
+        await foreach (var value in SelectFromSource(source, from.Ident, ctx))
         {
             yield return value;
         }
@@ -350,7 +350,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> SelectFromSource(IAsyncEnumerable<Value> @from, string ident, Context ctx)
     {
-        await foreach (var value in @from.ConfigureAwait(false))
+        await foreach (var value in @from)
         {
             ctx.Bind(ident, value);
             yield return value;
@@ -359,10 +359,10 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> CrossJoin(IAsyncEnumerable<Value> coll, FromClause @from, Context ctx)
     {
-        await foreach (var _ in coll.ConfigureAwait(false))
+        await foreach (var _ in coll)
         {
             var selection = SelectFromSource(@from, ctx);
-            await foreach (var value in selection.ConfigureAwait(false))
+            await foreach (var value in selection)
             {
                 yield return value;
             }
@@ -371,27 +371,27 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> Filter(IAsyncEnumerable<Value> coll, WhereClause @where, Context ctx)
     {
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
-            var include = await @where.Predicate.Evaluate(ctx).ConfigureAwait(false);
+            var include = await @where.Predicate.Evaluate(ctx);
             if (include.AsBoolean()) yield return value;
         }
     }
 
     private static async IAsyncEnumerable<Value> Bind(IAsyncEnumerable<Value> coll, LetClause @let, Context ctx)
     {
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
-            _ = await @let.Evaluate(ctx).ConfigureAwait(false);
+            _ = await @let.Evaluate(ctx);
             yield return value;
         }
     }
 
     private static async IAsyncEnumerable<Value> Limit(IAsyncEnumerable<Value> coll, LimitClause limit, Context ctx)
     {
-        var countValue = await limit.Count.Evaluate(ctx).ConfigureAwait(false);
+        var countValue = await limit.Count.Evaluate(ctx);
         var offsetValue = limit.Offset != null
-            ? await limit.Offset.Evaluate(ctx).ConfigureAwait(false)
+            ? await limit.Offset.Evaluate(ctx)
             : IntegerValue.Zero;
         var first = offsetValue is IntegerValue o
             ? o.Value
@@ -400,7 +400,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
             ? first + c.Value
             : throw new RuntimeException("limit clause expected integer arguments");
         var index = 0;
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
             if (index >= last) break;
             if (index >= first) yield return value;
@@ -413,9 +413,9 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
         // we need to capture a closure for each element because we change the order of elements,
         // so when replaying the ordered collection we can reassemble the correct context
         var keysAndValues = new List<(Value key, Value value, Scope closure)>();
-        await foreach (var value in coll.ConfigureAwait(false))
+        await foreach (var value in coll)
         {
-            var key = await orderBy.Key.Evaluate(ctx).ConfigureAwait(false);
+            var key = await orderBy.Key.Evaluate(ctx);
             keysAndValues.Add((key, value, ctx.CaptureClosure()));
         }
         var ordered = orderBy.IsDescending
@@ -433,15 +433,15 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
     private static async IAsyncEnumerable<Value> GroupBy(IAsyncEnumerable<Value> coll, GroupByClause groupBy, Context ctx)
     {
         var groups = new Dictionary<Value, Group>();
-        await foreach (var _ in coll.ConfigureAwait(false))
+        await foreach (var _ in coll)
         {
-            var key = await groupBy.Key.Evaluate(ctx).ConfigureAwait(false);
+            var key = await groupBy.Key.Evaluate(ctx);
             if (groups.TryGetValue(key, out var group) == false)
             {
                 group = new Group(ctx.CaptureClosure(), new List<Value>());
                 groups.Add(key, group);
             }
-            var element = await groupBy.Value.Evaluate(ctx).ConfigureAwait(false);
+            var element = await groupBy.Value.Evaluate(ctx);
             group.Elements.Add(element);
         }
         foreach (var pair in groups)
@@ -460,8 +460,8 @@ public record EagerFromExpr(FromExpr From) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var enumerable = (EnumerableValue) await From.Evaluate(ctx).ConfigureAwait(false);
-        var collection = await enumerable.Collect().ConfigureAwait(false);
+        var enumerable = (EnumerableValue) await From.Evaluate(ctx);
+        var collection = await enumerable.Collect();
         return new ListValue(collection);
     }
 }
@@ -481,7 +481,7 @@ public record LetClause(string Ident, Expr Right) : NestedClause
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var value = await Right.Evaluate(ctx).ConfigureAwait(false);
+        var value = await Right.Evaluate(ctx);
         ctx.Bind(Ident, value);
         return value;
     }
@@ -491,7 +491,7 @@ public record ThrowExpr(Expr Exception) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var exception = await Exception.Evaluate(ctx).ConfigureAwait(false);
+        var exception = await Exception.Evaluate(ctx);
         throw new RuntimeException($"Runtime exception: {exception.AsString()}");
     }
 }

@@ -19,6 +19,13 @@
     <PackageReference Include="Antlr4.Runtime" Version="$(Antlr4_Version)" />
     <PackageReference Include="StackExchange.Redis" Version="$(StackExchange_Redis_Version)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(Newtonsoft_Json_Version)" />
+    <PackageReference Include="Fody" Version="$(Fody_Version)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="ConfigureAwait.Fody" Version="$(ConfigureAwait_Fody_Version)">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
