@@ -64,11 +64,11 @@ public class EnumerableValue : Value, IAsyncEnumerable<Value>
     public override bool AsBoolean() => throw new RuntimeException("cannot convert enumerable to boolean");
 }
 
-public class ListValue : EnumerableValue, IReadOnlyList<Value>
+public class ListValue : EnumerableValue, IReadOnlyList<Value>, IEquatable<ListValue>
 {
     private readonly IReadOnlyList<Value> _list;
 
-    public static readonly ListValue Empty = new ListValue(Array.Empty<Value>()); 
+    public static readonly ListValue Empty = new(Array.Empty<Value>()); 
 
     public ListValue(IReadOnlyList<Value> collection)
         : base(AsyncEnumerable.FromCollection(collection)) =>
@@ -77,6 +77,8 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>
     public Value this[int index] => _list[index];
 
     public int Count => _list.Count;
+
+    public static ListValue Of(params Value[] values) => new ListValue(values);
 
     public IEnumerator<Value> GetEnumerator() => _list.GetEnumerator();
 
@@ -96,6 +98,21 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>
     }
 
     public override bool AsBoolean() => Count > 0;
+    
+    public bool Equals(ListValue? other) =>
+        ReferenceEquals(null, other) == false
+        && ValueCollections.Equal(_list, other._list);
+    
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((ListValue)obj);
+    }
+
+    public override int GetHashCode() =>
+        ValueCollections.GetHashCode(_list);
 }
 
 public class TupleValue : Value, IEquatable<TupleValue>
@@ -155,14 +172,10 @@ public class TupleValue : Value, IEquatable<TupleValue>
     
     public override bool AsBoolean() => true;
 
-    public bool Equals(TupleValue? other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-        if (Items.Count != other.Items.Count) return false;
-        return !Items.Where((t, i) => Equals(t, other.Items[i]) == false).Any();
-    }
-    
+    public bool Equals(TupleValue? other) =>
+        ReferenceEquals(null, other) == false
+        && ValueCollections.Equal(Items, other.Items);
+
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
@@ -172,7 +185,7 @@ public class TupleValue : Value, IEquatable<TupleValue>
     }
 
     public override int GetHashCode() =>
-        Items.Aggregate(1, (hash, v) => hash * 31 + v.GetHashCode());
+        ValueCollections.GetHashCode(Items);
 }
 
 public interface IRedisKey

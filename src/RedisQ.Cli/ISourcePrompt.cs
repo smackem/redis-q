@@ -83,6 +83,9 @@ internal class PrettySourcePrompt : ISourcePrompt
                 Tokens.OrderBy,
                 Tokens.Descending,
                 Tokens.Ascending,
+                Tokens.Group,
+                Tokens.By,
+                Tokens.Into,
             });
         private static readonly ISet<int> Operators = new HashSet<int>(
             new[]

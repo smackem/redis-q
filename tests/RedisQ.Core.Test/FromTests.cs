@@ -450,4 +450,95 @@ select (x, y, x * y);
             v => Assert.Equal(TupleValue.Of(IntegerValue.Of(1), IntegerValue.Of(12), IntegerValue.Of(12)), v),
             v => Assert.Equal(TupleValue.Of(IntegerValue.Of(2), IntegerValue.Of(12), IntegerValue.Of(24)), v));
     }
+
+    [Fact]
+    public async Task GroupBySimple()
+    {
+        const string source = @"
+from x in 0..5  
+group x + 100 by x / 3 into g 
+select g;
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Zero, Helpers.IntegerList(100, 101, 102)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(1), Helpers.IntegerList(103, 104, 105)), v));
+    }
+    
+    [Fact]
+    public async Task GroupByWithCrossJoin()
+    {
+        const string source = @"
+from a in 0..2 
+from b in 0..2 
+group (a, b) by a + b into g 
+select g;
+";
+        // 0    [(0, 0)]                
+        // 1    [(0, 1), (1, 0)]        
+        // 2    [(0, 2), (1, 1), (2, 0)]
+        // 3    [(1, 2), (2, 1)]        
+        // 4    [(2, 2)]                
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(
+                TupleValue.Of(
+                    IntegerValue.Zero,
+                    ListValue.Of(TupleValue.Of(IntegerValue.Zero, IntegerValue.Zero))),
+                v),
+            v => Assert.Equal(
+                TupleValue.Of(
+                    IntegerValue.Of(1),
+                    ListValue.Of(
+                        TupleValue.Of(IntegerValue.Zero, IntegerValue.Of(1)),
+                        TupleValue.Of(IntegerValue.Of(1), IntegerValue.Zero))),
+                v),
+            v => Assert.Equal(
+                TupleValue.Of(
+                    IntegerValue.Of(2),
+                    ListValue.Of(
+                        TupleValue.Of(IntegerValue.Zero, IntegerValue.Of(2)),
+                        TupleValue.Of(IntegerValue.Of(1), IntegerValue.Of(1)),
+                        TupleValue.Of(IntegerValue.Of(2), IntegerValue.Zero))),
+                v),
+            v => Assert.Equal(
+                TupleValue.Of(
+                    IntegerValue.Of(3),
+                    ListValue.Of(
+                        TupleValue.Of(IntegerValue.Of(1), IntegerValue.Of(2)),
+                        TupleValue.Of(IntegerValue.Of(2), IntegerValue.Of(1)))),
+                v),
+            v => Assert.Equal(
+                TupleValue.Of(
+                    IntegerValue.Of(4),
+                    ListValue.Of(TupleValue.Of(IntegerValue.Of(2), IntegerValue.Of(2)))),
+                v));
+    }
+    
+    [Fact]
+    public async Task GroupByFilteredWithBindingSorted()
+    {
+        const string source = @"
+from n in 0..20 
+let x = n % 3 
+where n % 2 == 0 
+group n by x into g 
+where g.key >= 1 
+orderby g.key 
+select g;
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(1), Helpers.IntegerList(4, 10, 16)), v),
+            v => Assert.Equal(TupleValue.Of(IntegerValue.Of(2), Helpers.IntegerList(2, 8, 14, 20)), v));
+    }
 }

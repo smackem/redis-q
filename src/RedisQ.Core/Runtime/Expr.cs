@@ -428,9 +428,31 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
         }
     }
 
-    private static IAsyncEnumerable<Value> GroupBy(IAsyncEnumerable<Value> coll, GroupByClause groupBy, Context ctx)
+    private record Group(Scope Closure, List<Value> Elements);
+
+    private static async IAsyncEnumerable<Value> GroupBy(IAsyncEnumerable<Value> coll, GroupByClause groupBy, Context ctx)
     {
-        return coll;
+        var groups = new Dictionary<Value, Group>();
+        await foreach (var _ in coll.ConfigureAwait(false))
+        {
+            var key = await groupBy.Key.Evaluate(ctx).ConfigureAwait(false);
+            if (groups.TryGetValue(key, out var group) == false)
+            {
+                group = new Group(ctx.CaptureClosure(), new List<Value>());
+                groups.Add(key, group);
+            }
+            var element = await groupBy.Value.Evaluate(ctx).ConfigureAwait(false);
+            group.Elements.Add(element);
+        }
+        foreach (var pair in groups)
+        {
+            ctx.BindAll(pair.Value.Closure);
+            var groupValue = TupleValue.Of(
+                ("key", pair.Key),
+                ("values", new ListValue(pair.Value.Elements)));
+            ctx.Bind(groupBy.Ident, groupValue);
+            yield return pair.Key;
+        }
     }
 }
 

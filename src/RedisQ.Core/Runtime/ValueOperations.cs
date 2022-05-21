@@ -19,6 +19,19 @@ internal static class ValueOperations
         };
 }
 
+internal static class ValueCollections
+{
+    public static bool Equal(IReadOnlyList<Value> l, IReadOnlyList<Value> r)
+    {
+        if (ReferenceEquals(l, r)) return true;
+        if (l.Count != r.Count) return false;
+        return !l.Where((t, i) => Equals(t, r[i]) == false).Any();
+    }
+
+    public static int GetHashCode(IEnumerable<Value> coll) =>
+        coll.Aggregate(1, (hash, v) => hash * 31 + v.GetHashCode());
+}
+
 internal class ValueComparer : IComparer<Value>
 {
     private ValueComparer()

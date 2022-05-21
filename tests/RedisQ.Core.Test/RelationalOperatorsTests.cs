@@ -170,4 +170,21 @@ public class RelationalOperatorsTests : TestBase
         var value6 = await Interpret(@"null ?? 1 + 2");
         Assert.Equal(IntegerValue.Of(3), value6);
     }
+
+    [Fact]
+    public async Task CompositeValuesEquality()
+    {
+        var value1 = await Interpret(@"[1, 2, 3] == [1, 2, 3]");
+        Assert.Equal(BoolValue.True, value1);
+        var value2 = await Interpret(@"[1, 2, 3] == [3, 2, 1]");
+        Assert.Equal(BoolValue.False, value2);
+        var value3 = await Interpret(@"[1, null, 'abc'] == [1, null, 'abc']");
+        Assert.Equal(BoolValue.True, value3);
+        var value4 = await Interpret(@"(1, null, 'abc') == [1, null, 'abc']");
+        Assert.Equal(BoolValue.False, value4);
+        var value5 = await Interpret(@"(1, null, 'abc') == (1, null, 'abc')");
+        Assert.Equal(BoolValue.True, value5);
+        var value6 = await Interpret(@"(['X', null, (42, 5.25)], null, 'abc') == (['X', null, (42, 5.25)], null, 'abc')");
+        Assert.Equal(BoolValue.True, value6);
+    }
 }
