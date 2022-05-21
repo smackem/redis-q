@@ -411,6 +411,11 @@ Use `convert(unit, value)` to convert durations into total hours, seconds or mil
 
 Additive operations work on timestamp and duration values: You can add durations to timestamps and to other durations.
 
+The function `now()` returns the current timestamp.
+```
+> now();
+2022-05-15 19:05:22 +02
+```
 
 ## JSON Support
 redis-q supports querying JSON objects using JSONPath (see https://github.com/json-path/JsonPath) and the subscript syntax for strings:
