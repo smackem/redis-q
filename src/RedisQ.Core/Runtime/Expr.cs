@@ -9,7 +9,7 @@ public abstract record Expr
     {
         try
         {
-            return await EvaluateOverride(ctx);
+            return await EvaluateOverride(ctx).ConfigureAwait(false);
         }
         catch (RuntimeException)
         {
@@ -50,7 +50,7 @@ public record ListExpr(IReadOnlyList<Expr> Items) : Expr
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
         var tasks = Items.Select(expr => expr.Evaluate(ctx));
-        var list = await Task.WhenAll(tasks);
+        var list = await Task.WhenAll(tasks).ConfigureAwait(false);
         return new ListValue(list);
     }
 }
@@ -82,13 +82,17 @@ public abstract record BinaryExpr(Expr Left, Expr Right) : Expr;
 public record OrExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right)
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx) =>
-        BoolValue.Of((await Left.Evaluate(ctx)).AsBoolean() || (await Right.Evaluate(ctx)).AsBoolean());
+        BoolValue.Of(
+            (await Left.Evaluate(ctx).ConfigureAwait(false)).AsBoolean() ||
+            (await Right.Evaluate(ctx).ConfigureAwait(false)).AsBoolean());
 }
 
 public record AndExpr(Expr Left, Expr Right) : BinaryExpr(Left, Right)
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx) =>
-        BoolValue.Of((await Left.Evaluate(ctx)).AsBoolean() && (await Right.Evaluate(ctx)).AsBoolean());
+        BoolValue.Of(
+            (await Left.Evaluate(ctx).ConfigureAwait(false)).AsBoolean() &&
+            (await Right.Evaluate(ctx).ConfigureAwait(false)).AsBoolean());
 }
 
 public record SimpleBinaryExpr(Expr Left, Expr Right, Func<Value, Value, Value> EvalFunc)
@@ -285,7 +289,7 @@ public record FieldAccessExpr(Expr Operand, string FieldName) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var operandValue = await Operand.Evaluate(ctx);
+        var operandValue = await Operand.Evaluate(ctx).ConfigureAwait(false);
         return operandValue switch
         {
             TupleValue tuple => tuple[FieldName],
@@ -297,9 +301,9 @@ public record FieldAccessExpr(Expr Operand, string FieldName) : Expr
 public record TernaryExpr(Expr Condition, Expr TrueCase, Expr FalseCase) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx) =>
-        (await Condition.Evaluate(ctx)).AsBoolean()
-            ? await TrueCase.Evaluate(ctx)
-            : await FalseCase.Evaluate(ctx);
+        (await Condition.Evaluate(ctx).ConfigureAwait(false)).AsBoolean()
+            ? await TrueCase.Evaluate(ctx).ConfigureAwait(false)
+            : await FalseCase.Evaluate(ctx).ConfigureAwait(false);
 }
 
 public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClauses, Expr Selection) : Expr
@@ -339,7 +343,7 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> SelectFromSource(FromClause @from, Context ctx)
     {
-        var sourceValue = await @from.Source.Evaluate(ctx);
+        var sourceValue = await @from.Source.Evaluate(ctx).ConfigureAwait(false);
         if (sourceValue is EnumerableValue source == false) throw new RuntimeException($"from: source value {sourceValue} is not enumerable");
 
         await foreach (var value in SelectFromSource(source, from.Ident, ctx).ConfigureAwait(false))

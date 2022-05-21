@@ -5,7 +5,7 @@ public static class AsyncEnumerable
     public static async Task<IReadOnlyList<T>> Collect<T>(this IAsyncEnumerable<T> enumerable, int? limit = null)
     {
         var items = new List<T>();
-        await foreach (var item in enumerable)
+        await foreach (var item in enumerable.ConfigureAwait(false))
         {
             if (limit.HasValue && limit.Value <= items.Count) break;
             items.Add(item);

@@ -253,7 +253,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncSort(Context ctx, Value[] arguments)
     {
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"sort({arguments[0]}): incompatible operand, enumerable expected");
-        var list = await coll.Collect();
+        var list = await coll.Collect().ConfigureAwait(false);
 
         if (list is List<Value> l) l.Sort(ValueComparer.Default);
         else list = list.OrderBy(value => value, ValueComparer.Default).ToArray();
@@ -275,7 +275,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncFirst(Context ctx, Value[] arguments)
     {
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"first({arguments[0]}): incompatible operand, enumerable expected");
-        await foreach (var v in coll)
+        await foreach (var v in coll.ConfigureAwait(false))
         {
             if (v is NullValue) continue;
             return v;
@@ -286,7 +286,7 @@ public partial class FunctionRegistry
     private static async Task<Value> FuncAny(Context ctx, Value[] arguments)
     {
         if (arguments[0] is EnumerableValue coll == false) throw new RuntimeException($"any({arguments[0]}): incompatible operand, enumerable expected");
-        await foreach (var v in coll)
+        await foreach (var v in coll.ConfigureAwait(false))
         {
             if (v is NullValue) continue;
             return BoolValue.True;

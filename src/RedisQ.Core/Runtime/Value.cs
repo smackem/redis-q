@@ -307,7 +307,7 @@ public class RangeValue : EnumerableValue
     {
         for (; lower <= upper; lower++)
         {
-            yield return await Task.FromResult(IntegerValue.Of(lower));
+            yield return await Task.FromResult(IntegerValue.Of(lower)).ConfigureAwait(false);
         }
     }
 }
