@@ -26,18 +26,17 @@ Redis-Q
 
 ## Samples
 
-Assume you create a sample data set in your redis instance consisting of users and sessions, where one user is associated to n sessions:
+Assume you create a sample data set in your redis instance (using `redis-cli`) consisting of users and sessions, where one user is associated to n sessions:
 ```redis-cli
 SET user-1 '{ "name":"bob" }'
 SET user-2 '{ "name":"alice" }'
-HSET "session-1" user-key "user-1" "status" "open" "startTime" "2022-04-01 22:03:54"
-HSET "session-2" user-key "user-1" "status" "closed" "startTime" "2022-03-30 21:03:51"
-HSET "session-2" user-key "user-1" "status" "closed" "startTime" "2022-03-29 20:14:02"
-HSET "session-3" user-key "user-1" "status" "closed" "startTime" "2022-03-30 21:03:51"
-HSET "session-4" user-key "user-2" "status" "closed" "startTime" "2022-03-30 19:22:51"
-HSET "session-5" user-key "user-2" "status" "open" "startTime" "2022-04-01 19:22:30"
+HSET session-1 user-key user-1 status open startTime "2022-04-01 22:03:54"
+HSET session-2 user-key user-1 status closed startTime "2022-03-29 20:14:02"
+HSET session-3 user-key user-1 status closed startTime "2022-03-30 21:03:51"
+HSET session-4 user-key user-2 status closed startTime "2022-03-30 19:22:51"
+HSET session-5 user-key user-2 status open startTime "2022-04-01 19:22:30"
 ```
-
+Now start redis-q and enter the following query to join users and sessions:
 ```csharp
 from userKey in SCAN("user-*")
 from sessionKey in SCAN("session-*") 
@@ -53,7 +52,7 @@ user    loggedInSince
 user-2  2022-04-01 19:22:30
 user-1  2022-04-01 22:03:54
 ```
-
+The following query will display id ('key') and name of users that are currently logged in: 
 ```csharp
 from userKey in SCAN("user-*")
 let openSessionCount = 
