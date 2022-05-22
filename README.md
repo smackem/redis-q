@@ -45,7 +45,7 @@ where HGET(sessionKey, "user-key") == userKey
 let sessionStart = HGET(sessionKey, "startTime")
 select (user: userKey, loggedInSince: sessionStart);
 ```
-Response:
+
 ```
 user    loggedInSince      
 ---------------------------
@@ -65,7 +65,7 @@ where openSessionCount > 0
 let userJson = GET(userKey) 
 select (key: userKey, name: userJson[".name"]);
 ```
-Response:
+
 ```
 key     name 
 -------------
