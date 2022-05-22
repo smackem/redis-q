@@ -2,19 +2,20 @@
 
 ![build](https://github.com/smackem/redis-q/actions/workflows/dotnet.yml/badge.svg)
 
-A REPL to run queries against a Redis database using a language similar to C#'s `from` clause.
+A REPL to run queries against a [Redis](https://www.redis.io) database using a language similar to C#'s `from` clause.
 
 ![image](doc/screenshot-intro-3.png)
 
 ## Features
 
 Redis-Q
-- works with Redis 5 or newer
+- works with [Redis](https://www.redis.io) 5 or newer
 - supports the basic Redis data types: string, list, hash, set and sorted set
 - allows you to write queries in a relational manner to examine the data stored in your Redis instance
 - supports well known operations like cross join and sub-queries as well as aggregations like sum, avg, distinct, count, min and max
 - is able to extract JSON values using JSON-Path
 - works on any desktop platform
+- only supports query (read) commands - use `redis-cli` for writing to the database
 
 ## Installation
 
