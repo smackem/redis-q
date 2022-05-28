@@ -216,7 +216,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         var arguments = context.arguments()?.expr().Select(a => a.Accept(this))
             ?? Enumerable.Empty<Expr>();
         if (lastArgument != null) arguments = arguments.Concat(new[] { lastArgument });
-        return new FunctionExpr(ident, arguments.ToArray());
+        return new FunctionInvocationExpr(ident, arguments.ToArray());
     }
 
     public override Expr VisitTuple(RedisQLParser.TupleContext context)
@@ -248,6 +248,14 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitThrowExpr(RedisQLParser.ThrowExprContext context) =>
         new ThrowExpr(context.expr().Accept(this));
+
+    public override Expr VisitFuncBinding(RedisQLParser.FuncBindingContext context) =>
+        new FuncBinding(
+            context.Ident().GetText(),
+            context.identList()?.children
+                .Select(ident => ident.GetText())
+                .ToArray() ?? Array.Empty<string>(),
+            context.pipelineExpr().Accept(this));
 
     protected override Expr AggregateResult(Expr aggregate, Expr nextResult) =>
         (aggregate, nextResult) switch

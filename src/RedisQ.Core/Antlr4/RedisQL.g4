@@ -2,7 +2,16 @@ grammar RedisQL;
 
 main
     : (pipelineExpr
-    | letClause) EOF
+    | letClause
+    | funcBinding) EOF
+    ;
+
+funcBinding
+    : Let Ident '(' identList? ')' '=' pipelineExpr
+    ;
+
+identList
+    : Ident (',' Ident)*
     ;
 
 pipelineExpr

@@ -336,3 +336,22 @@ public class DurationValue : ScalarValue<TimeSpan>, IRedisValue
     public override bool AsBoolean() => Value != TimeSpan.Zero;
     public SR.RedisValue AsRedisValue() => AsString();
 }
+
+public class FunctionValue : Value
+{
+    public FunctionValue(string name, IReadOnlyList<string> parameters, Expr body)
+    {
+        Name = name;
+        Parameters = parameters;
+        Body = body;
+    }
+
+    public string Name { get; }
+    public IReadOnlyList<string> Parameters { get; }
+    public Expr Body { get; }
+
+    public override string AsString() =>
+        $"{Name}({string.Join(", ", Parameters)})";
+
+    public override bool AsBoolean() => true;
+}

@@ -61,7 +61,7 @@ public record IdentExpr(string Ident) : Expr
         Task.FromResult(ctx.Resolve(Ident) ?? throw new RuntimeException($"identifier {Ident} not found"));
 }
 
-public record FunctionExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
+public record FunctionInvocationExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
 {
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
@@ -497,5 +497,15 @@ public record ThrowExpr(Expr Exception) : Expr
     {
         var exception = await Exception.Evaluate(ctx).ConfigureAwait(false);
         throw new RuntimeException($"Runtime exception: {exception.AsString()}");
+    }
+}
+
+public record FuncBinding(string Ident, IReadOnlyList<string> Parameters, Expr Body) : Expr
+{
+    private protected override Task<Value> EvaluateOverride(Context ctx)
+    {
+        var value = new FunctionValue(Ident, Parameters, Body);
+        ctx.Bind(Ident, value);
+        return Task.FromResult<Value>(value);
     }
 }
