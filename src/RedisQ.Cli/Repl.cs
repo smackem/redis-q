@@ -40,12 +40,34 @@ public class Repl
             var value = await Interpret(compiler, source, _ctx);
             if (value == null) continue;
             await Print(printer, Console.Out, value);
-            // do not store enumerable: it does not make sense because it has already been depleted by Print
-            _ctx.Bind("it", value is EnumerableValue and not ListValue
-                ? NullValue.Instance
-                : value);
+            BindIt(value);
         }
     }
+
+    /// <summary>
+    /// interprets the passed script which may contain multiple commands, separated by the <see cref="Terminator"/>
+    /// </summary>
+    public async Task InterpretScript(string source)
+    {
+        var commands = source.Split(Terminator, StringSplitOptions.RemoveEmptyEntries);
+        var compiler = new Compiler();
+        var printer = new ValuePrinter(_options, PromptContinue);
+        foreach (var command in commands)
+        {
+            var commandSource = TrimSource(command);
+            if (string.IsNullOrEmpty(commandSource)) continue;
+            var value = await Interpret(compiler, commandSource, _ctx);
+            if (value == null) continue;
+            await Print(printer, Console.Out, value);
+            BindIt(value);
+        }
+    }
+
+    private void BindIt(Value value) =>
+        // do not store enumerable: it does not make sense because it has already been depleted by Print
+        _ctx.Bind("it", value is EnumerableValue and not ListValue
+            ? NullValue.Instance
+            : value);
 
     private static async Task<bool> PromptContinue(string prompt)
     {
@@ -155,6 +177,7 @@ public class Repl
 
     private static void PrintBanner(Options options)
     {
+        if (options.NoBanner) return;
         var version = Assembly.GetEntryAssembly()?
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;
