@@ -38,4 +38,7 @@ public record Options
     
     [Option("no-banner", Required = false, Default = false, HelpText = "Don't print welcome message on startup")]
     public bool NoBanner { get; set; }
+    
+    [Option('q', "quiet-bindings", Required = false, Default = false, HelpText = "Don't print value of bindings ('let' commands) on creation")]
+    public bool QuietBindings { get; set; }
 }

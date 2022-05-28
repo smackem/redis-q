@@ -14,21 +14,33 @@ internal static class Program
     {
         var repl = new Repl(options);
         var runRepl = true;
+        var scriptMode = false;
+        var oldQuietBindings = options.QuietBindings;
 
         if (options.InlineSource != null)
         {
+            options.QuietBindings = true;
             await repl.InterpretScript(options.InlineSource);
-            runRepl = options.NoExit;
-            options.NoBanner = true;
+            scriptMode = true;
         }
         else if (options.FilePath != null)
         {
+            options.QuietBindings = true;
             var source = await File.ReadAllTextAsync(options.FilePath);
             await repl.InterpretScript(source);
+            scriptMode = true;
+        }
+
+        if (scriptMode)
+        {
             runRepl = options.NoExit;
             options.NoBanner = true;
         }
 
-        if (runRepl) await repl.Run();
+        if (runRepl)
+        {
+            options.QuietBindings = oldQuietBindings;
+            await repl.Run();
+        }
     }
 }

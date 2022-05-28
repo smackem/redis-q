@@ -206,7 +206,10 @@ public class Repl
         try
         {
             var expr = compiler.Compile(source);
-            return await expr.Evaluate(ctx).WaitAsync(timeSpan);
+            var value = await expr.Evaluate(ctx).WaitAsync(timeSpan);
+            return expr is LetClause && _options.QuietBindings
+                ? null
+                : value;
         }
         catch (OperationCanceledException e)
         {
