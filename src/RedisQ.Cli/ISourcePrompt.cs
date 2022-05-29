@@ -76,6 +76,7 @@ internal class PrettySourcePrompt : ISourcePrompt
                 Tokens.Where,
                 Tokens.Limit,
                 Tokens.Offset,
+                Tokens.All,
                 Tokens.Select,
                 Tokens.True,
                 Tokens.False,
