@@ -20,6 +20,19 @@ public class PostfixTests : TestBase
     }
 
     [Fact]
+    public async Task SubscriptRanges()
+    {
+        var value1 = await Interpret("[1, 2, 3][0..1]");
+        Assert.Equal(Helpers.IntegerList(1, 2), value1);
+        var value2 = await Interpret("[1, 2, 3][1..-1]");
+        Assert.Equal(Helpers.IntegerList(2, 3), value2);
+        var value3 = await Interpret("'abc'[0..1]");
+        Assert.Equal(new StringValue("ab"), value3);
+        var value4 = await Interpret("'abc'[1..-1]");
+        Assert.Equal(new StringValue("bc"), value4);
+    }
+
+    [Fact]
     public async Task Throw()
     {
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"throw 'X'"));

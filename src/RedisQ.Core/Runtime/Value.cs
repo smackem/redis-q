@@ -78,7 +78,9 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>, IEquatable<ListV
 
     public int Count => _list.Count;
 
-    public static ListValue Of(params Value[] values) => new ListValue(values);
+    public static ListValue Of(params Value[] values) => new(values);
+
+    public ListValue Slice(int lower, int upper) => new(_list.ToArray()[lower .. (upper + 1)]);
 
     public IEnumerator<Value> GetEnumerator() => _list.GetEnumerator();
 
@@ -210,6 +212,8 @@ public class StringValue : ScalarValue<string>, IRedisKey, IRedisValue
     public StringValue(string value) : base(value)
     {}
 
+    public StringValue Slice(int lower, int upper) => new(Value[lower .. (upper + 1)]);
+
     public override string AsString() => Value;
     public override bool AsBoolean() => string.IsNullOrEmpty(Value) == false;
 
@@ -292,16 +296,17 @@ public class BoolValue : ScalarValue<bool>, IRedisValue
 
 public class RangeValue : EnumerableValue
 {
-    private readonly long _lower, _upper;
-
     public RangeValue(long lower, long upper) : base(WalkRange(lower, upper))
     {
-        _lower = lower;
-        _upper = upper;
+        Lower = lower;
+        Upper = upper;
     }
 
-    public override bool AsBoolean() => _upper >= _lower;
-    public override string ToString() => $"[{GetType().Name}[{_lower} .. {_upper}]";
+    public long Lower { get; }
+    public long Upper { get; }
+
+    public override bool AsBoolean() => Upper >= Lower;
+    public override string ToString() => $"[{GetType().Name}[{Lower} .. {Upper}]";
 
     private static async IAsyncEnumerable<Value> WalkRange(long lower, long upper)
     {

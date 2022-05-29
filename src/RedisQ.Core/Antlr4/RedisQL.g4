@@ -56,7 +56,7 @@ limitClause
 limitClauseLimitPart
     : Limit (ternaryExpr | All)
     ;
-    
+
 limitClauseOffsetPart
     : Offset ternaryExpr
     ;

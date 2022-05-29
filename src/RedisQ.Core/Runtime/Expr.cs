@@ -292,8 +292,10 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         return (operandValue, subscriptValue) switch
         {
             (ListValue list, IntegerValue index) => list[CoerceIndex(list, (int) index.Value)],
+            (ListValue list, RangeValue range) => list.Slice(CoerceIndex(list, (int) range.Lower), CoerceIndex(list, (int) range.Upper)),
             (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items, (int) index.Value)],
             (StringValue str, IntegerValue index) => new StringValue(str.Value[CoerceIndex(str.Value, (int) index.Value)].ToString()),
+            (StringValue str, RangeValue range) => str.Slice(CoerceIndex(str.Value, (int) range.Lower), CoerceIndex(str.Value, (int) range.Upper)),
             (StringValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (RedisValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (NullValue, _) or (_, NullValue) => NullValue.Instance,
