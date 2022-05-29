@@ -11,6 +11,15 @@ public static class CliFunctions
     {
         registry.Register(new("clip", 1, FuncClip, "(any) -> dummy: string"));
         registry.Register(new("save", 2, FuncSave, "(path: string, value: any) -> dummy: string"));
+        registry.Register(new("trace", 1, FuncTrace, "(value: any) -> value"));
+    }
+
+    private static Task<Value> FuncTrace(Context ctx, Value[] arguments)
+    {
+        var value = arguments[0];
+        var timeStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        Console.WriteLine($"{timeStr} {value.AsString()}");
+        return Task.FromResult(value);
     }
 
     private static async Task<Value> FuncClip(Context ctx, Value[] arguments)
