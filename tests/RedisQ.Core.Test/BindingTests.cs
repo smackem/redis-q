@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using RedisQ.Core.Runtime;
 using Xunit;
@@ -64,5 +65,19 @@ public class BindingTests : TestBase
         Assert.Equal(IntegerValue.Of(123), value);
         var resolvedValue = ctx.Resolve("x");
         Assert.Equal(IntegerValue.Of(123), resolvedValue);
+    }
+
+    [Fact]
+    public async Task FunctionValueBindings()
+    {
+        var ctx = Context.Root(Helpers.DummyRedis, Helpers.DefaultFunctions);
+        var funcExpr = Compile(@"let add(a,b) = a + b");
+        var value = await funcExpr.Evaluate(ctx);
+        Assert.IsType<FunctionValue>(value);
+        var evalExpr = Compile(@"add(1, 2)");
+        var result = await evalExpr.Evaluate(ctx);
+        Assert.Equal(IntegerValue.Of(3), result);
+        var faultExpr = Compile(@"add(1)");
+        await Assert.ThrowsAsync<RuntimeException>(() => faultExpr.Evaluate(ctx));
     }
 }
