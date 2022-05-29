@@ -63,17 +63,40 @@ public record IdentExpr(string Ident) : Expr
 
 public record FunctionInvocationExpr(string Ident, IReadOnlyList<Expr> Arguments) : Expr
 {
-    private protected override async Task<Value> EvaluateOverride(Context ctx)
+    private protected override Task<Value> EvaluateOverride(Context ctx) =>
+        ctx.Resolve(Ident) is FunctionValue funcVal
+            ? InvokeFunctionValue(funcVal, ctx)
+            : InvokeBuiltInFunction(ctx);
+
+    private async Task<Value> InvokeFunctionValue(FunctionValue func, Context ctx)
+    {
+        var funcCtx = Context.Inherit(ctx);
+        var argCount = Arguments.Count;
+        if (func.Parameters.Count != argCount) throw new RuntimeException($"function '{func.AsString()}' expects {func.Parameters.Count} arguments but got {Arguments.Count}");
+        var arguments = await EvalArguments(ctx).ConfigureAwait(false);
+        for (var i = 0; i < argCount; i++)
+        {
+            funcCtx.Bind(func.Parameters[i], arguments[i]);
+        }
+        return await func.Body.Evaluate(funcCtx).ConfigureAwait(false);
+    }
+
+    private async Task<Value> InvokeBuiltInFunction(Context ctx)
     {
         var function = ctx.Functions.Resolve(Ident, Arguments.Count);
+        var arguments = await EvalArguments(ctx).ConfigureAwait(false);
+        return await function.Invoke(ctx, arguments.ToArray()).ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<Value>> EvalArguments(Context ctx)
+    {
         var arguments = new List<Value>();
         foreach (var arg in Arguments)
         {
             var value = await arg.Evaluate(ctx).ConfigureAwait(false);
             arguments.Add(value);
         }
-
-        return await function.Invoke(ctx, arguments.ToArray()).ConfigureAwait(false);
+        return arguments;
     }
 }
 
@@ -477,7 +500,7 @@ public abstract record NestedClause : Expr
 
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
-public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
+public record LimitClause(Expr? Count, Expr? Offset) : NestedClause;
 public record OrderByClause(Expr Key, bool IsDescending) : NestedClause;
 public record GroupByClause(Expr Value, Expr Key, string Ident) : NestedClause;
 

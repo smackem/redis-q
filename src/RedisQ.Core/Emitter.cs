@@ -10,7 +10,9 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     private int _nestingLevel;
 
     public override Expr VisitMain(RedisQLParser.MainContext context) =>
-        (context.pipelineExpr() as IParseTree ?? context.letClause()).Accept(this);
+        (context.pipelineExpr() as IParseTree
+         ?? context.letClause() as IParseTree
+         ?? context.funcBinding()).Accept(this);
 
     public override Expr VisitPipelineExpr(RedisQLParser.PipelineExprContext context)
     {
@@ -252,7 +254,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     public override Expr VisitFuncBinding(RedisQLParser.FuncBindingContext context) =>
         new FuncBinding(
             context.Ident().GetText(),
-            context.identList()?.children
+            context.identList()?.Ident()
                 .Select(ident => ident.GetText())
                 .ToArray() ?? Array.Empty<string>(),
             context.pipelineExpr().Accept(this));

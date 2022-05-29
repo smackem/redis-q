@@ -50,7 +50,7 @@ whereClause
     ;
 
 limitClause
-    : Limit ternaryExpr (Offset ternaryExpr)?
+    : Limit (ternaryExpr | All) (Offset ternaryExpr)?
     ;
 
 orderByClause
@@ -200,6 +200,7 @@ Let             : 'let';
 Where           : 'where';
 Limit           : 'limit';
 Offset          : 'offset';
+All             : 'all';
 Group           : 'group';
 By              : 'by';
 Into            : 'into';

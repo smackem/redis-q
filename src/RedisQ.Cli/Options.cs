@@ -27,10 +27,10 @@ public record Options
     [Option('t', "timeout", Required = false, Default = 1000, HelpText = "The maximum duration of an evaluation in milliseconds")]
     public int EvaluationTimeout { get; set; }
 
-    [Option('f', "file", Required = false, Default = null, HelpText = "Interpret input from file and quit")]
+    [Option('f', "file", Required = false, Default = null, HelpText = "Interpret input from file and quit. If --eval is also passed, process the inline source after the file.")]
     public string? FilePath { get; set; }
     
-    [Option('e', "eval", Required = false, Default = null, HelpText = "Interpret passed source code and quit")]
+    [Option('e', "eval", Required = false, Default = null, HelpText = "Interpret passed source code and quit. If --file is also passed, process the file first.")]
     public string? InlineSource { get; set; }
     
     [Option("no-exit", Required = false, Default = false, HelpText = "Don't quit after evaluating source code passed with --file or --eval")]

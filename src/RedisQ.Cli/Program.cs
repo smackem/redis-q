@@ -17,13 +17,7 @@ internal static class Program
         var scriptMode = false;
         var oldQuietBindings = options.QuietBindings;
 
-        if (options.InlineSource != null)
-        {
-            options.QuietBindings = true;
-            await repl.InterpretScript(options.InlineSource);
-            scriptMode = true;
-        }
-        else if (options.FilePath != null)
+        if (options.FilePath != null)
         {
             options.QuietBindings = true;
             var source = await File.ReadAllTextAsync(options.FilePath);
@@ -31,16 +25,20 @@ internal static class Program
             scriptMode = true;
         }
 
+        if (options.InlineSource != null)
+        {
+            options.QuietBindings = true;
+            await repl.InterpretScript(options.InlineSource);
+            scriptMode = true;
+        }
+
         if (scriptMode)
         {
             runRepl = options.NoExit;
             options.NoBanner = true;
+            options.QuietBindings = oldQuietBindings;
         }
 
-        if (runRepl)
-        {
-            options.QuietBindings = oldQuietBindings;
-            await repl.Run();
-        }
+        if (runRepl) await repl.Run();
     }
 }
