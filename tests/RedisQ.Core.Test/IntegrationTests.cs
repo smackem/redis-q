@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
 using RedisQ.Core.Runtime;
 using StackExchange.Redis;
 using Xunit;

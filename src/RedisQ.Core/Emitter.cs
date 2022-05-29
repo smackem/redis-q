@@ -10,9 +10,14 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     private int _nestingLevel;
 
     public override Expr VisitMain(RedisQLParser.MainContext context) =>
-        (context.pipelineExpr() as IParseTree
+        (context.letExpr() as IParseTree
          ?? context.letClause() as IParseTree
          ?? context.funcBinding()).Accept(this);
+
+    public override Expr VisitLetExpr(RedisQLParser.LetExprContext context) =>
+        context.letClause() != null
+            ? new LetExpr((LetClause)context.letClause().Accept(this), context.letExpr().Accept(this))
+            : context.pipelineExpr().Accept(this);
 
     public override Expr VisitPipelineExpr(RedisQLParser.PipelineExprContext context)
     {
@@ -265,7 +270,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             context.identList()?.Ident()
                 .Select(ident => ident.GetText())
                 .ToArray() ?? Array.Empty<string>(),
-            context.pipelineExpr().Accept(this));
+            context.letExpr().Accept(this));
 
     protected override Expr AggregateResult(Expr aggregate, Expr nextResult) =>
         (aggregate, nextResult) switch

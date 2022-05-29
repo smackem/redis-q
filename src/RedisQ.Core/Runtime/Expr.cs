@@ -539,3 +539,13 @@ public record FuncBinding(string Ident, IReadOnlyList<string> Parameters, Expr B
         return Task.FromResult<Value>(value);
     }
 }
+
+public record LetExpr(LetClause Let, Expr Body) : Expr
+{
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
+    {
+        var bodyCtx = Context.Inherit(ctx);
+        await Let.Evaluate(bodyCtx).ConfigureAwait(false);
+        return await Body.Evaluate(bodyCtx).ConfigureAwait(false);
+    }
+}

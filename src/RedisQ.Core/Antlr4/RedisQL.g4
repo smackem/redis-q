@@ -1,13 +1,18 @@
 grammar RedisQL;
 
 main
-    : (pipelineExpr
-    | letClause
+    : (letClause
+    | letExpr
     | funcBinding) EOF
     ;
 
+letExpr
+    : letClause 'in' letExpr?
+    | pipelineExpr
+    ;
+
 funcBinding
-    : Let Ident '(' identList? ')' '=' pipelineExpr
+    : Let Ident '(' identList? ')' '=' letExpr
     ;
 
 identList
@@ -166,7 +171,7 @@ primary
     | functionInvocation
     | tuple
     | list
-    | '(' pipelineExpr ')'
+    | '(' letExpr ')'
     ;
 
 tuple
