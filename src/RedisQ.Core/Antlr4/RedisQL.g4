@@ -50,7 +50,15 @@ whereClause
     ;
 
 limitClause
-    : Limit (ternaryExpr | All) (Offset ternaryExpr)?
+    : limitClauseLimitPart limitClauseOffsetPart?
+    ;
+
+limitClauseLimitPart
+    : Limit (ternaryExpr | All)
+    ;
+    
+limitClauseOffsetPart
+    : Offset ternaryExpr
     ;
 
 orderByClause

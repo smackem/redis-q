@@ -370,6 +370,38 @@ from x in [1, 2, 3] limit 2 offset 3 select x
     }
 
     [Fact]
+    public async Task SelectLimitedUnbounded()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit all select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
+    }
+
+    [Fact]
+    public async Task SelectLimitedWithNullLimit()
+    {
+        const string source = @"
+from x in [1, 2, 3] limit null select x
+";
+        var value = await Interpret(source);
+        Assert.IsType<EnumerableValue>(value);
+        var coll = (EnumerableValue)value;
+        var values = await coll.Collect();
+        Assert.Collection(values,
+            v => Assert.Equal(IntegerValue.Of(1), v),
+            v => Assert.Equal(IntegerValue.Of(2), v),
+            v => Assert.Equal(IntegerValue.Of(3), v));
+    }
+
+    [Fact]
     public async Task OrderBySimple()
     {
         const string source = @"

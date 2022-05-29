@@ -416,16 +416,21 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> Limit(IAsyncEnumerable<Value> coll, LimitClause limit, Context ctx)
     {
-        var countValue = await limit.Count.Evaluate(ctx).ConfigureAwait(false);
+        long? count = await limit.Count.Evaluate(ctx).ConfigureAwait(false) switch
+        {
+            NullValue => null,
+            IntegerValue n => n.Value,
+            _ => throw new RuntimeException("limit clause expects integer argument or null"),
+        };
+
         var offsetValue = limit.Offset != null
             ? await limit.Offset.Evaluate(ctx).ConfigureAwait(false)
             : IntegerValue.Zero;
         var first = offsetValue is IntegerValue o
             ? o.Value
             : throw new RuntimeException("limit clause expected integer arguments");
-        var last = countValue is IntegerValue c
-            ? first + c.Value
-            : throw new RuntimeException("limit clause expected integer arguments");
+
+        var last = first + count;
         var index = 0;
         await foreach (var value in coll.ConfigureAwait(false))
         {
@@ -500,7 +505,7 @@ public abstract record NestedClause : Expr
 
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
-public record LimitClause(Expr? Count, Expr? Offset) : NestedClause;
+public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
 public record OrderByClause(Expr Key, bool IsDescending) : NestedClause;
 public record GroupByClause(Expr Value, Expr Key, string Ident) : NestedClause;
 
