@@ -35,7 +35,8 @@ public class Repl
         {
             var source = TrimSource(await sourcePrompt.ReadSource());
             if (string.IsNullOrEmpty(source)) continue;
-            if (HandleShellCommand(source, out var handled)) return;
+            var (quit, handled) = await HandleShellCommand(source);
+            if (quit) return;
             if (handled) continue;
             var value = await Interpret(compiler, source, _ctx);
             if (value == null) continue;
@@ -77,17 +78,17 @@ public class Repl
         return key.Key != ConsoleKey.Q;
     }
 
-    private bool HandleShellCommand(string source, out bool handled)
+    private async Task<(bool quit, bool handled)> HandleShellCommand(string source)
     {
-        handled = false;
+        var handled = false;
         try
         {
             var match = Regex.Match(source, @"#(\w+)\b\s?(.*);?$");
-            if (match.Success == false) return false;
+            if (match.Success == false) return (false, handled);
             handled = true;
             switch (match.Groups[1].Value)
             {
-                case "q": return true;
+                case "q": return (true, handled);
                 case "pwd":
                     Console.WriteLine(Environment.CurrentDirectory);
                     break;
@@ -103,6 +104,9 @@ public class Repl
                 case "dump":
                     PrintContext();
                     break;
+                case "load" when match.Groups.Count >= 2:
+                    await LoadSource(match.Groups[2].Value);
+                    break;
             }
         }
         catch (Exception e)
@@ -110,7 +114,16 @@ public class Repl
             Report(e, false);
             handled = true;
         }
-        return false;
+        return (false, handled);
+    }
+    
+    private Task LoadSource(string fileName)
+    {
+        var filePath = Path.IsPathRooted(fileName)
+            ? fileName
+            : Path.Combine(Directory.GetCurrentDirectory(), fileName);
+        var source = File.ReadAllText(filePath);
+        return InterpretScript(source);
     }
 
     private void PrintContext()
