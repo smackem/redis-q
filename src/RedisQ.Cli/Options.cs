@@ -41,4 +41,7 @@ public record Options
     
     [Option('q', "quiet-bindings", Required = false, Default = false, HelpText = "Don't print value of bindings ('let' commands) on creation")]
     public bool QuietBindings { get; set; }
+
+    [Option("cli", Required = false, Default = "redis-cli", HelpText = "The path to the executable to start with the REPL command '#cli <ARGS>'")]
+    public string CliFilePath { get; set; } = "redis-cli";
 }
