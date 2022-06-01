@@ -20,7 +20,7 @@ public class Repl
     {
         _options = options;
         _functions = new FunctionRegistry(options.IsCaseSensitive == false);
-        CliFunctions.Register(_functions);
+        CliFunctions.Register(_functions, options);
         var redis = new RedisConnection(_options.ConnectionString);
         _ctx = Context.Root(redis, _functions);
     }
@@ -255,18 +255,12 @@ public class Repl
                 ? null
                 : value;
         }
-        catch (OperationCanceledException e)
+        catch (Exception e) when 
+            (e is TimeoutException
+                or OperationCanceledException
+                or CompilationException
+                or RuntimeException)
         {
-            Report(e, _options.Verbose);
-        }
-        catch (CompilationException e)
-        {
-            Report(e, _options.Verbose);
-        }
-        catch (RuntimeException e)
-        {
-            // Evaluate() translates all exceptions into RuntimeExceptions, so
-            // we don't need a catch-all clause
             Report(e, _options.Verbose);
         }
         return null;

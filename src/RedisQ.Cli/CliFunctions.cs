@@ -1,17 +1,50 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using RedisQ.Core.Runtime;
 using TextCopy;
 
 namespace RedisQ.Cli;
 
-public static class CliFunctions
+public class CliFunctions
 {
-    [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
-    public static void Register(FunctionRegistry registry)
+    private readonly Options _options;
+
+    private CliFunctions(Options options)
     {
+        _options = options;
+    }
+    
+    [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
+    public static void Register(FunctionRegistry registry, Options options)
+    {
+        var instance = new CliFunctions(options);
         registry.Register(new("clip", 1, FuncClip, "(any) -> dummy: string"));
         registry.Register(new("save", 2, FuncSave, "(path: string, value: any) -> dummy: string"));
         registry.Register(new("trace", 1, FuncTrace, "(value: any) -> value"));
+        registry.Register(new("cli", 1, instance.FuncCli, "(value: any) -> string"));
+    }
+
+    private async Task<Value> FuncCli(Context ctx, Value[] arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = _options.CliFilePath,
+            Arguments = arguments[0].AsString(),
+        };
+        try
+        {
+            using var process = Process.Start(psi);
+            if (process == null) throw new FileNotFoundException();
+            _options.CliFilePath = psi.FileName;
+            var cts = new CancellationTokenSource(_options.EvaluationTimeout);
+            await process.WaitForExitAsync(cts.Token);
+            if (process.HasExited == false) process.Kill();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+        return NullValue.Instance;
     }
 
     private static Task<Value> FuncTrace(Context ctx, Value[] arguments)
