@@ -30,21 +30,23 @@ public class CliFunctions
         {
             FileName = _options.CliFilePath,
             Arguments = arguments[0].AsString(),
+            RedirectStandardOutput = true,
+            RedirectStandardInput = true,
         };
         try
         {
             using var process = Process.Start(psi);
             if (process == null) throw new FileNotFoundException();
-            _options.CliFilePath = psi.FileName;
-            var cts = new CancellationTokenSource(_options.EvaluationTimeout);
-            await process.WaitForExitAsync(cts.Token);
+            var cts = new CancellationTokenSource((int) (_options.EvaluationTimeout * 0.9));
+            process.StandardInput.Close();
+            var output = await process.StandardOutput.ReadToEndAsync().WaitAsync(cts.Token);
             if (process.HasExited == false) process.Kill();
+            return new StringValue(output);
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
         }
-        return NullValue.Instance;
     }
 
     private static Task<Value> FuncTrace(Context ctx, Value[] arguments)
