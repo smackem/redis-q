@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.RegularExpressions;
 using ConsoleTables;
 using RedisQ.Core;
@@ -18,7 +20,7 @@ public class Repl
     {
         _options = options;
         _functions = new FunctionRegistry(options.IsCaseSensitive == false);
-        CliFunctions.Register(_functions);
+        CliFunctions.Register(_functions, options);
         var redis = new RedisConnection(_options.ConnectionString);
         _ctx = Context.Root(redis, _functions);
     }
@@ -107,6 +109,9 @@ public class Repl
                 case "load" when match.Groups.Count >= 2:
                     await LoadSource(match.Groups[2].Value);
                     break;
+                case "cli" when match.Groups.Count >= 2:
+                    await InvokeCli(match.Groups[2].Value);
+                    break;
             }
         }
         catch (Exception e)
@@ -116,7 +121,33 @@ public class Repl
         }
         return (false, handled);
     }
-    
+
+    private async Task InvokeCli(string arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = _options.CliFilePath,
+            Arguments = arguments,
+        };
+        while (true)
+        {
+            try
+            {
+                using var process = Process.Start(psi);
+                if (process == null) throw new FileNotFoundException();
+                _options.CliFilePath = psi.FileName;
+                await process.WaitForExitAsync();
+                return;
+            }
+            catch (Exception e)
+            {
+                Console.Write($"error starting {psi.FileName}: {e.Message}\nplease enter path (leave blank to cancel): ");
+                psi.FileName = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(psi.FileName)) return;
+            }
+        }
+    }
+
     private Task LoadSource(string fileName)
     {
         var filePath = Path.IsPathRooted(fileName)
@@ -224,18 +255,12 @@ public class Repl
                 ? null
                 : value;
         }
-        catch (OperationCanceledException e)
+        catch (Exception e) when 
+            (e is TimeoutException
+                or OperationCanceledException
+                or CompilationException
+                or RuntimeException)
         {
-            Report(e, _options.Verbose);
-        }
-        catch (CompilationException e)
-        {
-            Report(e, _options.Verbose);
-        }
-        catch (RuntimeException e)
-        {
-            // Evaluate() translates all exceptions into RuntimeExceptions, so
-            // we don't need a catch-all clause
             Report(e, _options.Verbose);
         }
         return null;
