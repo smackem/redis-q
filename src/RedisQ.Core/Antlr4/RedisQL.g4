@@ -1,9 +1,13 @@
 grammar RedisQL;
 
 main
-    : (letClause
+    : (mainExpr ';')* EOF
+    ;
+
+mainExpr
+    : letClause
     | letExpr
-    | funcBinding) EOF
+    | funcBinding
     ;
 
 letExpr
