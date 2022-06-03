@@ -52,18 +52,12 @@ public class Repl
     /// </summary>
     public async Task InterpretScript(string source)
     {
-        var commands = source.Split(Terminator, StringSplitOptions.RemoveEmptyEntries);
         var compiler = new Compiler();
         var printer = new ValuePrinter(_options, PromptContinue);
-        foreach (var command in commands)
-        {
-            var commandSource = TrimSource(command);
-            if (string.IsNullOrEmpty(commandSource)) continue;
-            var value = await Interpret(compiler, commandSource, _ctx);
-            if (value == null) continue;
-            await Print(printer, Console.Out, value);
-            BindIt(value);
-        }
+        var value = await Interpret(compiler, source, _ctx);
+        if (value == null) return;
+        await Print(printer, Console.Out, value);
+        BindIt(value);
     }
 
     private void BindIt(Value value) =>
@@ -141,7 +135,7 @@ public class Repl
             }
             catch (Exception e)
             {
-                Console.Write($"error starting {psi.FileName}: {e.Message}\nplease enter path (leave blank to cancel): ");
+                Console.Write($"error starting {psi.FileName}: {e.Message}{Environment.NewLine}please enter path (leave blank to cancel): ");
                 psi.FileName = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(psi.FileName)) return;
             }

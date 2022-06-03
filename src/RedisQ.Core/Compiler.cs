@@ -11,7 +11,7 @@ public class Compiler
         try
         {
             var errorMessages = new List<string>();
-            var tokens = CreateTokenStream(source, errorMessages);
+            var tokens = CreateTokenStream(PrepareSource(source), errorMessages);
             var parser = new RedisQLParser(tokens);
             var parserErrorListener = new ParserErrorListener(errorMessages);
             parser.AddErrorListener(parserErrorListener);
@@ -33,12 +33,19 @@ public class Compiler
     public IList<IToken> Lex(string source)
     {
         var errorMessages = new List<string>();
-        var tokens = CreateTokenStream(source, errorMessages);
+        var tokens = CreateTokenStream(PrepareSource(source), errorMessages);
         tokens.Fill();
         return errorMessages.Count == 0
             ? tokens.GetTokens()
             : throw new CompilationException(JoinErrorMessages(errorMessages));
     }
+
+    private static string PrepareSource(string source) =>
+        source.Trim() switch
+        {
+            var s when s.EndsWith(';') => s,
+            var s => s + ';',
+        };
 
     private static string JoinErrorMessages(IEnumerable<string> messages) => string.Join('\n', messages);
 

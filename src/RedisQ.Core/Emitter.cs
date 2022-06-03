@@ -9,7 +9,17 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 {
     private int _nestingLevel;
 
-    public override Expr VisitMain(RedisQLParser.MainContext context) =>
+    public override Expr VisitMain(RedisQLParser.MainContext context)
+    {
+        var expressions = context.mainExpr()
+            .Select(expr => expr.Accept(this))
+            .ToArray();
+        return expressions.Length == 1
+            ? expressions[0]
+            : new ProgramExpr(expressions);
+    }
+
+    public override Expr VisitMainExpr(RedisQLParser.MainExprContext context) =>
         (context.letExpr() as IParseTree
          ?? context.letClause() as IParseTree
          ?? context.funcBinding()).Accept(this);

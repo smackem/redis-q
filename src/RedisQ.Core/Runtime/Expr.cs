@@ -24,6 +24,21 @@ public abstract record Expr
     private protected abstract Task<Value> EvaluateOverride(Context ctx);
 }
 
+public record ProgramExpr(IReadOnlyList<Expr> Children) : Expr
+{
+    private protected override async Task<Value> EvaluateOverride(Context ctx)
+    {
+        var values = new List<Value>();
+        foreach (var expr in Children)
+        {
+            var value = await expr.Evaluate(ctx).ConfigureAwait(false);
+            values.Add(value);
+        }
+
+        return new ListValue(values);
+    }
+}
+
 public record LiteralExpr(Value Literal) : Expr
 {
     private protected override Task<Value> EvaluateOverride(Context _) => Task.FromResult(Literal);
