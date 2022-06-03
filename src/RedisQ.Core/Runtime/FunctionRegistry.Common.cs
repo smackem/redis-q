@@ -29,7 +29,7 @@ public partial class FunctionRegistry
         Register(new("max", 1, FuncMax, "(enumerable) -> number or null"));
         Register(new("reverse", 1, FuncReverse, "(enumerable) -> enumerable"));
         Register(new("sort", 1, FuncSort, "(enumerable) -> enumerable"));
-        Register(new("match", 2, FuncMatch, "(input: string, pattern: string) -> list of matched groups"));
+        Register(new("match", 2, FuncMatch, "(pattern: string, input: string) -> list of matched groups"));
         Register(new("first", 1, FuncFirst, "(enumerable) -> any"));
         Register(new("any", 1, FuncAny, "(enumerable) -> bool"));
         Register(new("enumerate", 1, FuncEnumerate, "(list) -> enumerable"));
@@ -54,6 +54,73 @@ public partial class FunctionRegistry
         Register(new("asin", 1, FuncAsin, "(real) -> real"));
         Register(new("acos", 1, FuncAcos, "(real) -> real"));
         Register(new("atan", 1, FuncAtan, "(real) -> real"));
+        Register(new("uuid", 0, FuncUuid, "() -> string"));
+        Register(new("trim", 1, FuncTrim, "(string) -> string"));
+        Register(new("replace", 3, FuncReplace, "(pattern: string, replacement: string, input: string) -> string"));
+        Register(new("indexof", 2, FuncIndexOf, "(value: any, searchee: list|string) -> int"));
+        Register(new("split", 2, FuncSplit, "(pattern: string, string) -> list of strings"));
+        Register(new("char", 1, FuncChar, "(code: int) -> string"));
+        Register(new("nl", 0, (_, _) => Task.FromResult<Value>(new StringValue(Environment.NewLine)), "() -> string"));
+        Register(new("pi", 0, (_, _) => Task.FromResult<Value>(new RealValue(Math.PI)), "() -> real"));
+        Register(new("e", 0, (_, _) => Task.FromResult<Value>(new RealValue(Math.E)), "() -> real"));
+    }
+
+    private static Task<Value> FuncChar(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue code == false) throw new RuntimeException($"char({arguments[0]}): incompatible operand, integer expected");
+        var ch = (char) code.Value;
+        return Task.FromResult<Value>(new StringValue(ch.ToString()));
+    }
+
+    private static Task<Value> FuncUuid(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(new StringValue(Guid.NewGuid().ToString()));
+
+    private static Task<Value> FuncTrim(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue str == false) throw new RuntimeException($"trim({arguments[0]}): incompatible operand, string expected");
+        return Task.FromResult<Value>(new StringValue(str.Value.Trim()));
+    }
+
+    private static Task<Value> FuncReplace(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue pattern == false) throw new RuntimeException($"replace({arguments[0]}): incompatible operand, string expected");
+        if (arguments[1] is StringValue replacement == false) throw new RuntimeException($"replace({arguments[1]}): incompatible operand, string expected");
+        if (arguments[2] is StringValue str == false) throw new RuntimeException($"replace({arguments[2]}): incompatible operand, string expected");
+        var result = Regex.Replace(str.Value, pattern.Value, replacement.Value);
+        return Task.FromResult<Value>(new StringValue(result));
+    }
+
+    private static Task<Value> FuncIndexOf(Context ctx, Value[] arguments)
+    {
+        switch (arguments[1])
+        {
+            case StringValue str:
+            {
+                var subStr = arguments[0].AsString();
+                var index = str.Value.IndexOf(subStr, StringComparison.Ordinal);
+                return Task.FromResult<Value>(IntegerValue.Of(index));
+            }
+            case ListValue list:
+            {
+                Value index = list.IndexOf(arguments[0]) switch
+                {
+                    null => NullValue.Instance,
+                    var i => IntegerValue.Of(i.Value),
+                };
+                return Task.FromResult(index);
+            }
+            default:
+                throw new RuntimeException($"indexof({arguments[1]}): incompatible operand, string or list expected");
+        }
+    }
+
+    private static Task<Value> FuncSplit(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue pattern == false) throw new RuntimeException($"replace({arguments[0]}): incompatible operand, string expected");
+        if (arguments[1] is StringValue str == false) throw new RuntimeException($"replace({arguments[2]}): incompatible operand, string expected");
+        var result = Regex.Split(str.Value, pattern.Value);
+        var value = new ListValue(result.Select(s => new StringValue(s)).ToArray());
+        return Task.FromResult<Value>(value);
     }
 
     private static Task<Value> FuncSize(Context ctx, Value[] arguments) =>
@@ -263,8 +330,8 @@ public partial class FunctionRegistry
 
     private static Task<Value> FuncMatch(Context ctx, Value[] arguments)
     {
-        var input = arguments[0].AsString();
-        var pattern = arguments[1].AsString();
+        var pattern = arguments[0].AsString();
+        var input = arguments[1].AsString();
         var match = Regex.Match(input, pattern);
         var groupList = match.Success
             ? new ListValue(match.Groups.Values.Select(g => new StringValue(g.Value)).ToArray())

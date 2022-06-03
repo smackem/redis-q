@@ -82,6 +82,17 @@ public class ListValue : EnumerableValue, IReadOnlyList<Value>, IEquatable<ListV
 
     public ListValue Slice(int lower, int upper) => new(_list.ToArray()[lower .. (upper + 1)]);
 
+    public int? IndexOf(Value value)
+    {
+        var count = _list.Count;
+        for (var i = 0; i < count; i++)
+        {
+            if (Equals(_list[i], value)) return i;
+        }
+
+        return null;
+    }
+
     public IEnumerator<Value> GetEnumerator() => _list.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
