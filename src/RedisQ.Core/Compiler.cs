@@ -47,15 +47,14 @@ public class Compiler
             var s => s + ';',
         };
 
-    private static string JoinErrorMessages(IEnumerable<string> messages) => string.Join('\n', messages);
+    private static string JoinErrorMessages(IEnumerable<string> messages) => string.Join(Environment.NewLine, messages);
 
-    private static CommonTokenStream CreateTokenStream(string source, List<string> outErrorMessages)
+    private static CommonTokenStream CreateTokenStream(string source, IList<string> outErrorMessages)
     {
         using var sourceReader = new StringReader(source);
-        var errorMessages = new List<string>();
         var stream = new AntlrInputStream(sourceReader);
         var lexer = new RedisQLLexer(stream);
-        var lexerErrorListener = new LexerErrorListener(errorMessages);
+        var lexerErrorListener = new LexerErrorListener(outErrorMessages);
         lexer.AddErrorListener(lexerErrorListener);
         return new CommonTokenStream(lexer);
     }

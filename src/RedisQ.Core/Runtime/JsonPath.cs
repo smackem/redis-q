@@ -11,6 +11,16 @@ public static class JsonPath
         return Convert(token);
     }
 
+    /// <summary>
+    /// parses a JSON object into a TupleValue. only composite object are supported,
+    /// not scalars.
+    /// </summary>
+    public static Value Parse(string json)
+    {
+        var obj = JObject.Parse(json);
+        return Convert(obj);
+    }
+
     private static Value Convert(JToken? token) =>
         token?.Type switch
         {
@@ -19,7 +29,16 @@ public static class JsonPath
             JTokenType.Float => new RealValue(token.ToObject<double>()),
             JTokenType.String => new StringValue(token.ToObject<string>() ?? string.Empty),
             JTokenType.Array => new ListValue(token.Select(Convert).ToArray()),
+            JTokenType.Object => ConvertObject((JObject) token),
             JTokenType.Null or null => NullValue.Instance,
             _ => new StringValue(token.ToString()),
         };
+
+    private static TupleValue ConvertObject(JObject obj)
+    {
+        var nameValuePairs = obj.Properties()
+            .Select(prop => (prop.Name, Convert(prop.Value)))
+            .ToArray();
+        return TupleValue.Of(nameValuePairs);
+    }
 }
