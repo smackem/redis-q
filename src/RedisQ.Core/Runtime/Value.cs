@@ -133,9 +133,10 @@ public class TupleValue : Value, IEquatable<TupleValue>
     private static readonly IReadOnlyDictionary<string, int> EmptyFieldMap = new Dictionary<string, int>();
     private readonly IReadOnlyDictionary<string, int> _fieldIndicesByName;
 
+    public static readonly TupleValue Empty = new(Array.Empty<Value>(), EmptyFieldMap);
+
     public TupleValue(IReadOnlyList<Value> items, IReadOnlyDictionary<string, int> fieldIndicesByName)
     {
-        if (items.Count < 2) throw new ArgumentException("a tuple must have at least two items");
         _fieldIndicesByName = fieldIndicesByName;
 
         var maxIndex = fieldIndicesByName.Count > 0

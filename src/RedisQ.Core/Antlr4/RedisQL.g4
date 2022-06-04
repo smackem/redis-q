@@ -282,6 +282,12 @@ SingleQuotedString
     : '\'' ~['\r\n]* '\''
     ;
 
+// unreferenced rule for lexing while typing
+UnterminatedString
+    : '\'' ~['\r\n]*
+    | '"' ~["\r\n]*
+    ;
+
 Comment
     : '//' ~ [\r\n]* -> skip
     ;

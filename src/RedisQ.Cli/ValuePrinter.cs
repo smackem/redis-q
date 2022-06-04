@@ -30,6 +30,9 @@ internal class ValuePrinter
                 await writer.WriteLineAsync();
                 await PrintEnumerable(enumerable, writer, indent);
                 break;
+            case TupleValue tuple:
+                PrintTuples(new[] { tuple }, writer, indent);
+                break;
             default:
                 await writer.WriteLineAsync($"{indent}{value.AsString()}");
                 break;
@@ -64,13 +67,15 @@ internal class ValuePrinter
             count += chunk.Length;
             if (_continuePrompt != null && chunk.Length == _options.ChunkSize)
             {
-                if (await _continuePrompt($"{indent}Enumerated {count} element(s)") == false) break;
+                if (await _continuePrompt($"{indent}{count} element(s)") == false) break;
             }
             else
             {
-                await writer.WriteLineAsync($"{indent}Enumerated {count} element(s)");
+                await writer.WriteLineAsync($"{indent}{count} element(s)");
             }
         }
+
+        if (count == 0) await writer.WriteLineAsync($"{indent}0 elements");
     }
 
     private static void PrintTuples(IReadOnlyCollection<Value> values, TextWriter writer, string indent)

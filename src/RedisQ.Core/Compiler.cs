@@ -1,4 +1,5 @@
-﻿using Antlr4.Runtime;
+﻿using System.Diagnostics;
+using Antlr4.Runtime;
 using RedisQ.Core.Lang;
 using RedisQ.Core.Runtime;
 
@@ -6,6 +7,9 @@ namespace RedisQ.Core;
 
 public class Compiler
 {
+    /// <summary>
+    /// compiles the source code, throwing an exception when compilation errors occur
+    /// </summary>
     public Expr Compile(string source)
     {
         try
@@ -30,14 +34,16 @@ public class Compiler
         }
     }
 
+    /// <summary>
+    /// tokenizes the source code as far as possible and does not throw exceptions
+    /// </summary>
     public IList<IToken> Lex(string source)
     {
         var errorMessages = new List<string>();
         var tokens = CreateTokenStream(PrepareSource(source), errorMessages);
         tokens.Fill();
-        return errorMessages.Count == 0
-            ? tokens.GetTokens()
-            : throw new CompilationException(JoinErrorMessages(errorMessages));
+        if (errorMessages.Count > 0) Trace.WriteLine(JoinErrorMessages(errorMessages));
+        return tokens.GetTokens();
     }
 
     private static string PrepareSource(string source) =>
@@ -47,15 +53,14 @@ public class Compiler
             var s => s + ';',
         };
 
-    private static string JoinErrorMessages(IEnumerable<string> messages) => string.Join('\n', messages);
+    private static string JoinErrorMessages(IEnumerable<string> messages) => string.Join(Environment.NewLine, messages);
 
-    private static CommonTokenStream CreateTokenStream(string source, List<string> outErrorMessages)
+    private static CommonTokenStream CreateTokenStream(string source, IList<string> outErrorMessages)
     {
         using var sourceReader = new StringReader(source);
-        var errorMessages = new List<string>();
         var stream = new AntlrInputStream(sourceReader);
         var lexer = new RedisQLLexer(stream);
-        var lexerErrorListener = new LexerErrorListener(errorMessages);
+        var lexerErrorListener = new LexerErrorListener(outErrorMessages);
         lexer.AddErrorListener(lexerErrorListener);
         return new CommonTokenStream(lexer);
     }
