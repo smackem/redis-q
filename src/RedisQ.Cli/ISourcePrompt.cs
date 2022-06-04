@@ -148,7 +148,9 @@ internal class PrettySourcePrompt : ISourcePrompt
                     _ => t.Type switch
                     {
                         Tokens.Integer or RedisQLLexer.Real => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightYellow),
-                        Tokens.SingleQuotedString or RedisQLLexer.DoubleQuotedString => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightGreen),
+                        Tokens.SingleQuotedString
+                            or RedisQLLexer.DoubleQuotedString
+                            or RedisQLLexer.UnterminatedString => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightGreen),
                         _ => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightWhite),
                     },
                 });
