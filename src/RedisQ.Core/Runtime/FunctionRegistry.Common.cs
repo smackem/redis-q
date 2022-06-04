@@ -108,8 +108,12 @@ public partial class FunctionRegistry
             case StringValue str:
             {
                 var subStr = arguments[0].AsString();
-                var index = str.Value.IndexOf(subStr, StringComparison.Ordinal);
-                return Task.FromResult<Value>(IntegerValue.Of(index));
+                Value index = str.Value.IndexOf(subStr, StringComparison.Ordinal) switch
+                {
+                    < 0 => NullValue.Instance,
+                    var i => IntegerValue.Of(i),
+                };
+                return Task.FromResult(index);
             }
             case ListValue list:
             {

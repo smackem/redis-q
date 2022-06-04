@@ -106,6 +106,9 @@ public class Repl
                 case "cli" when match.Groups.Count >= 2:
                     await InvokeCli(match.Groups[2].Value);
                     break;
+                case "source" when match.Groups.Count >= 2:
+                    PrintSource(match.Groups[2].Value);
+                    break;
             }
         }
         catch (Exception e)
@@ -114,6 +117,19 @@ public class Repl
             handled = true;
         }
         return (false, handled);
+    }
+
+    private void PrintSource(string ident)
+    {
+        var value = _ctx.Resolve(ident);
+        if (value is FunctionValue func == false)
+        {
+            Console.WriteLine($"{ident} is not a function");
+            return;
+        }
+        var parameters = string.Join(", ", func.Parameters);
+        Console.WriteLine(
+            $"{func.Name}({parameters}) = {func.Body.Print()}");
     }
 
     private async Task InvokeCli(string arguments)
