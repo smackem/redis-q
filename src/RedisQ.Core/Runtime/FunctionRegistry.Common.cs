@@ -64,12 +64,16 @@ public partial class FunctionRegistry
         Register(new("pi", 0, (_, _) => Task.FromResult<Value>(new RealValue(Math.PI)), "() -> real"));
         Register(new("e", 0, (_, _) => Task.FromResult<Value>(new RealValue(Math.E)), "() -> real"));
         Register(new("parse", 1, FuncParse, "(json: string) -> value"));
+        Register(new("json", 1, FuncJson, "(value) -> string"));
     }
+
+    private static Task<Value> FuncJson(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(new StringValue(JsonPath.ToJson(arguments[0])));
 
     private static Task<Value> FuncParse(Context ctx, Value[] arguments)
     {
         var json = arguments[0].AsString();
-        return Task.FromResult<Value>(JsonPath.Parse(json));
+        return Task.FromResult(JsonPath.Parse(json));
     }
 
     private static Task<Value> FuncChar(Context ctx, Value[] arguments)

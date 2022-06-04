@@ -1,3 +1,4 @@
+using System.Text;
 using Newtonsoft.Json.Linq;
 
 namespace RedisQ.Core.Runtime;
@@ -12,13 +13,34 @@ public static class JsonPath
     }
 
     /// <summary>
-    /// parses a JSON object into a TupleValue. only composite object are supported,
-    /// not scalars.
+    /// parses a JSON value into a <see cref="Value"/>.
     /// </summary>
-    public static Value Parse(string json)
+    public static Value Parse(string json) =>
+        Convert(JToken.Parse(json));
+
+    public static string ToJson(Value value) =>
+        value switch
+        {
+            IntegerValue or RealValue => value.AsString(),
+            StringValue s => '"' + s.Value + '"',
+            TimestampValue
+                or DurationValue
+                or RedisValue
+                or RedisKeyValue => '"' + value.AsString() + '"',
+            ListValue list => '[' + string.Join(", ", list.Select(ToJson)) + ']',
+            TupleValue tuple => Convert(tuple),
+            NullValue => "null",
+            BoolValue b => b.Value ? "true" : "false",
+            _ => throw new ArgumentException($"cannot convert to json: {value}"),
+        };
+
+    private static string Convert(TupleValue tuple)
     {
-        var obj = JObject.Parse(json);
-        return Convert(obj);
+        var items = tuple.Items.Select((v, i) =>
+            i < 0 || i >= tuple.FieldNames.Count || string.IsNullOrEmpty(tuple.FieldNames[i])
+                ? $"item{i}: {ToJson(v)}"
+                : $"{tuple.FieldNames[i]}: {ToJson(v)}");
+        return '{' + string.Join(", ", items) + '}';
     }
 
     private static Value Convert(JToken? token) =>
