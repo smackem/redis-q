@@ -20,7 +20,9 @@ public abstract record Expr
             throw new RuntimeException(e);
         }
     }
-    
+
+    public string Print() => new ExprPrinter().Print(this);
+
     private protected abstract Task<Value> EvaluateOverride(Context ctx);
 }
 
