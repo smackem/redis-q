@@ -203,6 +203,42 @@ Note that the `offset` clause is optional and the default offset is 0.
 
 When working with large data sets, including a `limit` clause in all queries against keyspace-scans (like `keys()` or `zscan()`) is good practice.
 
+As in C#, you can use the `group by` clause to group results based on common criteria:
+```csharp
+from x in [1,2,3,4,5,6,7,8,9,10]
+group x by x % 2 into g
+select g;
+```
+```
+key  values          
+---------------------
+1    [1, 3, 5, 7, 9] 
+0    [2, 4, 6, 8, 10]
+
+2 element(s)
+```
+
+The target identifier (in this example `g`) is assigned a tuple with fields `(key, values)`.
+One of the first samples in this documents - collecting open sessions per user - can be rewritten like this, using the `group by` clause:
+
+```csharp
+from userKey in SCAN("user-*") 
+from sessionKey in SCAN("session-*") 
+where HGET(sessionKey, "user-key") == userKey 
+where HGET(sessionKey, "status") == "open"
+group sessionKey by userKey into g 
+let userJson = GET(userKey) 
+select (key: g.key, name: userJson[".name"], openSessions: count(g.values));
+```
+```
+key     name   openSessions
+---------------------------
+user-2  alice  1           
+user-1  bob    1           
+
+2 element(s)
+```
+
 ### Functions and Pipelining
 redis-q features a collection of built-in functions, which can be invoked as usual in languages like C or Java:
 ```csharp
@@ -240,6 +276,8 @@ select squared
 ```
 484+100+16+225+900
 ```
+
+Since v0.3.0, redis-q also supports defining user functions. See 'Bindings' below for more info.
 
 ## Data Types
 RedisQL is a dynamically-typed language supporting scalar values like integers or strings as well as composite values like lists, enumerables and tuples.
@@ -316,6 +354,23 @@ select m;
   [10, 100, 1000]
   [20, 200, 2000]
   [30, 300, 3000]
+```
+
+Lists, opposed to Enumerables, can be indexed using the subscript operator:
+```
+let l = [100, 200, 300];
+l[0]
+```
+```
+100
+```
+
+The index can either be an integer or a range to extract a sub-list (slice) from the list:
+```
+l[0..1]
+```
+```
+[100, 200]
 ```
 
 ### Tuples
@@ -455,6 +510,44 @@ The last evaluation's result can be recalled using the identifier `it`:
 
 It's best to bind top-level values to discrete lists instead of enumerations so the value can be iterated multiple times using the `it` identifier. This is why the `collect()` function is used in the preceding samples.
 
+Since v0.3.0, redis-q supports function expressions:
+
+```
+> let carthesian(itemsA, itemsB) =
+    from a in itemsA
+    from b in itemsB
+    select (a: a, b: b);
+add(a, b)
+> add(0..1, 0..1);
+a  b
+----
+0  0
+0  1
+1  0
+1  1
+```
+
+The body of a function consists of a single expression. To enable top-level `let` bindings in fucntions, redis-q 0.3.0 supports the F#-like `let .. in ..` expression:
+```fsharp
+> let a = 100 in
+  let b = 200 in
+  a + b;
+```
+```
+300
+```
+
+This is a single expressions which defines two bindings: the value 100 is bound to identifier `a` and the value 200 is bound to identifier `b`.
+
+To define a function that stores intermediate results in bindings, you can write
+
+```fsharp
+let randomRange(maxLength) =
+    let lower = random(0, 1000) in
+    let upper = lower + random(0, maxLength) in
+    lower .. upper;
+```
+
 ## REPL shell commands (since v0.2.0)
 
 | Command | Description |
@@ -465,6 +558,12 @@ It's best to bind top-level values to discrete lists instead of enumerations so 
 | `#cd <DIR>;` | Changes to the directory `<DIR>` |
 | `#ls;` | Lists all file system entries in the current directory |
 | `#dump;` | Prints all top-level bindings |
+
+## REPL shell commands (since v0.3.0)
+
+| Command | Description |
+| --- | --- |
+| `#load <FILE>;` | Loads and interprets RedisQL source from `<FILE>` |
 
 ## Built-in functions
 
