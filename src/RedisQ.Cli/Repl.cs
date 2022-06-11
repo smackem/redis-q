@@ -175,7 +175,7 @@ public class Repl
             p.Print(v, writer).Wait();
             return writer.ToString().Trim();
         }
-        var printer = new ValuePrinter(new Options(), null);
+        var printer = new ValuePrinter(Options.Default(), null);
         var scope = _ctx.CaptureClosure().Bindings
             .Select(b => new
             {

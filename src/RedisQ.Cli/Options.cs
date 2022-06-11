@@ -9,6 +9,8 @@ namespace RedisQ.Cli;
 // ReSharper disable once ClassNeverInstantiated.Global
 public record Options
 {
+    public static Options Default() => new();
+
     [Value(0, MetaName = "connection-string", Default = "localhost:6379", HelpText = "Redis connection string")]
     public string ConnectionString { get; set; } = "localhost:6379";
 

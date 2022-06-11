@@ -66,7 +66,7 @@ internal class PrettySourcePrompt : ISourcePrompt
     
     private class LocalPromptCallbacks : PromptCallbacks
     {
-        private static readonly KeyPress SoftEnter = new(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), "\n");
+        private static readonly KeyPress SoftEnter = new(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), Environment.NewLine);
         private static readonly ISet<int> Keywords = new HashSet<int>(
             new[]
             {
