@@ -1,6 +1,8 @@
 using System.Text;
 using PrettyPrompt;
+using PrettyPrompt.Completion;
 using PrettyPrompt.Consoles;
+using PrettyPrompt.Documents;
 using PrettyPrompt.Highlighting;
 using RedisQ.Core;
 using RedisQ.Core.Lang;
@@ -115,6 +117,16 @@ internal class PrettySourcePrompt : ISourcePrompt
         {
             _compiler = compiler;
             _terminator = terminator;
+        }
+
+        protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
+        {
+            if (caret > 0 && text[caret - 1] == '(')
+            {
+                var items = new[] { new CompletionItem("gurke") };
+                return Task.FromResult<IReadOnlyList<CompletionItem>>(items);
+            }
+            return base.GetCompletionItemsAsync(text, caret, spanToBeReplaced, cancellationToken);
         }
 
         protected override Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)

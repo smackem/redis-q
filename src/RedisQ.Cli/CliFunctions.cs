@@ -13,7 +13,7 @@ public class CliFunctions
     {
         _options = options;
     }
-    
+
     [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
     public static void Register(FunctionRegistry registry, Options options)
     {
