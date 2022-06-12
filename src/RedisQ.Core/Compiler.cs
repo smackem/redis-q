@@ -10,8 +10,9 @@ public class Compiler
     /// <summary>
     /// compiles the source code, throwing an exception when compilation errors occur
     /// </summary>
-    public Expr Compile(string source)
+    public Expr Compile(string source, CompilerOptions? options = null)
     {
+        options ??= CompilerOptions.Default;
         try
         {
             var errorMessages = new List<string>();
@@ -21,7 +22,7 @@ public class Compiler
             parser.AddErrorListener(parserErrorListener);
             var tree = parser.main();
             return errorMessages.Count == 0
-                ? tree.Accept(new Emitter())
+                ? tree.Accept(new Emitter(options.ParseIntAsReal))
                 : throw new CompilationException(JoinErrorMessages(errorMessages));
         }
         catch (CompilationException)

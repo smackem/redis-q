@@ -109,6 +109,10 @@ public class Repl
                 case "source" when match.Groups.Count >= 2:
                     PrintSource(match.Groups[2].Value);
                     break;
+                case "math":
+                    _options.MathMode ^= true;
+                    Console.WriteLine("Math mode is {0}", _options.MathMode ? "on" : "off");
+                    break;
             }
         }
         catch (Exception e)
@@ -257,9 +261,14 @@ public class Repl
     private async Task<Value?> Interpret(Compiler compiler, string source, Context ctx)
     {
         var timeSpan = TimeSpan.FromMilliseconds(_options.EvaluationTimeout);
+        var compilerOptions = new CompilerOptions
+        {
+            ParseIntAsReal = _options.MathMode,
+        };
+
         try
         {
-            var expr = compiler.Compile(source);
+            var expr = compiler.Compile(source, compilerOptions);
             var value = await expr.Evaluate(ctx).WaitAsync(timeSpan);
             return expr is LetClause && _options.QuietBindings
                 ? null
@@ -273,6 +282,7 @@ public class Repl
         {
             Report(e, _options.Verbose);
         }
+
         return null;
     }
 

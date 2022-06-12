@@ -44,4 +44,7 @@ public record Options
 
     [Option("cli", Required = false, Default = "redis-cli", HelpText = "The path to the executable to start with the REPL command '#cli <ARGS>'")]
     public string CliFilePath { get; set; } = "redis-cli";
+
+    [Option('m', "math", Required = false, Default = false, HelpText = "Math mode: all numbers are parsed as real numbers")]
+    public bool MathMode { get; set; }
 }

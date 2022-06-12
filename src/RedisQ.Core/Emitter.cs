@@ -8,6 +8,12 @@ namespace RedisQ.Core;
 internal class Emitter : RedisQLBaseVisitor<Expr>
 {
     private int _nestingLevel;
+    private readonly bool _parseIntAsReal;
+
+    public Emitter(bool parseIntAsReal)
+    {
+        _parseIntAsReal = parseIntAsReal;
+    }
 
     public override Expr VisitMain(RedisQLParser.MainContext context)
     {
@@ -225,6 +231,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     {
         Value value = context switch
         {
+            var ctx when ctx.Integer() != null && _parseIntAsReal => new RealValue(ParseReal(ctx.Integer().GetText())),
             var ctx when ctx.Integer() != null => IntegerValue.Of(ParseInteger(ctx.Integer().GetText())),
             var ctx when ctx.Real() != null => new RealValue(ParseReal(ctx.Real().GetText())),
             _ => throw new CompilationException($"unexpected number literal: {context.GetText()}"),
