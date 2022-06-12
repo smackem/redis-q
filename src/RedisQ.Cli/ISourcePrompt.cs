@@ -6,6 +6,7 @@ using PrettyPrompt.Documents;
 using PrettyPrompt.Highlighting;
 using RedisQ.Core;
 using RedisQ.Core.Lang;
+using RedisQ.Core.Runtime;
 using Tokens = RedisQ.Core.Lang.RedisQLLexer; 
 
 namespace RedisQ.Cli;
@@ -44,13 +45,13 @@ internal class PrettySourcePrompt : ISourcePrompt
 {
     private readonly IPrompt _prompt;
 
-    public PrettySourcePrompt(char terminator, Compiler compiler)
+    public PrettySourcePrompt(char terminator, Compiler compiler, Func<string, FunctionDefinition?> functionLookup)
     {
         var promptStr = new FormattedString("> ", new FormatSpan(0, 2, AnsiColor.BrightBlack));
         var historyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".redis-q-history");
         _prompt = new Prompt(
             configuration: new PromptConfiguration(prompt: promptStr),
-            callbacks: new LocalPromptCallbacks(compiler, terminator),
+            callbacks: new LocalPromptCallbacks(compiler, terminator, functionLookup),
             persistentHistoryFilepath: historyPath);
     }
 
@@ -111,23 +112,51 @@ internal class PrettySourcePrompt : ISourcePrompt
             });
 
         private readonly Compiler _compiler;
+        private readonly Func<string, FunctionDefinition?> _functionLookup;
         private readonly char _terminator;
 
-        public LocalPromptCallbacks(Compiler compiler, char terminator)
+        public LocalPromptCallbacks(Compiler compiler, char terminator, Func<string, FunctionDefinition?> functionLookup)
         {
             _compiler = compiler;
             _terminator = terminator;
+            _functionLookup = functionLookup;
         }
 
         protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
         {
-            if (caret > 0 && text[caret - 1] == '(')
+            var lastCharPos = caret - 1;
+            char? lastChar = lastCharPos < text.Length ? text[lastCharPos] : null;
+            do
             {
-                var items = new[] { new CompletionItem("gurke") };
+                if (lastChar == null) break;
+                var ident = ExtractFunctionName(text, caret - 1);
+                if (ident.Length == 0) break;
+                var function = _functionLookup(ident);
+                if (function == null) break;
+                var items = new[] { new CompletionItem(function.HelpText) };
                 return Task.FromResult<IReadOnlyList<CompletionItem>>(items);
-            }
+            } while (false);
+
             return base.GetCompletionItemsAsync(text, caret, spanToBeReplaced, cancellationToken);
         }
+
+        private static string ExtractFunctionName(string text, int caret)
+        {
+            var end = caret--;
+            while (caret >= 0 && IsIdentChar(text[caret]))
+            {
+                caret--;
+            }
+            return text[(caret + 1) .. end];
+        }
+
+        private static bool IsIdentChar(char ch) =>
+            ch switch
+            {
+                var c when char.IsLetterOrDigit(c) => true,
+                '_' => true,
+                _ => false,
+            };
 
         protected override Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {

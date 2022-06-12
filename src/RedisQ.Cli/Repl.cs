@@ -32,7 +32,7 @@ public class Repl
         var printer = new ValuePrinter(_options, PromptContinue);
         ISourcePrompt sourcePrompt = _options.Simple
             ? new MonochromeSourcePrompt(Terminator)
-            : new PrettySourcePrompt(Terminator, compiler);
+            : new PrettySourcePrompt(Terminator, compiler, ident => _functions.TryResolve(ident));
         while (true)
         {
             var source = TrimSource(await sourcePrompt.ReadSource());

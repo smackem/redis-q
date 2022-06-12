@@ -24,6 +24,9 @@ public partial class FunctionRegistry : IEnumerable<FunctionDefinition>
         return function;
     }
 
+    public FunctionDefinition? TryResolve(string name) =>
+        _dict.TryGetValue(name, out var f) ? f : null;
+
     public void Register(FunctionDefinition function) =>
         _dict.Add(function.Name, function);
 
