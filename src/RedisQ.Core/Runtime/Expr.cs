@@ -226,6 +226,27 @@ public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         _ => throw new RuntimeException($"the operator '-' cannot be applied to the operands {l} and {r}"),
     });
 
+public record BitAndExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value & rv.Value),
+        _ => throw new RuntimeException($"the operator '&' cannot be applied to the operands {l} and {r}"),
+    });
+
+public record BitOrExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value | rv.Value),
+        _ => throw new RuntimeException($"the operator '&' cannot be applied to the operands {l} and {r}"),
+    });
+
+public record BitXorExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value ^ rv.Value),
+        _ => throw new RuntimeException($"the operator '^' cannot be applied to the operands {l} and {r}"),
+    });
+
 public record TimesExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
@@ -257,6 +278,20 @@ public record ModExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l,
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value % rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
         _ => throw new RuntimeException($"the operator '%' cannot be applied to the operands {l} and {r}"),
+    });
+
+public record BitLShiftExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value << (int) rv.Value),
+        _ => throw new RuntimeException($"the operator '<<' cannot be applied to the operands {l} and {r}"),
+    });
+
+public record BitRShiftExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (IntegerValue lv, IntegerValue rv) => IntegerValue.Of(lv.Value >> (int) rv.Value),
+        _ => throw new RuntimeException($"the operator '>>' cannot be applied to the operands {l} and {r}"),
     });
 
 public record UnaryExpr : Expr
@@ -298,6 +333,13 @@ public record NotExpr(Expr Operand) : UnaryExpr(Operand, value =>
     {
         NullValue => NullValue.Instance,
         _ => BoolValue.Of(value.AsBoolean() == false),
+    });
+
+public record BitNotExpr(Expr Operand) : UnaryExpr(Operand, value =>
+    value switch
+    {
+        IntegerValue n => IntegerValue.Of(~n.Value),
+        _ => throw new RuntimeException($"operator '~' cannot be applied to operand {value}"),
     });
 
 public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr

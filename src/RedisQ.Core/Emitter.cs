@@ -157,6 +157,9 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         {
             var op when op.Plus() != null => new PlusExpr(left, right),
             var op when op.Minus() != null => new MinusExpr(left, right),
+            var op when op.BitAnd() != null => new BitAndExpr(left, right),
+            var op when op.BitOr() != null => new BitOrExpr(left, right),
+            var op when op.BitXor() != null => new BitXorExpr(left, right),
             _ => throw new CompilationException("syntax does not allow this"),
         };
     }
@@ -171,6 +174,8 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             var op when op.Times() != null => new TimesExpr(left, right),
             var op when op.Div() != null => new DivExpr(left, right),
             var op when op.Mod() != null => new ModExpr(left, right),
+            var op when op.BitLShift() != null => new BitLShiftExpr(left, right),
+            var op when op.BitRShift() != null => new BitRShiftExpr(left, right),
             _ => throw new CompilationException("syntax does not allow this"),
         };
     }
@@ -184,6 +189,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             var op when op.Minus() != null => new NegExpr(operand),
             var op when op.Plus() != null => new PosExpr(operand),
             var op when op.Not() != null => new NotExpr(operand),
+            var op when op.BitNot() != null => new BitNotExpr(operand),
             _ => throw new CompilationException("syntax does not allow this"),
         };
     }
