@@ -155,16 +155,14 @@ x  y   product
 ```
 Filtering of enumerables can be achieved using the `where` clause:
 ```csharp
-from x in 1..10
+from x in [0,1,2,3,4]
 where x % 2 == 0
 select x
 ```
 ```
+  0
   2
   4
-  6
-  8
-  10
 ```
 
 Ordering of items can be achieved with the `orderby` clause:

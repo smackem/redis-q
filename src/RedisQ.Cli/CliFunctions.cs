@@ -13,7 +13,7 @@ public class CliFunctions
     {
         _options = options;
     }
-    
+
     [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeNotEvident")]
     public static void Register(FunctionRegistry registry, Options options)
     {
@@ -51,40 +51,40 @@ public class CliFunctions
 
     private static Task<Value> FuncTrace(Context ctx, Value[] arguments)
     {
-        var value = arguments[0];
+        var input = arguments[0];
         var timeStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        Console.WriteLine($"{timeStr} {value.AsString()}");
-        return Task.FromResult(value);
+        Console.WriteLine($"{timeStr} {input.AsString()}");
+        return Task.FromResult(input);
     }
 
     private static async Task<Value> FuncClip(Context ctx, Value[] arguments)
     {
-        var options = new Options(); // override options
+        var options = Options.Default();
         var printer = new ValuePrinter(options, null);
+        var input = arguments[0];
         await using var writer = new StringWriter();
-        await printer.Print(arguments[0], writer);
+        await printer.Print(input, writer);
         var str = writer.ToString();
         await ClipboardService.SetTextAsync(str);
-        return new StringValue($"{str.Length} characters copied to clipboard :-)");
+        return input;
     }
 
     private static async Task<Value> FuncSave(Context ctx, Value[] arguments)
     {
         if (arguments[0] is StringValue path == false) throw new RuntimeException($"save({arguments[0]}): incompatible operand, string expected");
         await using var stream = File.Create(path.Value);
-        if (arguments[1] is RedisValue value)
+        var input = arguments[1];
+        if (input is RedisValue value)
         {
             await stream.WriteAsync(value.Value);
-            await stream.FlushAsync();
         }
         else
         {
             var writer = new StreamWriter(stream);
-            var options = new Options(); // override options
+            var options = Options.Default(); // override options
             var printer = new ValuePrinter(options, null);
-            await printer.Print(arguments[1], writer);
-            await writer.FlushAsync();
+            await printer.Print(input, writer);
         }
-        return new StringValue($"{stream.Position} bytes written to {path.Value} ;-)");
+        return input;
     }
 }

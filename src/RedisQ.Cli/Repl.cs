@@ -32,7 +32,7 @@ public class Repl
         var printer = new ValuePrinter(_options, PromptContinue);
         ISourcePrompt sourcePrompt = _options.Simple
             ? new MonochromeSourcePrompt(Terminator)
-            : new PrettySourcePrompt(Terminator, compiler);
+            : new PrettySourcePrompt(Terminator, compiler, ident => _functions.TryResolve(ident));
         while (true)
         {
             var source = TrimSource(await sourcePrompt.ReadSource());
@@ -179,7 +179,7 @@ public class Repl
             p.Print(v, writer).Wait();
             return writer.ToString().Trim();
         }
-        var printer = new ValuePrinter(new Options(), null);
+        var printer = new ValuePrinter(Options.Default(), null);
         var scope = _ctx.CaptureClosure().Bindings
             .Select(b => new
             {
