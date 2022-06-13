@@ -126,6 +126,9 @@ additiveExpr
 additiveOp
     : Plus
     | Minus
+    | BitAnd
+    | BitOr
+    | BitXor
     ;
 
 multiplicativeExpr
@@ -137,6 +140,8 @@ multiplicativeOp
     : Times
     | Div
     | Mod
+    | BitLShift
+    | BitRShift
     ;
 
 unaryExpr
@@ -148,6 +153,7 @@ unaryOp
     : Minus
     | Plus
     | Not
+    | BitNot
     ;
 
 postFixedPrimary
@@ -233,6 +239,12 @@ Minus           : '-';
 Times           : '*';
 Div             : '/';
 Mod             : '%';
+BitAnd          : '&';
+BitOr           : '|';
+BitXor          : '^';
+BitLShift       : '<<';
+BitRShift       : '>>';
+BitNot          : '~';
 Lt              : '<';
 Le              : '<=';
 Gt              : '>';
