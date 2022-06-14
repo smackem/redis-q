@@ -239,6 +239,8 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         {
             var ctx when ctx.Integer() != null && _parseIntAsReal => new RealValue(ParseReal(ctx.Integer().GetText())),
             var ctx when ctx.Integer() != null => IntegerValue.Of(ParseInteger(ctx.Integer().GetText())),
+            var ctx when ctx.HexInteger() != null => IntegerValue.Of(ParseHexInteger(ctx.HexInteger().GetText())),
+            var ctx when ctx.BinaryInteger() != null => IntegerValue.Of(ParseBinaryInteger(ctx.BinaryInteger().GetText())),
             var ctx when ctx.Real() != null => new RealValue(ParseReal(ctx.Real().GetText())),
             _ => throw new CompilationException($"unexpected number literal: {context.GetText()}"),
         };
@@ -305,5 +307,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     private static string ParseString(string s) => s.StartsWith("\"") ? s.Trim('\"') : s.Trim('\'');
     private static long ParseInteger(string s) => long.Parse(s.Replace("_", string.Empty));
+    private static long ParseHexInteger(string s) => Convert.ToInt64(s.Replace("_", string.Empty)[2..], 16);
+    private static long ParseBinaryInteger(string s) => Convert.ToInt64(s.Replace("_", string.Empty)[2..], 2);
     private static double ParseReal(string s) => double.Parse(s.Replace("_", string.Empty), CultureInfo.InvariantCulture);
 }
