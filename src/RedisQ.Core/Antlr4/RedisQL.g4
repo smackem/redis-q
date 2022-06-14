@@ -205,7 +205,7 @@ arguments
     ;
 
 number
-    : (Plus | Minus)? (Integer | Real | HexInteger)
+    : (Plus | Minus)? (Integer | Real | HexInteger | BinaryInteger)
     ;
 
 string
@@ -284,6 +284,14 @@ HexInteger
 
 HexLiteral
     : ([a-f] | [A-F] | DigitOrUnderscore)
+    ;
+
+BinaryInteger
+    : '0b' BinaryLiteral+
+    ;
+
+BinaryLiteral
+    : '0' | '1' | '_'
     ;
 
 DoubleQuotedString

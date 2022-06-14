@@ -188,7 +188,7 @@ internal class PrettySourcePrompt : ISourcePrompt
                     //_ when Operators.Contains(t.Type) => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightCyan),
                     _ => t.Type switch
                     {
-                        Tokens.Integer or RedisQLLexer.Real => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightYellow),
+                        Tokens.Integer or RedisQLLexer.Real or Tokens.HexInteger or Tokens.BinaryInteger => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightYellow),
                         Tokens.SingleQuotedString
                             or RedisQLLexer.DoubleQuotedString
                             or RedisQLLexer.UnterminatedString => new FormatSpan(t.StartIndex, t.Length, AnsiColor.BrightGreen),
