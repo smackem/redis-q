@@ -167,7 +167,7 @@ fieldAccessPostfix
     ;
 
 subscriptPostfix
-    : '[' expr ']'
+    : '[' pipelineExpr ']'
     ;
 
 primary
@@ -186,10 +186,11 @@ primary
 
 tuple
     : '(' tupleItem ',' tupleItem (',' tupleItem)* ')'
+    | '(' Ident ':' pipelineExpr ')'
     ;
 
 tupleItem
-    : (Ident ':')? expr
+    : (Ident ':')? pipelineExpr
     ;
 
 list
@@ -201,7 +202,7 @@ functionInvocation
     ;
 
 arguments
-    : expr (',' expr)*
+    : pipelineExpr (',' pipelineExpr)*
     ;
 
 number

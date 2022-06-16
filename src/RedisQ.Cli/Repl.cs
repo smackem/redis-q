@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 using System.Text.RegularExpressions;
 using ConsoleTables;
 using RedisQ.Core;
@@ -242,7 +241,7 @@ public class Repl
         Console.WriteLine($"***** redis-q v{version}");
         Console.WriteLine($"redis @ {options.ConnectionString}");
         Console.WriteLine("terminate expressions with ;");
-        Console.WriteLine("enter #q; to quit...");
+        Console.WriteLine("enter #h; for help...");
         Console.WriteLine();
     }
 

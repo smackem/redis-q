@@ -18,8 +18,8 @@ public class CliFunctions
     public static void Register(FunctionRegistry registry, Options options)
     {
         var instance = new CliFunctions(options);
-        registry.Register(new("clip", 1, FuncClip, "(any) -> dummy: string"));
-        registry.Register(new("save", 2, FuncSave, "(path: string, value: any) -> dummy: string"));
+        registry.Register(new("clip", 1, FuncClip, "(value: any) -> value"));
+        registry.Register(new("save", 2, FuncSave, "(path: string, value: any) -> value"));
         registry.Register(new("trace", 1, FuncTrace, "(value: any) -> value"));
         registry.Register(new("cli", 1, instance.FuncCli, "(value: any) -> string"));
     }

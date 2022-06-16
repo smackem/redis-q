@@ -251,7 +251,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
     private Expr EmitFunctionInvocation(RedisQLParser.FunctionInvocationContext context, Expr? lastArgument)
     {
         var ident = context.Ident().GetText();
-        var arguments = context.arguments()?.expr().Select(a => a.Accept(this))
+        var arguments = context.arguments()?.pipelineExpr().Select(a => a.Accept(this))
             ?? Enumerable.Empty<Expr>();
         if (lastArgument != null) arguments = arguments.Concat(new[] { lastArgument });
         return new FunctionInvocationExpr(ident, arguments.ToArray());
@@ -259,12 +259,19 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitTuple(RedisQLParser.TupleContext context)
     {
+        if (context.Ident() != null)
+        {
+            return new TupleExpr(
+                new[] { context.pipelineExpr().Accept(this) },
+                new Dictionary<string, int> { {context.Ident().GetText(), 0} });
+        }
+
         var fieldIndicesByName = new Dictionary<string, int>();
         var fieldExpressions = new List<Expr>();
         var index = 0;
         foreach (var tupleItem in context.tupleItem())
         {
-            fieldExpressions.Add(tupleItem.expr().Accept(this));
+            fieldExpressions.Add(tupleItem.pipelineExpr().Accept(this));
             var fieldName = tupleItem.Ident()?.GetText();
             if (fieldName != null)
             {
@@ -273,12 +280,13 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             }
             index++;
         }
+
         return new TupleExpr(fieldExpressions, fieldIndicesByName);
     }
 
     public override Expr VisitList(RedisQLParser.ListContext context)
     {
-        var items = context.arguments()?.expr().Select(a => a.Accept(this));
+        var items = context.arguments()?.pipelineExpr().Select(a => a.Accept(this));
         return items != null
             ? new ListExpr(items.ToArray())
             : ListExpr.Empty;
