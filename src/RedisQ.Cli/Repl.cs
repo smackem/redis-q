@@ -14,6 +14,7 @@ public class Repl
     private readonly FunctionRegistry _functions;
     private readonly Options _options;
     private readonly Context _ctx;
+    private readonly ReplCommandRegistry _replCommands;
 
     public Repl(Options options)
     {
@@ -22,6 +23,8 @@ public class Repl
         CliFunctions.Register(_functions, options);
         var redis = new RedisConnection(_options.ConnectionString);
         _ctx = Context.Root(redis, _functions);
+        _replCommands = new ReplCommandRegistry(PrintHelp);
+        RegisterReplCommands();
     }
 
     public async Task Run()
@@ -36,9 +39,12 @@ public class Repl
         {
             var source = TrimSource(await sourcePrompt.ReadSource());
             if (string.IsNullOrEmpty(source)) continue;
-            var (quit, handled) = await HandleShellCommand(source);
-            if (quit) return;
-            if (handled) continue;
+            // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
+            switch (await HandleShellCommand(source))
+            {
+                case ShellCommandInvocation.QuitRequested: return;
+                case ShellCommandInvocation.Handled: continue;
+            }
             var value = await Interpret(compiler, source, _ctx);
             if (value == null) continue;
             await Print(printer, Console.Out, value);
@@ -73,53 +79,88 @@ public class Repl
         return key.Key != ConsoleKey.Q;
     }
 
-    private async Task<(bool quit, bool handled)> HandleShellCommand(string source)
+    private async Task<ShellCommandInvocation> HandleShellCommand(string source)
     {
-        var handled = false;
         try
         {
             var match = Regex.Match(source, @"#(\w+)\b\s?(.*);?$");
-            if (match.Success == false) return (false, handled);
-            handled = true;
-            switch (match.Groups[1].Value)
-            {
-                case "q": return (true, handled);
-                case "pwd":
-                    Console.WriteLine(Environment.CurrentDirectory);
-                    break;
-                case "ls":
-                    PrintFiles();
-                    break;
-                case "cd" when match.Groups.Count >= 2:
-                    ChangeDirectory(match.Groups[2].Value);
-                    break;
-                case "h" or "help":
-                    PrintHelp();
-                    break;
-                case "dump":
-                    PrintContext();
-                    break;
-                case "load" when match.Groups.Count >= 2:
-                    await LoadSource(match.Groups[2].Value);
-                    break;
-                case "cli" when match.Groups.Count >= 2:
-                    await InvokeCli(match.Groups[2].Value);
-                    break;
-                case "source" when match.Groups.Count >= 2:
-                    PrintSource(match.Groups[2].Value);
-                    break;
-                case "math":
-                    _options.MathMode ^= true;
-                    Console.WriteLine("Math mode is {0}", _options.MathMode ? "on" : "off");
-                    break;
-            }
+            if (match.Success == false) return ShellCommandInvocation.Unhandled;
+            var quit = await _replCommands.InvokeCommand(match.Groups[1].Value, match.Groups[2].Value);
+            return quit
+                ? ShellCommandInvocation.QuitRequested
+                : ShellCommandInvocation.Handled;
         }
         catch (Exception e)
         {
             Report(e, false);
-            handled = true;
+            return ShellCommandInvocation.Handled;
         }
-        return (false, handled);
+    }
+
+    private enum ShellCommandInvocation
+    {
+        Unhandled,
+        Handled,
+        QuitRequested,
+    }
+
+    private void RegisterReplCommands()
+    {
+        _replCommands.Register(new ReplCommand("pwd", false,
+            _ =>
+            {
+                Console.WriteLine(Environment.CurrentDirectory);
+                return Task.CompletedTask;
+            },
+            "print the current working directory"));
+        _replCommands.Register(new ReplCommand("ls", false,
+            _ =>
+            {
+                PrintFiles();
+                return Task.CompletedTask;
+            },
+            "list file system entries in current working directory"));
+        _replCommands.Register(new ReplCommand("cd", true,
+            arg =>
+            {
+                ChangeDirectory(arg);
+                return Task.CompletedTask;
+            },
+            "change working directory"));
+        _replCommands.Register(new ReplCommand("dump", false,
+            _ =>
+            {
+                PrintContext();
+                return Task.CompletedTask;
+            },
+            "print current context (all top-level bindings)"));
+        _replCommands.Register(new ReplCommand("load", true,
+            LoadSource,
+            "load and interpret script from given file"));
+        _replCommands.Register(new ReplCommand("cli", true,
+            InvokeCli,
+            "invoke cli executable and pass the given arguments"));
+        _replCommands.Register(new ReplCommand("source", true,
+            arg =>
+            {
+                PrintSource(arg);
+                return Task.CompletedTask;
+            },
+            "print the definition of the given function"));
+        _replCommands.Register(new ReplCommand("math", true,
+            arg =>
+            {
+                bool? mathMode = arg switch
+                {
+                    "on" => true,
+                    "off" => false,
+                    _ => null,
+                };
+                if (mathMode != null) _options.MathMode = mathMode.Value;
+                Console.WriteLine("Math mode is {0}", _options.MathMode ? "on" : "off");
+                return Task.CompletedTask;
+            },
+            "switch math mode 'on', 'off' or display its current value"));
     }
 
     private void PrintSource(string ident)
@@ -214,6 +255,7 @@ public class Repl
     private static void PrintFiles()
     {
         var baseDir = Environment.CurrentDirectory;
+        Console.WriteLine($"  directory: {baseDir}");
         var files = Directory.GetDirectories(baseDir)
             .OrderBy(path => path)
             .Select(path => new
