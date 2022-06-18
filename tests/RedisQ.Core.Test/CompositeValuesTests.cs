@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using RedisQ.Core.Runtime;
 using Xunit;
 
@@ -81,6 +79,17 @@ public class CompositeValuesTests : TestBase
         Assert.Equal(IntegerValue.Of(1), value3);
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"(1, 2).none"));
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"(one: 1, 2).two"));
+    }
+
+    [Fact]
+    public async Task TupleOfOne()
+    {
+        var value1 = await Interpret(@"(one: 1).one");
+        Assert.Equal(IntegerValue.Of(1), value1);
+        var value2 = await Interpret(@"(one: 1)[0]");
+        Assert.Equal(IntegerValue.Of(1), value2);
+        var value3 = await Interpret(@"(one: 1)");
+        Assert.IsType<TupleValue>(value3);
     }
 
     [Fact]

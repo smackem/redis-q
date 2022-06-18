@@ -37,8 +37,8 @@ public static class JsonPath
     {
         var items = tuple.Items.Select((v, i) =>
             i < 0 || i >= tuple.FieldNames.Count || string.IsNullOrEmpty(tuple.FieldNames[i])
-                ? $"item{i}: {ToJson(v)}"
-                : $"{tuple.FieldNames[i]}: {ToJson(v)}");
+                ? $"\"item{i}\": {ToJson(v)}"
+                : $"\"{tuple.FieldNames[i]}\": {ToJson(v)}");
         return '{' + string.Join(", ", items) + '}';
     }
 

@@ -16,7 +16,7 @@ internal class ExprPrinter
             TupleExpr e => PrintTuple(e),
             ListExpr e => PrintList(e),
             IdentExpr e => e.Ident,
-            FunctionInvocationExpr e => "",
+            FunctionInvocationExpr e => $"{e.Ident}({PrintArguments(e.Arguments)})",
             OrExpr e => PrintBinary(e, "||"),
             AndExpr e => PrintBinary(e, "&&"),
             EqExpr e => PrintBinary(e, "=="),
@@ -72,7 +72,10 @@ internal class ExprPrinter
     }
 
     private string PrintList(ListExpr e) =>
-        '[' + string.Join(", ", e.Items.Select(Print)) + ']';
+        '[' + PrintArguments(e.Items) + ']';
+
+    private string PrintArguments(IEnumerable<Expr> e) =>
+        string.Join(", ", e.Select(Print));
 
     private string PrintLet(LetExpr e)
     {
