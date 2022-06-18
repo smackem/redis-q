@@ -46,6 +46,9 @@ public partial class FunctionRegistry
         Register(new("ZRANK", 2, FuncZRank, "(key, value) -> int"));
         Register(new("ZSCORE", 2, FuncZScore, "(key, value) -> real"));
         Register(new("ZSCAN", 2, FuncZScan, "(key, pattern: value) -> enumerable"));
+        Register(new("BITPOS", 4, FuncBitPos, "(key, bit: bool, start: int, end: int) -> int"));
+        Register(new("BITCOUNT", 3, FuncBitCount, "(key, start: int, end: int) -> int"));
+        Register(new("GETBIT", 2, FuncGetBit, "(key, offset: int) -> bool"));
     }
 
     private static async Task<Value> FuncExists(Context ctx, Value[] arguments)
@@ -387,5 +390,35 @@ public partial class FunctionRegistry
         var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
         var val = await db.KeyTypeAsync(key.AsRedisKey()).ConfigureAwait(false);
         return new StringValue(val.ToString().ToLower());
+    }
+
+    private static async Task<Value> FuncBitPos(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is not IRedisKey key) throw new RuntimeException($"bitpos({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is not BoolValue bit) throw new RuntimeException($"bitpos({arguments[1]}): incompatible operand, Bool expected");
+        if (arguments[2] is not IntegerValue start) throw new RuntimeException($"bitpos({arguments[2]}): incompatible operand, Integer expected");
+        if (arguments[3] is not IntegerValue end) throw new RuntimeException($"bitpos({arguments[3]}): incompatible operand, Integer expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var pos = await db.StringBitPositionAsync(key.AsRedisKey(), bit.Value, start.Value, end.Value);
+        return IntegerValue.Of(pos);
+    }
+
+    private static async Task<Value> FuncBitCount(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is not IRedisKey key) throw new RuntimeException($"bitcount({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is not IntegerValue start) throw new RuntimeException($"bitcount({arguments[1]}): incompatible operand, Integer expected");
+        if (arguments[2] is not IntegerValue end) throw new RuntimeException($"bitcount({arguments[2]}): incompatible operand, Integer expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var count = await db.StringBitCountAsync(key.AsRedisKey(), start.Value, end.Value);
+        return IntegerValue.Of(count);
+    }
+
+    private static async Task<Value> FuncGetBit(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is not IRedisKey key) throw new RuntimeException($"getbit({arguments[0]}): incompatible operand, RedisKey expected");
+        if (arguments[1] is not IntegerValue offset) throw new RuntimeException($"getbit({arguments[1]}): incompatible operand, Integer expected");
+        var db = await ctx.Redis.GetDatabase().ConfigureAwait(false);
+        var bit = await db.StringGetBitAsync(key.AsRedisKey(), offset.Value);
+        return BoolValue.Of(bit);
     }
 }
