@@ -161,6 +161,9 @@ public class Repl
                 return Task.CompletedTask;
             },
             "switch math mode 'on', 'off' or display its current value. in math mode, all number literals are real"));
+        _replCommands.Register(new ReplCommand("r", null,
+            InvokeRun,
+            "run the commandline given as argument"));
     }
 
     private void PrintSource(string ident)
@@ -202,6 +205,29 @@ public class Repl
         }
     }
 
+    private async Task InvokeRun(string arguments)
+    {
+        var (shell, firstParam) = OperatingSystem.IsWindows()
+            ? ("cmd.exe", "/c")
+            : ("sh", "-c");
+        var psi = new ProcessStartInfo
+        {
+            FileName = shell,
+            Arguments = firstParam + " '" + arguments + "'",
+        };
+        try
+        {
+            using var process = Process.Start(psi);
+            if (process == null) throw new FileNotFoundException();
+            _options.CliFilePath = psi.FileName;
+            await process.WaitForExitAsync();
+        }
+        catch (Exception e)
+        {
+            Console.Write($"error starting {psi.FileName}: {e.Message}");
+        }
+    }
+
     private Task LoadSource(string fileName)
     {
         var filePath = Path.IsPathRooted(fileName)
@@ -237,12 +263,11 @@ public class Repl
         Console.WriteLine();
 
         var functions = _functions
-            .Select(f =>
-                new
-                {
-                    FunctionName = f.Name,
-                    Signature = f.HelpText,
-                })
+            .Select(f => new
+            {
+                FunctionName = f.Name,
+                Signature = f.HelpText,
+            })
             .OrderBy(f => f.FunctionName, StringComparer.Ordinal);
 
         ConsoleTable.From(functions).Write(Format.Minimal);
@@ -250,6 +275,7 @@ public class Repl
 
     private static void ChangeDirectory(string directory)
     {
+        directory = Regex.Replace(directory, @"^\~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         Directory.SetCurrentDirectory(
             Path.IsPathRooted(directory)
                 ? directory
