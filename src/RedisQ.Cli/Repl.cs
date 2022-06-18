@@ -29,7 +29,7 @@ public class Repl
 
     public async Task Run()
     {
-        PrintBanner(_options);
+        if (_options.NoBanner is false) PrintBanner(_options);
         var compiler = new Compiler();
         var printer = new ValuePrinter(_options, PromptContinue);
         ISourcePrompt sourcePrompt = _options.Simple
@@ -137,7 +137,7 @@ public class Repl
         _replCommands.Register(new ReplCommand("load", true,
             LoadSource,
             "load and interpret script from given file"));
-        _replCommands.Register(new ReplCommand("cli", true,
+        _replCommands.Register(new ReplCommand("cli", null,
             InvokeCli,
             "invoke cli executable and pass the given arguments"));
         _replCommands.Register(new ReplCommand("source", true,
@@ -147,7 +147,7 @@ public class Repl
                 return Task.CompletedTask;
             },
             "print the definition of the given function"));
-        _replCommands.Register(new ReplCommand("math", true,
+        _replCommands.Register(new ReplCommand("math", null,
             arg =>
             {
                 bool? mathMode = arg switch
@@ -160,7 +160,7 @@ public class Repl
                 Console.WriteLine("Math mode is {0}", _options.MathMode ? "on" : "off");
                 return Task.CompletedTask;
             },
-            "switch math mode 'on', 'off' or display its current value"));
+            "switch math mode 'on', 'off' or display its current value. in math mode, all number literals are real"));
     }
 
     private void PrintSource(string ident)
@@ -231,6 +231,11 @@ public class Repl
 
     private void PrintHelp()
     {
+        PrintBanner(_options);
+
+        Console.WriteLine("Built-in functions:");
+        Console.WriteLine();
+
         var functions = _functions
             .Select(f =>
                 new
@@ -276,7 +281,6 @@ public class Repl
 
     private static void PrintBanner(Options options)
     {
-        if (options.NoBanner) return;
         var version = Assembly.GetEntryAssembly()?
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;

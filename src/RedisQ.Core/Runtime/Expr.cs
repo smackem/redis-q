@@ -208,6 +208,9 @@ public record RangeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
     (l, r) switch
     {
         (IntegerValue lv, IntegerValue rv) => new RangeValue(lv.Value, rv.Value),
+        (RealValue lv, IntegerValue rv) => new RangeValue((long) lv.Value, rv.Value),
+        (IntegerValue lv, RealValue rv) => new RangeValue(lv.Value, (long) rv.Value),
+        (RealValue lv, RealValue rv) => new RangeValue((long) lv.Value, (long) rv.Value),
         _ => throw new RuntimeException($"the operator '..' can only be applied to integers, not to {l} and {r}"),
     });
 

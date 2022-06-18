@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using PrettyPrompt;
 using PrettyPrompt.Completion;
@@ -126,14 +127,22 @@ internal class PrettySourcePrompt : ISourcePrompt
         {
             var lastCharPos = caret - 1;
             char? lastChar = lastCharPos < text.Length ? text[lastCharPos] : null;
+            var typedWord = text.AsSpan(spanToBeReplaced.Start, spanToBeReplaced.Length).ToString();
+            // Debug.WriteLine("typedWord: " + typedWord);
             do
             {
-                if (lastChar == null) break;
+                if (lastChar != '(') break;
                 var ident = ExtractFunctionName(text, caret - 1);
+                // Debug.WriteLine("ident: " + ident);
                 if (ident.Length == 0) break;
                 var function = _functionLookup(ident);
                 if (function == null) break;
-                var items = new[] { new CompletionItem(function.HelpText) };
+                var items = new[]
+                {
+                    new CompletionItem(
+                        replacementText: string.Empty,
+                        displayText: function.HelpText),
+                };
                 return Task.FromResult<IReadOnlyList<CompletionItem>>(items);
             } while (false);
 

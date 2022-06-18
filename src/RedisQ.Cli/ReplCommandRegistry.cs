@@ -1,3 +1,5 @@
+using ConsoleTables;
+
 namespace RedisQ.Cli;
 
 internal class ReplCommandRegistry
@@ -23,13 +25,21 @@ internal class ReplCommandRegistry
                 break;
             default:
             {
-                if (_commands.TryGetValue(command, out var cmd))
+                switch (_commands.TryGetValue(command, out var cmd), cmd, arguments)
                 {
-                    await cmd.Action(arguments);
-                }
-                else
-                {
-                    Console.WriteLine($"unknown shell command '{command}'. enter #h; for help.");
+                    case (true, { HasParameter: true}, not "")
+                    or (true, { HasParameter: null}, _):
+                        await cmd.Action(arguments);
+                        break;
+                    case (true, { HasParameter: false}, _):
+                        await cmd.Action(string.Empty);
+                        break;
+                    case (true, { HasParameter: true}, ""):
+                        Console.WriteLine(cmd.RenderInvocation(true));
+                        break;
+                    case (false, _, _):
+                        Console.WriteLine($"unknown shell command '{command}'. enter #h; for help.");
+                        break;
                 }
                 break;
             }
@@ -40,11 +50,40 @@ internal class ReplCommandRegistry
     private void PrintHelp()
     {
         _printHelp();
+
+        Console.WriteLine("Available shell commands:");
+        Console.WriteLine();
+
+        var commands =
+            _commands.Values
+                .Select(
+                    c => new
+                    {
+                        Invocation = c.RenderInvocation(false),
+                        Description = c.HelpText,
+                    })
+                .OrderBy(c => c.Invocation, StringComparer.Ordinal);
+
+        ConsoleTable.From(commands).Write(Format.Minimal);
     }
 }
 
 internal record ReplCommand(
     string Name,
-    bool HasParameter,
+    bool? HasParameter,
     Func<string, Task> Action,
-    string HelpText);
+    string HelpText)
+{
+    public string RenderInvocation(bool includeHelpText) =>
+        // ReSharper disable once UseStringInterpolationWhenPossible
+        string.Format(
+            "#{0}{1};{2}",
+            Name,
+            HasParameter switch
+            {
+                true => " ARG",
+                null => " [ARG]",
+                _ => string.Empty,
+            },
+            includeHelpText ? " " + HelpText : string.Empty);
+}
