@@ -11,7 +11,7 @@ internal class ReplCommandRegistry
 
     public ReplCommandRegistry(Action printHelp) =>
         _printHelp = printHelp;
-    
+
     public void Register(ReplCommand command) =>
         _commands.Add(command.Name, command);
 
