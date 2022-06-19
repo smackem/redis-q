@@ -161,7 +161,7 @@ public class Repl
                 return Task.CompletedTask;
             },
             "switch math mode 'on', 'off' or display its current value. in math mode, all number literals are real"));
-        _replCommands.Register(new ReplCommand("r", null,
+        _replCommands.Register(new ReplCommand("r", true,
             InvokeRun,
             "run the commandline given as argument"));
     }
@@ -205,21 +205,23 @@ public class Repl
         }
     }
 
-    private async Task InvokeRun(string arguments)
+    private static async Task InvokeRun(string arguments)
     {
-        var (shell, firstParam) = OperatingSystem.IsWindows()
-            ? ("cmd.exe", "/c")
-            : ("sh", "-c");
-        var psi = new ProcessStartInfo
-        {
-            FileName = shell,
-            Arguments = firstParam + " '" + arguments + "'",
-        };
+        var psi = OperatingSystem.IsWindows()
+            ? new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = "/c " + arguments,
+            }
+            : new ProcessStartInfo
+            {
+                FileName = "sh",
+                ArgumentList = { "-c", arguments },
+            };
         try
         {
             using var process = Process.Start(psi);
             if (process == null) throw new FileNotFoundException();
-            _options.CliFilePath = psi.FileName;
             await process.WaitForExitAsync();
         }
         catch (Exception e)
