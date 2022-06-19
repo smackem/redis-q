@@ -62,6 +62,14 @@ internal class ReplCommandRegistry
                         Invocation = c.RenderInvocation(false),
                         Description = c.HelpText,
                     })
+                .Concat(new[]
+                {
+                    new
+                    {
+                        Invocation = "#q;",
+                        Description = "quit redis-q",
+                    },
+                })
                 .OrderBy(c => c.Invocation, StringComparer.Ordinal);
 
         ConsoleTable.From(commands).Write(Format.Minimal);
