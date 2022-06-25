@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using PrettyPrompt;
 using PrettyPrompt.Completion;
