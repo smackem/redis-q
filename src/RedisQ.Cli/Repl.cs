@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ConsoleTables;
+using PrettyPrompt.Consoles;
+using PrettyPrompt.Highlighting;
 using RedisQ.Core;
 using RedisQ.Core.Redis;
 using RedisQ.Core.Runtime;
@@ -29,7 +31,7 @@ public class Repl
 
     public async Task Run()
     {
-        if (_options.NoBanner is false) PrintBanner(_options);
+        if (_options.NoBanner is false) PrintBanner();
         var compiler = new Compiler();
         var printer = new ValuePrinter(_options, PromptContinue);
         ISourcePrompt sourcePrompt = _options.Simple
@@ -259,8 +261,9 @@ public class Repl
 
     private void PrintHelp()
     {
-        PrintBanner(_options);
+        PrintBanner();
 
+        Console.WriteLine("Visit {0} for documentation", Emphasis("https://github.com/smackem/redis-q"));
         Console.WriteLine("Built-in functions:");
         Console.WriteLine();
 
@@ -307,18 +310,6 @@ public class Repl
         ConsoleTable.From(files).Write(Format.Minimal);
     }
 
-    private static void PrintBanner(Options options)
-    {
-        var version = Assembly.GetEntryAssembly()?
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion;
-        Console.WriteLine($"***** redis-q v{version}");
-        Console.WriteLine($"redis @ {options.ConnectionString}");
-        Console.WriteLine("terminate expressions with ;");
-        Console.WriteLine("enter #h; for help...");
-        Console.WriteLine();
-    }
-
     private async Task Print(ValuePrinter printer, TextWriter writer, Value value)
     {
         try
@@ -358,6 +349,33 @@ public class Repl
 
         return null;
     }
+
+    private void PrintBanner()
+    {
+        var version = Assembly.GetEntryAssembly()?
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+        Console.WriteLine("***** {0} v{1}", Title("redis-q"), version);
+        Console.WriteLine("redis @ {0}", Emphasis(_options.ConnectionString));
+        Console.WriteLine("terminate expressions with {0}", Input(";"));
+        Console.WriteLine("enter {0} for help...", Input("#h;"));
+        Console.WriteLine();
+    }
+
+    private string Emphasis(string s) =>
+        _options.Simple
+            ? s
+            : AnsiColor.Yellow.GetEscapeSequence() + s + AnsiEscapeCodes.Reset;
+
+    private string Input(string s) =>
+        _options.Simple
+            ? s
+            : AnsiColor.Magenta.GetEscapeSequence() + s + AnsiEscapeCodes.Reset;
+
+    private string Title(string s) =>
+        _options.Simple
+            ? s
+            : AnsiColor.Cyan.GetEscapeSequence() + s + AnsiEscapeCodes.Reset;
 
     private static void Report(Exception e, bool verbose) =>
         Console.WriteLine(verbose ? e : e.Message);
