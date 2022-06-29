@@ -82,11 +82,13 @@ select (x.year, x.month, x.day, x.hour, x.minute, x.second, x.millisecond)
         var value = await Interpret(@"
 from ts in [timestamp(""2022-05-01 23:40:35.123"", ""yyyy-MM-dd HH:mm:ss.fff"")]
 select (
+    ts - timestamp(""2022-05-01"", ""yyyy-MM-dd""),
     ts + duration(10, ""s""),
     ts - duration(10, ""s""))
 |> first()
 ");
         Assert.Equal(TupleValue.Of(
+                new DurationValue(new TimeSpan(0, 23, 40, 35, 123)),
                 new TimestampValue(new DateTimeOffset(new DateTime(2022, 05, 01, 23, 40, 45, 123))),
                 new TimestampValue(new DateTimeOffset(new DateTime(2022, 05, 01, 23, 40, 25, 123)))),
             value);

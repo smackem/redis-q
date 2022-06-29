@@ -223,6 +223,7 @@ public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         (RealValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value - rv.Value),
+        (TimestampValue lv, TimestampValue rv) => new DurationValue(lv.Value - rv.Value),
         (TimestampValue lv, DurationValue rv) => new TimestampValue(lv.Value - rv.Value),
         (DurationValue lv, DurationValue rv) => new DurationValue(lv.Value - rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
