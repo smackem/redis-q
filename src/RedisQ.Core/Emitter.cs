@@ -80,13 +80,11 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitLimitClause(RedisQLParser.LimitClauseContext context) =>
         new LimitClause(
-            context.limitClauseLimitPart().Accept(this),
+            context.limitClauseLimitPart()?.Accept(this),
             context.limitClauseOffsetPart()?.Accept(this));
 
     public override Expr VisitLimitClauseLimitPart(RedisQLParser.LimitClauseLimitPartContext context) =>
-        context.All() != null
-            ? new LiteralExpr(NullValue.Instance)
-            : context.ternaryExpr().Accept(this);
+        context.ternaryExpr().Accept(this);
 
     public override Expr VisitLimitClauseOffsetPart(RedisQLParser.LimitClauseOffsetPartContext context) =>
         context.ternaryExpr().Accept(this);
