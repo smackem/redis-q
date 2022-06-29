@@ -43,9 +43,13 @@ internal class ExprPrinter
             EagerFromExpr e => PrintFrom(e.From),
             FromClause e => $"from {e.Ident} in {Print(e.Source)}",
             WhereClause e => $"where {Print(e.Predicate)}",
-            LimitClause e => e.Offset is null
-                ? $"limit {Print(e.Count)}"
-                : $"limit {Print(e.Count)} offset {Print(e.Offset)}",
+            LimitClause e => (e.Count, e.Offset) switch
+            {
+                (not null, null) => $"limit {Print(e.Count)}",
+                (null, not null) => $"offset {Print(e.Offset)}",
+                (not null, not null) => $"limit {Print(e.Count)} offset {Print(e.Offset)}",
+                _ => throw new ArgumentOutOfRangeException()
+            },
             OrderByClause e => e.IsDescending
                 ? $"orderby {Print(e.Key)} descending"
                 : $"orderby {Print(e.Key)}",

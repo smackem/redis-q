@@ -59,11 +59,13 @@ whereClause
     ;
 
 limitClause
-    : limitClauseLimitPart limitClauseOffsetPart?
+    : limitClauseLimitPart limitClauseOffsetPart
+    | limitClauseOffsetPart
+    | limitClauseLimitPart
     ;
 
 limitClauseLimitPart
-    : Limit (ternaryExpr | All)
+    : Limit ternaryExpr
     ;
 
 limitClauseOffsetPart
@@ -215,7 +217,7 @@ string
     ;
 
 throwExpr
-    : 'throw' expr
+    : Throw expr
     ;
 
 From            : 'from';
@@ -224,7 +226,6 @@ Let             : 'let';
 Where           : 'where';
 Limit           : 'limit';
 Offset          : 'offset';
-All             : 'all';
 Group           : 'group';
 By              : 'by';
 Into            : 'into';
@@ -235,6 +236,7 @@ Null            : 'null';
 OrderBy         : 'orderby';
 Descending      : 'descending' | 'desc';
 Ascending       : 'ascending';
+Throw           : 'throw';
 Plus            : '+';
 Minus           : '-';
 Times           : '*';

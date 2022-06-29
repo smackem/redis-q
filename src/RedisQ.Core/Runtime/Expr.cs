@@ -481,7 +481,10 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> Limit(IAsyncEnumerable<Value> coll, LimitClause limit, Context ctx)
     {
-        long? count = await limit.Count.Evaluate(ctx).ConfigureAwait(false) switch
+        var countValue = limit.Count != null
+            ? await limit.Count.Evaluate(ctx).ConfigureAwait(false)
+            : NullValue.Instance;
+        long? count = countValue switch
         {
             NullValue => null,
             IntegerValue n => n.Value,
@@ -570,7 +573,7 @@ public abstract record NestedClause : Expr
 
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
-public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
+public record LimitClause(Expr? Count, Expr? Offset) : NestedClause;
 public record OrderByClause(Expr Key, bool IsDescending) : NestedClause;
 public record GroupByClause(Expr Value, Expr Key, string Ident) : NestedClause;
 
