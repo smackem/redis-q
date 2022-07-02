@@ -170,7 +170,7 @@ public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
     (l, r) switch
     {
         (NullValue, _) or (_, NullValue) => BoolValue.False,
-        _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())),
+        _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString(), RegexOptions.IgnoreCase)),
     });
 
 public record NullCoalescingExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
