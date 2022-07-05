@@ -65,7 +65,15 @@ public partial class FunctionRegistry
         Register(new("e", 0, (_, _) => Task.FromResult<Value>(new RealValue(Math.E)), "() -> real"));
         Register(new("parse", 1, FuncParse, "(json: string) -> value"));
         Register(new("json", 1, FuncJson, "(value) -> string"));
+        Register(new("typeof", 1, FuncTypeOf, "(value) -> string"));
     }
+
+    private static Task<Value> FuncTypeOf(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(arguments[0].GetType().Name.ToLower() switch
+        {
+            var s when s.EndsWith("value") => new StringValue(s[..^5]),
+            var s => new StringValue(s),
+        });
 
     private static Task<Value> FuncJson(Context ctx, Value[] arguments) =>
         Task.FromResult<Value>(new StringValue(JsonPath.ToJson(arguments[0])));
