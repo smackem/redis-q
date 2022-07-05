@@ -515,8 +515,8 @@ Since v0.3.0, redis-q supports function expressions:
     from a in itemsA
     from b in itemsB
     select (a: a, b: b);
-add(a, b)
-> add(0..1, 0..1);
+carthesian(a, b)
+> carthesian(0..1, 0..1);
 a  b
 ----
 0  0
@@ -525,7 +525,7 @@ a  b
 1  1
 ```
 
-The body of a function consists of a single expression. To enable top-level `let` bindings in fucntions, redis-q 0.3.0 supports the F#-like `let .. in ..` expression:
+The body of a function consists of a single expression. To enable top-level `let` bindings in functions, redis-q 0.3.0 supports the F#-like `let .. in ..` expression:
 ```fsharp
 > let a = 100 in
   let b = 200 in
@@ -535,7 +535,7 @@ The body of a function consists of a single expression. To enable top-level `let
 300
 ```
 
-This is a single expressions which defines two bindings: the value 100 is bound to identifier `a` and the value 200 is bound to identifier `b`.
+This is a single expression which defines two bindings: the value 100 is bound to identifier `a` and the value 200 is bound to identifier `b`.
 
 To define a function that stores intermediate results in bindings, you can write
 
