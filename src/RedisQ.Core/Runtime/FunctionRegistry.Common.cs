@@ -33,10 +33,10 @@ public partial class FunctionRegistry
         Register(new("first", 1, FuncFirst, "(enumerable) -> any"));
         Register(new("any", 1, FuncAny, "(enumerable) -> bool"));
         Register(new("enumerate", 1, FuncEnumerate, "(list) -> enumerable"));
-        Register(new("timestamp", 2, FuncTimestamp, "(input: string, format: string) -> timestamp"));
+        Register(new("timestamp", 2, FuncTimestamp, "(format: string, input: string) -> timestamp"));
         Register(new("now", 0, FuncNow, "() -> timestamp"));
         Register(new("deconstruct", 1, FuncDeconstruct, "(timestamp) -> tuple of (year, month, day, hour, minute, second, millisecond)"));
-        Register(new("duration", 2, FuncDuration, "(input: string, format: string) -> duration"));
+        Register(new("duration", 2, FuncDuration, "(formatOrUnit: string, input: string or number) -> duration"));
         Register(new("convert", 2, FuncConvert, "(unit: 'h' or 'm' or 's' or 'ms', duration) -> real"));
         Register(new("random", 2, FuncRandom, "(minInclusive: int, maxExclusive: int) -> int"));
         Register(new("pow", 2, FuncPow, "(base: real, exponent: real) -> real"));
@@ -58,7 +58,7 @@ public partial class FunctionRegistry
         Register(new("trim", 1, FuncTrim, "(string) -> string"));
         Register(new("replace", 3, FuncReplace, "(pattern: string, replacement: string, input: string) -> string"));
         Register(new("indexof", 2, FuncIndexOf, "(value: any, searchee: list|string) -> int"));
-        Register(new("split", 2, FuncSplit, "(pattern: string, string) -> list of strings"));
+        Register(new("split", 2, FuncSplit, "(pattern: string, input: string) -> list of strings"));
         Register(new("char", 1, FuncChar, "(code: int) -> string"));
         Register(new("nl", 0, (_, _) => Task.FromResult<Value>(new StringValue(Environment.NewLine)), "() -> string"));
         Register(new("pi", 0, (_, _) => Task.FromResult<Value>(new RealValue(Math.PI)), "() -> real"));
@@ -392,8 +392,8 @@ public partial class FunctionRegistry
 
     private static Task<Value> FuncTimestamp(Context ctx, Value[] arguments)
     {
-        if (arguments[0] is StringValue s == false) throw new RuntimeException($"timestamp({arguments[0]}): incompatible operand, string expected");
-        if (arguments[1] is StringValue format == false) throw new RuntimeException($"timestamp({arguments[1]}): incompatible operand, string expected");
+        if (arguments[0] is StringValue format == false) throw new RuntimeException($"timestamp({arguments[0]}): incompatible operand, string expected");
+        if (arguments[1] is StringValue s == false) throw new RuntimeException($"timestamp({arguments[1]}): incompatible operand, string expected");
         var time = DateTimeOffset.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture);
         return Task.FromResult<Value>(new TimestampValue(time));
     }
@@ -415,7 +415,7 @@ public partial class FunctionRegistry
 
     private static Task<Value> FuncDuration(Context ctx, Value[] arguments)
     {
-        var timeSpan = (arguments[0], arguments[1]) switch
+        var timeSpan = (arguments[1], arguments[0]) switch
         {
             (IntegerValue n, StringValue {Value: "ms" or "milliseconds"}) => TimeSpan.FromMilliseconds(n.Value),
             (IntegerValue n, StringValue {Value: "s" or "seconds"}) => TimeSpan.FromSeconds(n.Value),
@@ -425,7 +425,7 @@ public partial class FunctionRegistry
             (IntegerValue n, StringValue {Value: "h" or "hours"}) => TimeSpan.FromHours(n.Value),
             (RealValue r, StringValue {Value: "h" or "hours"}) => TimeSpan.FromHours(r.Value),
             (StringValue s, StringValue format) => TimeSpan.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture),
-            _ => throw new RuntimeException($"duration({arguments[0]}, {arguments[1]}): incompatible operands, (string, string) expected"),
+            _ => throw new RuntimeException($"duration({arguments[0]}, {arguments[1]}): incompatible operands, (string, string or number) expected"),
         };
         return Task.FromResult<Value>(new DurationValue(timeSpan));
     }
