@@ -52,6 +52,8 @@ public static class JsonPath
             JTokenType.Array => new ListValue(token.Select(Convert).ToArray()),
             JTokenType.Object => ConvertObject((JObject) token),
             JTokenType.Null or null => NullValue.Instance,
+            JTokenType.Date => new TimestampValue(token.ToObject<DateTimeOffset>()),
+            JTokenType.TimeSpan => new DurationValue(token.ToObject<TimeSpan>()),
             _ => new StringValue(token.ToString()),
         };
 
