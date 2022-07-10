@@ -79,7 +79,6 @@ internal class PrettySourcePrompt : ISourcePrompt
                 Tokens.Where,
                 Tokens.Limit,
                 Tokens.Offset,
-                Tokens.All,
                 Tokens.Select,
                 Tokens.True,
                 Tokens.False,
@@ -90,6 +89,7 @@ internal class PrettySourcePrompt : ISourcePrompt
                 Tokens.Group,
                 Tokens.By,
                 Tokens.Into,
+                Tokens.Throw,
             });
         private static readonly ISet<int> Operators = new HashSet<int>(
             new[]

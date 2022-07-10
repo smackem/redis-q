@@ -87,6 +87,7 @@ select (
 |> first()
 ");
         Assert.Equal(TupleValue.Of(
+                new DurationValue(new TimeSpan(0, 23, 40, 35, 123)),
                 new TimestampValue(new DateTimeOffset(new DateTime(2022, 05, 01, 23, 40, 45, 123))),
                 new TimestampValue(new DateTimeOffset(new DateTime(2022, 05, 01, 23, 40, 25, 123)))),
             value);

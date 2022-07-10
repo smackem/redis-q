@@ -170,7 +170,7 @@ public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
     (l, r) switch
     {
         (NullValue, _) or (_, NullValue) => BoolValue.False,
-        _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString())),
+        _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString(), RegexOptions.IgnoreCase)),
     });
 
 public record NullCoalescingExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
@@ -223,6 +223,7 @@ public record MinusExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         (RealValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (IntegerValue lv, RealValue rv) => new RealValue(lv.Value - rv.Value),
         (RealValue lv, IntegerValue rv) => new RealValue(lv.Value - rv.Value),
+        (TimestampValue lv, TimestampValue rv) => new DurationValue(lv.Value - rv.Value),
         (TimestampValue lv, DurationValue rv) => new TimestampValue(lv.Value - rv.Value),
         (DurationValue lv, DurationValue rv) => new DurationValue(lv.Value - rv.Value),
         (NullValue, _) or (_, NullValue) => NullValue.Instance,
@@ -480,7 +481,10 @@ public record FromExpr(FromClause Head, IReadOnlyList<NestedClause> NestedClause
 
     private static async IAsyncEnumerable<Value> Limit(IAsyncEnumerable<Value> coll, LimitClause limit, Context ctx)
     {
-        long? count = await limit.Count.Evaluate(ctx).ConfigureAwait(false) switch
+        var countValue = limit.Count != null
+            ? await limit.Count.Evaluate(ctx).ConfigureAwait(false)
+            : NullValue.Instance;
+        long? count = countValue switch
         {
             NullValue => null,
             IntegerValue n => n.Value,
@@ -569,7 +573,7 @@ public abstract record NestedClause : Expr
 
 public record FromClause(string Ident, Expr Source) : NestedClause;
 public record WhereClause(Expr Predicate) : NestedClause;
-public record LimitClause(Expr Count, Expr? Offset) : NestedClause;
+public record LimitClause(Expr? Count, Expr? Offset) : NestedClause;
 public record OrderByClause(Expr Key, bool IsDescending) : NestedClause;
 public record GroupByClause(Expr Value, Expr Key, string Ident) : NestedClause;
 
