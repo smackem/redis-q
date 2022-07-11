@@ -66,6 +66,22 @@ public partial class FunctionRegistry
         Register(new("parse", 1, FuncParse, "(json: string) -> value"));
         Register(new("json", 1, FuncJson, "(value) -> string"));
         Register(new("typeof", 1, FuncTypeOf, "(value) -> string"));
+        Register(new("hex", 1, FuncHex, "(integer) -> string"));
+        Register(new("bin", 1, FuncBin, "(integer) -> string"));
+    }
+
+    private static Task<Value> FuncHex(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue n == false) throw new RuntimeException($"hex({arguments[0]}): incompatible operand, integer expected");
+        var s = Convert.ToString(n.Value, 16);
+        return Task.FromResult<Value>(new StringValue(s));
+    }
+
+    private static Task<Value> FuncBin(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue n == false) throw new RuntimeException($"bin({arguments[0]}): incompatible operand, integer expected");
+        var s = Convert.ToString(n.Value, 2);
+        return Task.FromResult<Value>(new StringValue(s));
     }
 
     private static Task<Value> FuncTypeOf(Context ctx, Value[] arguments) =>

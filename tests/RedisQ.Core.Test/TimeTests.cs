@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using RedisQ.Core.Runtime;
+﻿using RedisQ.Core.Runtime;
 using Xunit;
 
 namespace RedisQ.Core.Test;
@@ -82,6 +80,7 @@ select (x.year, x.month, x.day, x.hour, x.minute, x.second, x.millisecond)
         var value = await Interpret(@"
 from ts in [timestamp(""yyyy-MM-dd HH:mm:ss.fff"", ""2022-05-01 23:40:35.123"")]
 select (
+    ts - timestamp(""yyyy-MM-dd"", ""2022-05-01""),
     ts + duration(""s"", 10),
     ts - duration(""s"", 10))
 |> first()
