@@ -1,7 +1,4 @@
-using System;
 using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
 using RedisQ.Core.Redis;
 using RedisQ.Core.Runtime;
 
@@ -16,12 +13,24 @@ public class IntegrationTestBase : TestBase, IDisposable
     {
         var psi = new ProcessStartInfo
         {
-            FileName = "redis-server",
+            FileName = GetDbExecutablePath(),
             Arguments = $"--port {Port} --save \"\" --appendonly no",
             RedirectStandardOutput = true,
         };
         _redisProcess = Process.Start(psi)!;
         WaitUntilReady(_redisProcess.StandardOutput).Wait();
+    }
+
+    private static string GetDbExecutablePath()
+    {
+        if (!OperatingSystem.IsWindows()) return "redis-server";
+
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var packagePath = Path.Join(homeDir, ".nuget", "packages", "memuraideveloper");
+        var latestPackageVersion = Directory.EnumerateDirectories(packagePath)
+            .Select(path => Version.Parse(Path.GetFileName(path)))
+            .Max();
+        return string.Join(Path.DirectorySeparatorChar, packagePath, latestPackageVersion, "tools", "memurai.exe");
     }
 
     private static async Task WaitUntilReady(TextReader reader)
