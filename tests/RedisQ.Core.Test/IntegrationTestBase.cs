@@ -26,7 +26,7 @@ public class IntegrationTestBase : TestBase, IDisposable
         if (!OperatingSystem.IsWindows()) return "redis-server";
 
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var packagePath = string.Join(Path.DirectorySeparatorChar, homeDir, ".nuget", "packages", "memuraideveloper");
+        var packagePath = Path.Join(homeDir, ".nuget", "packages", "memuraideveloper");
         var latestPackageVersion = Directory.EnumerateDirectories(packagePath)
             .Select(path => Version.Parse(Path.GetFileName(path)))
             .Max();
