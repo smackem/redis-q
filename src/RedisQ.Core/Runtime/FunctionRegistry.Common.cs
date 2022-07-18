@@ -68,6 +68,17 @@ public partial class FunctionRegistry
         Register(new("typeof", 1, FuncTypeOf, "(value) -> string"));
         Register(new("hex", 1, FuncHex, "(integer) -> string"));
         Register(new("bin", 1, FuncBin, "(integer) -> string"));
+        Register(new("today", 0, FuncToday, "() -> timestamp"));
+        Register(new("date", 1, FuncDate, "(timestamp) -> timestamp"));
+    }
+
+    private static Task<Value> FuncToday(Context ctx, Value[] arguments) =>
+        Task.FromResult<Value>(new TimestampValue(DateTimeOffset.Now.Date));
+
+    private static Task<Value> FuncDate(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is TimestampValue ts == false) throw new RuntimeException($"date({arguments[0]}): incompatible operand, timestamp expected");
+        return Task.FromResult<Value>(new TimestampValue(ts.Value.Date));
     }
 
     private static Task<Value> FuncHex(Context ctx, Value[] arguments)
@@ -85,11 +96,7 @@ public partial class FunctionRegistry
     }
 
     private static Task<Value> FuncTypeOf(Context ctx, Value[] arguments) =>
-        Task.FromResult<Value>(arguments[0].GetType().Name.ToLower() switch
-        {
-            var s when s.EndsWith("value") => new StringValue(s[..^5]),
-            var s => new StringValue(s),
-        });
+        Task.FromResult<Value>(new StringValue(arguments[0].TypeName));
 
     private static Task<Value> FuncJson(Context ctx, Value[] arguments) =>
         Task.FromResult<Value>(new StringValue(JsonPath.ToJson(arguments[0])));

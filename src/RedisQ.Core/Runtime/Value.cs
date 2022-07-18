@@ -10,6 +10,13 @@ public abstract class Value
 {
     public abstract string AsString();
     public abstract bool AsBoolean();
+
+    public string TypeName =>
+        GetType().Name.ToLower() switch
+        {
+            var s when s.EndsWith("value") => s[..^5],
+            var s => s,
+        };
 }
 
 public class NullValue : Value
