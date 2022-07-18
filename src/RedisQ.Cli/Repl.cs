@@ -254,6 +254,7 @@ public class Repl
             .Select(b => new
             {
                 Name = b.Key,
+                Type = b.Value.TypeName,
                 Value = PrintValue(printer, b.Value),
             });
         ConsoleTable.From(scope).Write(Format.Minimal);
