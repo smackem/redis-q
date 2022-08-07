@@ -28,9 +28,10 @@ public class IntegrationTestBase : TestBase, IDisposable
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var packagePath = Path.Join(homeDir, ".nuget", "packages", "memuraideveloper");
         var latestPackageVersion = Directory.EnumerateDirectories(packagePath)
-            .Select(path => Version.Parse(Path.GetFileName(path)))
-            .Max();
-        return string.Join(Path.DirectorySeparatorChar, packagePath, latestPackageVersion, "tools", "memurai.exe");
+            .Select(Path.GetFileName)
+            .Select(fileName => (Name: fileName, Version: Version.Parse(fileName!)))
+            .MaxBy(tuple => tuple.Version);
+        return Path.Join(packagePath, latestPackageVersion.Name, "tools", "memurai.exe");
     }
 
     private static async Task WaitUntilReady(TextReader reader)
