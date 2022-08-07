@@ -27,6 +27,7 @@ public class Repl
         _ctx = Context.Root(redis, _functions);
         _replCommands = new ReplCommandRegistry(PrintHelp);
         RegisterReplCommands();
+        BindCustomFunctions();
     }
 
     public async Task Run()
@@ -47,6 +48,7 @@ public class Repl
                 case ShellCommandInvocation.QuitRequested: return;
                 case ShellCommandInvocation.Handled: continue;
             }
+
             var value = await Interpret(compiler, source, _ctx);
             if (value == null) continue;
             await Print(printer, Console.Out, value);
@@ -72,6 +74,14 @@ public class Repl
         _ctx.Bind("it", value is EnumerableValue and not ListValue
             ? NullValue.Instance
             : value);
+
+    private void BindCustomFunctions()
+    {
+        const string dirIdent = "dir";
+        var dirFunction = new FunctionValue(dirIdent, Array.Empty<string>(),
+            new FunctionInvocationExpr("SCAN", new[] {new LiteralExpr(new StringValue("*"))}));
+        _ctx.Bind(dirIdent, dirFunction);
+    }
 
     private static async Task<bool> PromptContinue(string prompt)
     {
