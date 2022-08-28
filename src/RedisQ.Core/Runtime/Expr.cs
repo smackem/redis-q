@@ -217,7 +217,7 @@ public record RangeExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
 public record WithExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (TupleValue lv, TupleValue rv) => lv, 
+        (TupleValue lv, TupleValue rv) => TupleValue.Combine(lv, rv), 
         _ => throw new RuntimeException($"the operator 'with' can only be applied to tuples, not to {l} and {r}"),
     });
 

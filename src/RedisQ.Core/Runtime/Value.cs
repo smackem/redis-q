@@ -180,6 +180,33 @@ public class TupleValue : Value, IEquatable<TupleValue>
         return new TupleValue(values, fieldIndicesByName);
     }
 
+    public static TupleValue Combine(TupleValue left, TupleValue right)
+    {
+        var newValues = new List<Value>(left.Items);
+        var newFieldIndicesByName = new Dictionary<string, int>(left._fieldIndicesByName);
+
+        for (var i = 0; i < right.Items.Count; i++)
+        {
+            var rightFieldName = i < right.FieldNames.Count ? right.FieldNames[i] : null;
+            if (string.IsNullOrEmpty(rightFieldName))
+            {
+                newValues.Add(right.Items[i]);
+                continue;
+            }
+            if (left._fieldIndicesByName.TryGetValue(rightFieldName, out var leftIndex))
+            {
+                newValues[leftIndex] = right.Items[i];
+            }
+            else
+            {
+                newValues.Add(right.Items[i]);
+                newFieldIndicesByName[rightFieldName] = newValues.Count - 1;
+            }
+        }
+
+        return new TupleValue(newValues, newFieldIndicesByName);
+    }
+
     public override string ToString() =>
         $"{GetType().Name}[{string.Join(", ", Items.Select(v => v.ToString()))}]";
 
