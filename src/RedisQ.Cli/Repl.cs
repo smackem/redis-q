@@ -27,7 +27,7 @@ public class Repl
         _ctx = Context.Root(redis, _functions);
         _replCommands = new ReplCommandRegistry(PrintHelp);
         RegisterReplCommands();
-        BindCustomFunctions();
+        CustomFunctions.Bind(_ctx);
     }
 
     public async Task Run()
@@ -74,14 +74,6 @@ public class Repl
         _ctx.Bind("it", value is EnumerableValue and not ListValue
             ? NullValue.Instance
             : value);
-
-    private void BindCustomFunctions()
-    {
-        const string dirIdent = "dir";
-        var dirFunction = new FunctionValue(dirIdent, Array.Empty<string>(),
-            new FunctionInvocationExpr("SCAN", new[] {new LiteralExpr(new StringValue("*"))}));
-        _ctx.Bind(dirIdent, dirFunction);
-    }
 
     private static async Task<bool> PromptContinue(string prompt)
     {

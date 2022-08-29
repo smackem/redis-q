@@ -124,9 +124,9 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitRelationalExpr(RedisQLParser.RelationalExprContext context)
     {
-        if (context.rangeExpr().Length == 1) return base.VisitRelationalExpr(context);
-        var left = context.rangeExpr()[0].Accept(this);
-        var right = context.rangeExpr()[1].Accept(this);
+        if (context.compositionalExpr().Length == 1) return base.VisitRelationalExpr(context);
+        var left = context.compositionalExpr(0).Accept(this);
+        var right = context.compositionalExpr(1).Accept(this);
         return context.relationalOp() switch
         {
             var op when op.Eq() != null => new EqExpr(left, right),
@@ -141,10 +141,18 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         };
     }
 
-    public override Expr VisitRangeExpr(RedisQLParser.RangeExprContext context) =>
-        context.FromTo() == null
-            ? context.additiveExpr(0).Accept(this)
-            : new RangeExpr(context.additiveExpr(0).Accept(this), context.additiveExpr(1).Accept(this));
+    public override Expr VisitCompositionalExpr(RedisQLParser.CompositionalExprContext context)
+    {
+        if (context.additiveExpr().Length == 1) return base.VisitCompositionalExpr(context);
+        var left = context.additiveExpr(0).Accept(this);
+        var right = context.additiveExpr(1).Accept(this);
+        return context.compositionalOp() switch
+        {
+            var op when op.FromTo() != null => new RangeExpr(left, right),
+            var op when op.With() != null => new WithExpr(left, right),
+            _ => throw new CompilationException("syntax does not allow this"),
+        };
+    }
 
     public override Expr VisitAdditiveExpr(RedisQLParser.AdditiveExprContext context)
     {

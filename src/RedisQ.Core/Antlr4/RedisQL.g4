@@ -100,8 +100,8 @@ conditionalAndExpr
     ;
 
 relationalExpr
-    : rangeExpr
-    | rangeExpr relationalOp rangeExpr
+    : compositionalExpr
+    | compositionalExpr relationalOp compositionalExpr
     ;
 
 relationalOp
@@ -115,9 +115,14 @@ relationalOp
     | NullCoalesce
     ;
 
-rangeExpr
+compositionalExpr
     : additiveExpr
-    | additiveExpr FromTo additiveExpr
+    | additiveExpr compositionalOp additiveExpr
+    ;
+
+compositionalOp
+    : FromTo
+    | With
     ;
 
 additiveExpr
@@ -237,6 +242,7 @@ OrderBy         : 'orderby';
 Descending      : 'descending' | 'desc';
 Ascending       : 'ascending';
 Throw           : 'throw';
+With            : 'with';
 Plus            : '+';
 Minus           : '-';
 Times           : '*';

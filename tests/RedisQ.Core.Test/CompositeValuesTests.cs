@@ -93,6 +93,19 @@ public class CompositeValuesTests : TestBase
     }
 
     [Fact]
+    public async Task TupleComposition()
+    {
+        var value1 = await Interpret(@"(one: 1) with (two: 2)");
+        Assert.Equal(TupleValue.Of(("one", IntegerValue.Of(1)), ("two", IntegerValue.Of(2))), value1);
+        var value2 = await Interpret(@"((one: 1) with (two: 2)).two");
+        Assert.Equal(IntegerValue.Of(2), value2);
+        var value3 = await Interpret(@"(one: 1) with (11, 12)");
+        Assert.Equal(TupleValue.Of(("one", IntegerValue.Of(1)), ("", IntegerValue.Of(11)), ("", IntegerValue.Of(12))), value3);
+        var value4 = await Interpret(@"(one: 1, two: 2) with (two: 22)");
+        Assert.Equal(TupleValue.Of(("one", IntegerValue.Of(1)), ("two", IntegerValue.Of(22))), value4);
+    }
+
+    [Fact]
     public async Task Range()
     {
         const string source = "1 .. 3";
