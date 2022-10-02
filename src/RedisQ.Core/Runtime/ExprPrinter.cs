@@ -33,6 +33,12 @@ internal class ExprPrinter
             TimesExpr e => PrintBinary(e, "*"),
             DivExpr e => PrintBinary(e, "/"),
             ModExpr e => PrintBinary(e, "%"),
+            BitAndExpr e => PrintBinary(e, "&"),
+            BitLShiftExpr e => PrintBinary(e, "<<"),
+            BitNotExpr e => "~" + Print(e.Operand),
+            BitOrExpr e => PrintBinary(e, "|"),
+            BitRShiftExpr e => PrintBinary(e, ">>"),
+            BitXorExpr e => PrintBinary(e, "^"),
             NegExpr e => "-" + Print(e.Operand),
             PosExpr e => "+" + Print(e.Operand),
             NotExpr e => "!" + Print(e.Operand),
@@ -43,6 +49,7 @@ internal class ExprPrinter
             EagerFromExpr e => PrintFrom(e.From),
             FromClause e => $"from {e.Ident} in {Print(e.Source)}",
             WhereClause e => $"where {Print(e.Predicate)}",
+            WithExpr e => $"{Print(e.Left)} with {Print(e.Right)}",
             LimitClause e => (e.Count, e.Offset) switch
             {
                 (not null, null) => $"limit {Print(e.Count)}",
