@@ -154,12 +154,7 @@ public class Repl
         _replCommands.Register(new ReplCommand("math", null,
             arg =>
             {
-                bool? mathMode = arg switch
-                {
-                    "on" => true,
-                    "off" => false,
-                    _ => null,
-                };
+                var mathMode = ParseOptionalBool(arg);
                 if (mathMode != null) _options.MathMode = mathMode.Value;
                 Console.WriteLine("Math mode is {0}", _options.MathMode ? "on" : "off");
                 return Task.CompletedTask;
@@ -168,7 +163,24 @@ public class Repl
         _replCommands.Register(new ReplCommand("r", true,
             InvokeRun,
             "run the commandline given as argument"));
+        _replCommands.Register(new ReplCommand("quiet", null,
+            arg =>
+            {
+                var quiet = ParseOptionalBool(arg);
+                if (quiet != null) _options.QuietBindings = quiet.Value;
+                Console.WriteLine("Quiet bindings mode is {0}", _options.QuietBindings ? "on" : "off");
+                return Task.CompletedTask;
+            },
+            "switch quiet bindings mode 'on', 'off' or display its current value."));
     }
+
+    private static bool? ParseOptionalBool(string s) =>
+        s switch
+        {
+            "on" => true,
+            "off" => false,
+            _ => null,
+        };
 
     private void PrintSource(string ident)
     {
