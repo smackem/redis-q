@@ -22,6 +22,7 @@ public class CliFunctions
         registry.Register(new("save", 2, FuncSave, "(path: string, value: any) -> value"));
         registry.Register(new("trace", 1, FuncTrace, "(value: any) -> value"));
         registry.Register(new("cli", 1, instance.FuncCli, "(value: any) -> string"));
+        registry.Register(new("load", 1, FuncLoad, "(path: string) -> value"));
     }
 
     private async Task<Value> FuncCli(Context ctx, Value[] arguments)
@@ -80,11 +81,17 @@ public class CliFunctions
         }
         else
         {
-            var writer = new StreamWriter(stream);
+            await using var writer = new StreamWriter(stream);
             var options = Options.Default(); // override options
             var printer = new ValuePrinter(options, null);
             await printer.Print(input, writer);
         }
         return input;
+    }
+
+    private static async Task<Value> FuncLoad(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue path == false) throw new RuntimeException($"load({arguments[0]}): incompatible operand, string expected");
+        return new RedisValue(await File.ReadAllBytesAsync(path.Value));
     }
 }
