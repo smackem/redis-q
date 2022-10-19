@@ -365,13 +365,13 @@ public class RangeValue : EnumerableValue
 
 public class TimestampValue : ScalarValue<DateTimeOffset>, IRedisValue
 {
-    private const string StandardFormat = "yyyy-MM-dd HH:mm:ss zz";
+    public const string StandardFormatString = "yyyy-MM-dd HH:mm:ss zz";
 
     public TimestampValue(DateTimeOffset value) : base(value)
     {}
 
     public override string AsString() =>
-        Value.ToString(StandardFormat);
+        Value.ToString(StandardFormatString);
 
     public override bool AsBoolean() => Value.ToUnixTimeSeconds() != 0;
     public SR.RedisValue AsRedisValue() => AsString();
@@ -379,10 +379,12 @@ public class TimestampValue : ScalarValue<DateTimeOffset>, IRedisValue
 
 public class DurationValue : ScalarValue<TimeSpan>, IRedisValue
 {
+    public const string StandardFormatString = "g";// "general short" = d.hh.mm.ss.ttt
+
     public DurationValue(TimeSpan value) : base(value)
     {}
 
-    public override string AsString() => Value.ToString("g"); // "general short" = d.HH.mm.ss.ttt
+    public override string AsString() => Value.ToString(StandardFormatString);
 
     public override bool AsBoolean() => Value != TimeSpan.Zero;
     public SR.RedisValue AsRedisValue() => AsString();

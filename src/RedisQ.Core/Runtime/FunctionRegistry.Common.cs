@@ -415,9 +415,14 @@ public partial class FunctionRegistry
 
     private static Task<Value> FuncTimestamp(Context ctx, Value[] arguments)
     {
-        if (arguments[0] is StringValue format == false) throw new RuntimeException($"timestamp({arguments[0]}): incompatible operand, string expected");
+        var format = arguments[0] switch
+        {
+            StringValue fmt => fmt.Value,
+            NullValue => TimestampValue.StandardFormatString,
+            _ => throw new RuntimeException($"timestamp({arguments[0]}): incompatible operand, string expected"),
+        };
         if (arguments[1] is StringValue s == false) throw new RuntimeException($"timestamp({arguments[1]}): incompatible operand, string expected");
-        var time = DateTimeOffset.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture);
+        var time = DateTimeOffset.ParseExact(s.Value, format, CultureInfo.InvariantCulture);
         return Task.FromResult<Value>(new TimestampValue(time));
     }
 
@@ -448,6 +453,7 @@ public partial class FunctionRegistry
             (IntegerValue n, StringValue {Value: "h" or "hours"}) => TimeSpan.FromHours(n.Value),
             (RealValue r, StringValue {Value: "h" or "hours"}) => TimeSpan.FromHours(r.Value),
             (StringValue s, StringValue format) => TimeSpan.ParseExact(s.Value, format.Value, CultureInfo.InvariantCulture),
+            (StringValue s, NullValue) => TimeSpan.ParseExact(s.Value, DurationValue.StandardFormatString, CultureInfo.InvariantCulture),
             _ => throw new RuntimeException($"duration({arguments[0]}, {arguments[1]}): incompatible operands, (string, string or number) expected"),
         };
         return Task.FromResult<Value>(new DurationValue(timeSpan));
