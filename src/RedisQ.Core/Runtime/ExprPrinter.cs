@@ -8,7 +8,9 @@ internal class ExprPrinter
 
     private string Indent => new(' ', 4 * _indent);
 
-    public string Print(Expr expr) =>
+    public string Print(Expr expr) => Print(expr, false);
+
+    private string Print(Expr expr, bool needsParens) =>
         expr switch
         {
             ProgramExpr e => string.Join(";" + Br, e.Children.Select(Print)) + ';',
@@ -17,32 +19,41 @@ internal class ExprPrinter
             ListExpr e => PrintList(e),
             IdentExpr e => e.Ident,
             FunctionInvocationExpr e => $"{e.Ident}({PrintArguments(e.Arguments)})",
-            OrExpr e => PrintBinary(e, "||"),
-            AndExpr e => PrintBinary(e, "&&"),
-            EqExpr e => PrintBinary(e, "=="),
-            NeExpr e => PrintBinary(e, "!="),
-            MatchExpr e => PrintBinary(e, "~="),
-            NullCoalescingExpr e => PrintBinary(e, "??"),
-            LtExpr e => PrintBinary(e, "<"),
-            LeExpr e => PrintBinary(e, "<="),
-            GtExpr e => PrintBinary(e, ">"),
-            GeExpr e => PrintBinary(e, ">="),
-            RangeExpr e => PrintBinary(e, ".."),
-            PlusExpr e => PrintBinary(e, "+"),
-            MinusExpr e => PrintBinary(e, "-"),
-            TimesExpr e => PrintBinary(e, "*"),
-            DivExpr e => PrintBinary(e, "/"),
-            ModExpr e => PrintBinary(e, "%"),
-            NegExpr e => "-" + Print(e.Operand),
-            PosExpr e => "+" + Print(e.Operand),
-            NotExpr e => "!" + Print(e.Operand),
+            OrExpr e => PrintBinary(e, "||", needsParens),
+            AndExpr e => PrintBinary(e, "&&", needsParens),
+            EqExpr e => PrintBinary(e, "==", needsParens),
+            NeExpr e => PrintBinary(e, "!=", needsParens),
+            MatchExpr e => PrintBinary(e, "~=", needsParens),
+            NullCoalescingExpr e => PrintBinary(e, "??", needsParens),
+            LtExpr e => PrintBinary(e, "<", needsParens),
+            LeExpr e => PrintBinary(e, "<=", needsParens),
+            GtExpr e => PrintBinary(e, ">", needsParens),
+            GeExpr e => PrintBinary(e, ">=", needsParens),
+            RangeExpr e => PrintBinary(e, "..", needsParens),
+            PlusExpr e => PrintBinary(e, "+", needsParens),
+            MinusExpr e => PrintBinary(e, "-", needsParens),
+            TimesExpr e => PrintBinary(e, "*", needsParens),
+            DivExpr e => PrintBinary(e, "/", needsParens),
+            ModExpr e => PrintBinary(e, "%", needsParens),
+            BitAndExpr e => PrintBinary(e, "&", needsParens),
+            BitLShiftExpr e => PrintBinary(e, "<<", needsParens),
+            BitOrExpr e => PrintBinary(e, "|", needsParens),
+            BitRShiftExpr e => PrintBinary(e, ">>", needsParens),
+            BitXorExpr e => PrintBinary(e, "^", needsParens),
+            BitNotExpr e => "~" + Print(e.Operand, needsParens: true),
+            NegExpr e => "-" + Print(e.Operand, needsParens: true),
+            PosExpr e => "+" + Print(e.Operand, needsParens: true),
+            NotExpr e => "!" + Print(e.Operand, needsParens: true),
             SubscriptExpr e => $"{Print(e.Operand)}[{Print(e.Subscript)}]",
             FieldAccessExpr e => Print(e.Operand) + '.' + e.FieldName,
-            TernaryExpr e => Print(e.Condition) + " ? " + Print(e.TrueCase) + " : " + Print(e.FalseCase),
+            TernaryExpr e => needsParens
+                ? '(' + Print(e.Condition) + " ? " + Print(e.TrueCase) + " : " + Print(e.FalseCase) + ')'
+                : Print(e.Condition) + " ? " + Print(e.TrueCase) + " : " + Print(e.FalseCase),
             FromExpr e => PrintFrom(e),
             EagerFromExpr e => PrintFrom(e.From),
             FromClause e => $"from {e.Ident} in {Print(e.Source)}",
             WhereClause e => $"where {Print(e.Predicate)}",
+            WithExpr e => $"{Print(e.Left)} with {Print(e.Right)}",
             LimitClause e => (e.Count, e.Offset) switch
             {
                 (not null, null) => $"limit {Print(e.Count)}",
@@ -115,8 +126,10 @@ internal class ExprPrinter
     private static string PrintParameters(IEnumerable<string> idents) =>
         string.Join(", ", idents);
 
-    private string PrintBinary(BinaryExpr expr, string op) =>
-        $"{Print(expr.Left)} {op} {Print(expr.Right)}";
+    private string PrintBinary(BinaryExpr expr, string op, bool needsParens) =>
+        needsParens
+        ? $"({Print(expr.Left, true)} {op} {Print(expr.Right, true)})"
+        : $"{Print(expr.Left, true)} {op} {Print(expr.Right, true)}";
 
     private static string PrintLiteral(Value literal) =>
         literal switch
