@@ -136,6 +136,7 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
             var op when op.Gt() != null => new GtExpr(left, right),
             var op when op.Ge() != null => new GeExpr(left, right),
             var op when op.RegexMatch() != null => new MatchExpr(left, right),
+            var op when op.NotRegexMatch() != null => new NotMatchExpr(left, right),
             var op when op.NullCoalesce() != null => new NullCoalescingExpr(left, right),
             _ => throw new CompilationException("syntax does not allow this"),
         };
