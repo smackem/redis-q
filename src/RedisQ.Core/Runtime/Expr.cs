@@ -176,7 +176,7 @@ public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
 public record NotMatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     (l, r) switch
     {
-        (NullValue, _) or (_, NullValue) => BoolValue.False,
+        (NullValue, _) or (_, NullValue) => BoolValue.True,
         _ => BoolValue.Of(!Regex.IsMatch(l.AsString(), r.AsString(), RegexOptions.IgnoreCase)),
     });
 

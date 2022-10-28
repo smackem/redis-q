@@ -127,6 +127,19 @@ public class RelationalOperatorsTests : TestBase
     }
 
     [Fact]
+    public async Task NotMatch()
+    {
+        var value1 = await Interpret(@"""abc"" !~= ""[a-b]{3}""");
+        Assert.Equal(BoolValue.True, value1);
+        var value2 = await Interpret(@"""abc"" !~= ""[a-c]{3}""");
+        Assert.Equal(BoolValue.False, value2);
+        var value3 = await Interpret(@"""abc"" !~= null");
+        Assert.Equal(BoolValue.True, value3);
+        var value4 = await Interpret(@"null !~= ''");
+        Assert.Equal(BoolValue.True, value4);
+    }
+
+    [Fact]
     public async Task ThrowsOnIncompatibleRelationalOperands()
     {
         await Assert.ThrowsAsync<RuntimeException>(() => Interpret(@"1 < []"));
