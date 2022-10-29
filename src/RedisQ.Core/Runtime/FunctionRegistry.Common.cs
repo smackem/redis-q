@@ -221,6 +221,7 @@ public partial class FunctionRegistry
         arguments[0] switch
         {
             ListValue list =>Task.FromResult<Value>(BoolValue.Of(list.AsBoolean())), 
+            RangeValue v => Task.FromResult<Value>(BoolValue.Of(v.AsBoolean())),
             EnumerableValue or TupleValue => Task.FromResult<Value>(NullValue.Instance),
             var v => Task.FromResult<Value>(BoolValue.Of(v.AsBoolean())),
         };

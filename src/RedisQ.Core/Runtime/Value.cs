@@ -352,7 +352,7 @@ public class RangeValue : EnumerableValue
     public long Upper { get; }
 
     public override bool AsBoolean() => Upper >= Lower;
-    public override string ToString() => $"[{GetType().Name}[{Lower} .. {Upper}]";
+    public override string ToString() => $"{GetType().Name}[{Lower} .. {Upper}]";
 
     private static async IAsyncEnumerable<Value> WalkRange(long lower, long upper)
     {
