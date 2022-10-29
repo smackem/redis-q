@@ -1,4 +1,4 @@
-VERSION=1.2.0-snapshot
+VERSION=1.2.0
 
 rm -Rf publish-*
 
