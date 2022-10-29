@@ -85,7 +85,7 @@ RedisQL adds the following language features not supported by C#:
 | Ranges | `collect(0..100)` |
 | Single-quoted or double-quoted string literals | `'hello' + ", world"` |
 | List expressions | `[1, true, 'string']` |
-| Regex operator | `"abc" ~= "\w{3}" // true` |
+| Regex operator | `"abc" =~ "\w{3}" // true` |
 | Top-level `let` statements | `let x = 1` |
 | The `limit` clause | `from ... limit 10 offset 1 ...` |
 | Case-insensitive function names | `SCAN('*')` is the same as `scan('*')` |
@@ -101,7 +101,8 @@ RedisQL supports the following operators, basically a subset of the common opera
 | `a <= b` | Less than or equal |
 | `a > b` | Greater than |
 | `a >= b` | Greater than or equal |
-| `a ~= b` | String-like value a matches the regex pattern b |
+| `a =~ b` | String-like value a matches the regex pattern b |
+| `a !~ b` | String-like value a does not match the regex pattern b |
 | `a + b` | Add numbers a and b or concatenate strings, if a or b is a string |
 | `a - b` | Subtract number b from number a |
 | `a * b` | Multiply numbers a and b |

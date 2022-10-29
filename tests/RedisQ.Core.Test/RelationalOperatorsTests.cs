@@ -120,10 +120,23 @@ public class RelationalOperatorsTests : TestBase
     [Fact]
     public async Task Match()
     {
-        var value1 = await Interpret(@"""abc"" ~= ""[a-c]+""");
+        var value1 = await Interpret(@"""abc"" =~ ""[a-c]+""");
         Assert.Equal(BoolValue.True, value1);
-        var value2 = await Interpret(@"""abc"" ~= ""[X]{2}""");
+        var value2 = await Interpret(@"""abc"" =~ ""[X]{2}""");
         Assert.Equal(BoolValue.False, value2);
+    }
+
+    [Fact]
+    public async Task NotMatch()
+    {
+        var value1 = await Interpret(@"""abc"" !~ ""[a-b]{3}""");
+        Assert.Equal(BoolValue.True, value1);
+        var value2 = await Interpret(@"""abc"" !~ ""[a-c]{3}""");
+        Assert.Equal(BoolValue.False, value2);
+        var value3 = await Interpret(@"""abc"" !~ null");
+        Assert.Equal(BoolValue.True, value3);
+        var value4 = await Interpret(@"null !~ ''");
+        Assert.Equal(BoolValue.True, value4);
     }
 
     [Fact]
@@ -148,7 +161,7 @@ public class RelationalOperatorsTests : TestBase
         Assert.Equal(BoolValue.True, value3);
         var value4 = await compiler.Compile(@"a == false").Evaluate(ctx);
         Assert.Equal(BoolValue.False, value4);
-        var value5 = await compiler.Compile(@"a ~= ""[a-z]""").Evaluate(ctx);
+        var value5 = await compiler.Compile(@"a =~ ""[a-z]""").Evaluate(ctx);
         Assert.Equal(BoolValue.False, value5);
         var value6 = await compiler.Compile(@"a == """"").Evaluate(ctx);
         Assert.Equal(BoolValue.False, value6);

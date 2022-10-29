@@ -163,7 +163,7 @@ public partial class FunctionRegistry
     private static Task<Value> FuncSplit(Context ctx, Value[] arguments)
     {
         if (arguments[0] is StringValue pattern == false) throw new RuntimeException($"replace({arguments[0]}): incompatible operand, string expected");
-        if (arguments[1] is StringValue str == false) throw new RuntimeException($"replace({arguments[2]}): incompatible operand, string expected");
+        if (arguments[1] is StringValue str == false) throw new RuntimeException($"replace({arguments[1]}): incompatible operand, string expected");
         var result = Regex.Split(str.Value, pattern.Value);
         var value = new ListValue(result.Select(s => new StringValue(s)).ToArray());
         return Task.FromResult<Value>(value);
@@ -221,6 +221,7 @@ public partial class FunctionRegistry
         arguments[0] switch
         {
             ListValue list =>Task.FromResult<Value>(BoolValue.Of(list.AsBoolean())), 
+            RangeValue v => Task.FromResult<Value>(BoolValue.Of(v.AsBoolean())),
             EnumerableValue or TupleValue => Task.FromResult<Value>(NullValue.Instance),
             var v => Task.FromResult<Value>(BoolValue.Of(v.AsBoolean())),
         };

@@ -32,6 +32,21 @@ public class CompositeValuesTests : TestBase
     }
 
     [Fact]
+    public async Task ListSlice()
+    {
+        var value1 = await Interpret("[1, 2, 3][0..-1]");
+        Assert.Equal(Helpers.IntegerList(1, 2, 3), value1);
+        var value2 = await Interpret("[1, 2, 3][-1..1000]");
+        Assert.Equal(Helpers.IntegerList(3), value2);
+        var value3 = await Interpret("[1, 2, 3][-1000..-100]");
+        Assert.Equal(ListValue.Empty, value3);
+        var value4 = await Interpret("[1, 2, 3][100..200]");
+        Assert.Equal(ListValue.Empty, value4);
+        var value5 = await Interpret("[1, 2, 3][1..200]");
+        Assert.Equal(Helpers.IntegerList(2, 3), value5);
+    }
+
+    [Fact]
     public async Task EmptyList()
     {
         const string source = "[]";

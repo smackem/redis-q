@@ -112,6 +112,7 @@ relationalOp
     | Gt
     | Ge
     | RegexMatch
+    | NotRegexMatch
     | NullCoalesce
     ;
 
@@ -260,7 +261,8 @@ Gt              : '>';
 Ge              : '>=';
 Eq              : '==';
 Ne              : '!=';
-RegexMatch      : '~=';
+RegexMatch      : '=~';
+NotRegexMatch   : '!~';
 Or              : '||';
 And             : '&&';
 Not             : '!';

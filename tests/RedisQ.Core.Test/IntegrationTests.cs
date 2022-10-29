@@ -63,7 +63,7 @@ select (k, hget(k, ""name""))
 from k in keys(""user-*"")
 let json = get(k)
 let name = json["".name""]
-where name ~= ""e""
+where name =~ ""e""
 select (k, json["".login""])
 |> collect()
 ";

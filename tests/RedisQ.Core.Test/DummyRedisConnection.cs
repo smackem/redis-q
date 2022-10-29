@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using RedisQ.Core.Redis;
 using StackExchange.Redis;
 
 namespace RedisQ.Core.Test;
 
-public class DummyRedisConnection : IRedisConnection
+public sealed class DummyRedisConnection : IRedisConnection
 {
     public void Dispose()
     {}

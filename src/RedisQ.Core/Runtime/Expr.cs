@@ -173,6 +173,13 @@ public record MatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (
         _ => BoolValue.Of(Regex.IsMatch(l.AsString(), r.AsString(), RegexOptions.IgnoreCase)),
     });
 
+public record NotMatchExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
+    (l, r) switch
+    {
+        (NullValue, _) or (_, NullValue) => BoolValue.True,
+        _ => BoolValue.Of(!Regex.IsMatch(l.AsString(), r.AsString(), RegexOptions.IgnoreCase)),
+    });
+
 public record NullCoalescingExpr(Expr Left, Expr Right) : SimpleBinaryExpr(Left, Right, (l, r) =>
     l is NullValue ? r : l);
 
@@ -361,11 +368,11 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         var subscriptValue = await Subscript.Evaluate(ctx).ConfigureAwait(false);
         return (operandValue, subscriptValue) switch
         {
-            (ListValue list, IntegerValue index) => list[CoerceIndex(list, (int) index.Value)],
-            (ListValue list, RangeValue range) => list.Slice(CoerceIndex(list, (int) range.Lower), CoerceIndex(list, (int) range.Upper)),
-            (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items, (int) index.Value)],
-            (StringValue str, IntegerValue index) => new StringValue(str.Value[CoerceIndex(str.Value, (int) index.Value)].ToString()),
-            (StringValue str, RangeValue range) => str.Slice(CoerceIndex(str.Value, (int) range.Lower), CoerceIndex(str.Value, (int) range.Upper)),
+            (ListValue list, IntegerValue index) => list[CoerceIndex(list.Count, (int) index.Value)],
+            (ListValue list, RangeValue range) => Slice(list, range),
+            (TupleValue tuple, IntegerValue index) => tuple.Items[CoerceIndex(tuple.Items.Count, (int) index.Value)],
+            (StringValue str, IntegerValue index) => new StringValue(str.Value[CoerceIndex(str.Value.Length, (int) index.Value)].ToString()),
+            (StringValue str, RangeValue range) => Slice(str, range),
             (StringValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (RedisValue json, StringValue path) => JsonPath.Select(json.AsString(), path.Value),
             (NullValue, _) or (_, NullValue) => NullValue.Instance,
@@ -373,11 +380,38 @@ public record SubscriptExpr(Expr Operand, Expr Subscript) : Expr
         };
     }
 
-    private static int CoerceIndex(IReadOnlyCollection<Value> list, int index) =>
-        index < 0 ? list.Count + index : index;
+    private static ListValue Slice(ListValue list, RangeValue value)
+    {
+        var newRange = CoerceRange(list.Count, (int) value.Lower, (int) value.Upper);
+        return newRange == null
+            ? ListValue.Empty
+            : list.Slice(newRange.Value.Item1, newRange.Value.Item2);
+    }
 
-    private static int CoerceIndex(string str, int index) =>
-        index < 0 ? str.Length + index : index;
+    private static StringValue Slice(StringValue str, RangeValue value)
+    {
+        var newRange = CoerceRange(str.Value.Length, (int) value.Lower, (int) value.Upper);
+        return newRange == null
+            ? StringValue.Empty
+            : str.Slice(newRange.Value.Item1, newRange.Value.Item2);
+    }
+
+    private static (int, int)? CoerceRange(int length, int lower, int upper)
+    {
+        lower = CoerceIndex(length, lower);
+        upper = CoerceIndex(length, upper);
+        if (lower < 0 && upper < 0) return null;
+        if (lower >= length) return null;
+        if (lower < 0) lower = 0;
+        if (upper > length - 1) upper = length - 1;
+        return (lower, upper);
+    }
+
+    private static int CoerceIndex(int length, int index)
+    {
+        index = index < 0 ? length + index : index;
+        return index;
+    }
 }
 
 public record FieldAccessExpr(Expr Operand, string FieldName) : Expr
