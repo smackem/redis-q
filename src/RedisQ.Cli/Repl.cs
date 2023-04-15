@@ -110,6 +110,14 @@ public class Repl
 
     private void RegisterReplCommands()
     {
+        _replCommands.Register(new ReplCommand("defaults", false,
+            _ =>
+            {
+                Console.WriteLine($"standard timestamp format: {TimestampValue.StandardFormatString}");
+                Console.WriteLine($"standard duration format:  {DurationValue.StandardFormatString}");
+                return Task.CompletedTask;
+            },
+            "print compile-time default values"));
         _replCommands.Register(new ReplCommand("pwd", false,
             _ =>
             {

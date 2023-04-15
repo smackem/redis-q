@@ -72,6 +72,63 @@ public partial class FunctionRegistry
         Register(new("date", 1, FuncDate, "(timestamp) -> timestamp"));
         Register(new("chars", 1, FuncChars, "(string) -> list of chars"));
         Register(new("chunk", 2, FuncChunk, "(size, enumerable) -> enumerable of lists"));
+        Register(new("take", 2, FuncTake, "(count, enumerable) -> enumerable"));
+        Register(new("skip", 2, FuncSkip, "(count, enumerable) -> enumerable"));
+        Register(new("zip", 2, FuncZip, "(enumerable, enumerable) -> enumerable of tuples"));
+    }
+
+    private static Task<Value> FuncZip(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is EnumerableValue coll1 == false) throw new RuntimeException($"zip({arguments[0]}, {arguments[1]}): incompatible operand, integer expected");
+        if (arguments[1] is EnumerableValue coll2 == false) throw new RuntimeException($"zip({arguments[0]}, {arguments[1]}): incompatible operand, enumerable expected");
+
+        async IAsyncEnumerable<TupleValue> Collect()
+        {
+            await using var enum1 = coll1.GetAsyncEnumerator();
+            await using var enum2 = coll2.GetAsyncEnumerator();
+
+            while (await enum1.MoveNextAsync() && await enum2.MoveNextAsync())
+            {
+                yield return TupleValue.Of(enum1.Current, enum2.Current);
+            }
+        }
+
+        return Task.FromResult<Value>(new EnumerableValue(Collect()));
+    }
+
+    private static Task<Value> FuncSkip(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue size == false) throw new RuntimeException($"skip({arguments[0]}, {arguments[1]}): incompatible operand, integer expected");
+        if (arguments[1] is EnumerableValue coll == false) throw new RuntimeException($"skip({arguments[0]}, {arguments[1]}): incompatible operand, enumerable expected");
+
+        async IAsyncEnumerable<Value> Collect(int offset)
+        {
+            var index = 0;
+            await foreach (var item in coll)
+            {
+                if (index++ < offset) continue;
+                yield return item;
+            }
+        }
+
+        return Task.FromResult<Value>(new EnumerableValue(Collect((int) size.Value)));
+    }
+
+    private static Task<Value> FuncTake(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue size == false) throw new RuntimeException($"take({arguments[0]}, {arguments[1]}): incompatible operand, integer expected");
+        if (arguments[1] is EnumerableValue coll == false) throw new RuntimeException($"take({arguments[0]}, {arguments[1]}): incompatible operand, enumerable expected");
+
+        async IAsyncEnumerable<Value> Collect(int count)
+        {
+            await foreach (var item in coll)
+            {
+                if (count-- <= 0) yield break;
+                yield return item;
+            }
+        }
+
+        return Task.FromResult<Value>(new EnumerableValue(Collect((int) size.Value)));
     }
 
     private static Task<Value> FuncChunk(Context ctx, Value[] arguments)
@@ -79,7 +136,7 @@ public partial class FunctionRegistry
         if (arguments[0] is IntegerValue size == false) throw new RuntimeException($"chunk({arguments[0]}, {arguments[1]}): incompatible operand, integer expected");
         if (arguments[1] is EnumerableValue coll == false) throw new RuntimeException($"chunk({arguments[0]}, {arguments[1]}): incompatible operand, enumerable expected");
 
-        async IAsyncEnumerable<ListValue> Collect()
+        async IAsyncEnumerable<Value> Collect()
         {
             await foreach (var chunk in coll.Chunk((int) size.Value))
             {
