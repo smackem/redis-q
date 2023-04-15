@@ -118,7 +118,7 @@ relationalOp
 
 compositionalExpr
     : additiveExpr
-    | additiveExpr compositionalOp additiveExpr
+    | compositionalExpr compositionalOp additiveExpr
     ;
 
 compositionalOp

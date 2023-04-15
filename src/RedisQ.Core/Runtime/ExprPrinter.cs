@@ -24,6 +24,7 @@ internal class ExprPrinter
             EqExpr e => PrintBinary(e, "==", needsParens),
             NeExpr e => PrintBinary(e, "!=", needsParens),
             MatchExpr e => PrintBinary(e, "~=", needsParens),
+            NotMatchExpr e => PrintBinary(e, "!~", needsParens),
             NullCoalescingExpr e => PrintBinary(e, "??", needsParens),
             LtExpr e => PrintBinary(e, "<", needsParens),
             LeExpr e => PrintBinary(e, "<=", needsParens),

@@ -128,10 +128,7 @@ public class CompositeValuesTests : TestBase
         var value = await Eval(expr);
         Assert.IsType<RangeValue>(value);
         var values = await ((RangeValue)value).Collect();
-        Assert.Collection(values,
-            v => Assert.Equal(IntegerValue.Of(1), v),
-            v => Assert.Equal(IntegerValue.Of(2), v),
-            v => Assert.Equal(IntegerValue.Of(3), v));
+        Assert.Equal(Helpers.IntegerList(1, 2, 3), values);
     }
 
     [Fact]
