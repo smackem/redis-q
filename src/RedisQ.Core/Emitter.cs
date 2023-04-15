@@ -144,9 +144,9 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitCompositionalExpr(RedisQLParser.CompositionalExprContext context)
     {
-        if (context.additiveExpr().Length == 1) return base.VisitCompositionalExpr(context);
-        var left = context.additiveExpr(0).Accept(this);
-        var right = context.additiveExpr(1).Accept(this);
+        if (context.compositionalExpr() == null) return base.VisitCompositionalExpr(context);
+        var left = context.compositionalExpr().Accept(this);
+        var right = context.additiveExpr().Accept(this);
         return context.compositionalOp() switch
         {
             var op when op.FromTo() != null => new RangeExpr(left, right),
