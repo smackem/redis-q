@@ -70,6 +70,15 @@ public partial class FunctionRegistry
         Register(new("bin", 1, FuncBin, "(integer) -> string"));
         Register(new("today", 0, FuncToday, "() -> timestamp"));
         Register(new("date", 1, FuncDate, "(timestamp) -> timestamp"));
+        Register(new("chars", 1, FuncChars, "(string) -> list of chars"));
+    }
+
+    private static Task<Value> FuncChars(Context ctx, Value[] arguments)
+    {
+        var s = arguments[0].AsString();
+        var chars = s.Select(ch => new StringValue(ch.ToString())).ToArray();
+        var list = new ListValue(chars);
+        return Task.FromResult<Value>(list);
     }
 
     private static Task<Value> FuncToday(Context ctx, Value[] arguments) =>
