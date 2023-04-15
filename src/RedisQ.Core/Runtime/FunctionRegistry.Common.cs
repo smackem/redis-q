@@ -71,6 +71,23 @@ public partial class FunctionRegistry
         Register(new("today", 0, FuncToday, "() -> timestamp"));
         Register(new("date", 1, FuncDate, "(timestamp) -> timestamp"));
         Register(new("chars", 1, FuncChars, "(string) -> list of chars"));
+        Register(new("chunk", 2, FuncChunk, "(size, enumerable) -> enumerable of lists"));
+    }
+
+    private static Task<Value> FuncChunk(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is IntegerValue size == false) throw new RuntimeException($"chunk({arguments[0]}, {arguments[1]}): incompatible operand, integer expected");
+        if (arguments[1] is EnumerableValue coll == false) throw new RuntimeException($"chunk({arguments[0]}, {arguments[1]}): incompatible operand, enumerable expected");
+
+        async IAsyncEnumerable<ListValue> Collect()
+        {
+            await foreach (var chunk in coll.Chunk((int) size.Value))
+            {
+                yield return new ListValue(chunk);
+            }
+        }
+
+        return Task.FromResult<Value>(new EnumerableValue(Collect()));
     }
 
     private static Task<Value> FuncChars(Context ctx, Value[] arguments)
