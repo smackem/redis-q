@@ -25,7 +25,12 @@ identList
 
 pipelineExpr
     : pipelineExpr '|>' functionInvocation
+    | pipelineExpr '|>' '{' pipelineRhsExpr '}'
     | expr
+    ;
+
+pipelineRhsExpr
+    : expr
     ;
 
 expr
@@ -190,6 +195,7 @@ primary
     | tuple
     | list
     | '(' letExpr ')'
+    | PipelineValue
     ;
 
 tuple
@@ -268,6 +274,7 @@ And             : '&&';
 Not             : '!';
 FromTo          : '..';
 NullCoalesce    : '??';
+PipelineValue   : '$';
 
 Ident
     : ([a-z] | [A-Z] | '_') ([a-z] | [A-Z] | DigitOrUnderscore)*

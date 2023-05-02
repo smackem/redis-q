@@ -7,6 +7,7 @@ namespace RedisQ.Core;
 
 internal class Emitter : RedisQLBaseVisitor<Expr>
 {
+    private const string PipelineValueIdent = "$";
     private int _nestingLevel;
     private readonly bool _parseIntAsReal;
 
@@ -37,9 +38,21 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
 
     public override Expr VisitPipelineExpr(RedisQLParser.PipelineExprContext context)
     {
-        if (context.functionInvocation() == null) return context.expr().Accept(this);
-        var lastArgument = context.pipelineExpr().Accept(this);
-        return EmitFunctionInvocation(context.functionInvocation(), lastArgument);
+        var pipelineExpr = context.pipelineExpr()?.Accept(this);
+        if (pipelineExpr == null) return context.expr().Accept(this);
+
+        if (context.functionInvocation() != null)
+        {
+            return EmitFunctionInvocation(context.functionInvocation(), pipelineExpr);
+        }
+
+        // ReSharper disable once ConvertIfStatementToReturnStatement
+        if (context.pipelineRhsExpr() != null)
+        {
+            return new LetExpr(new LetClause(PipelineValueIdent, pipelineExpr), context.pipelineRhsExpr().Accept(this));
+        }
+
+        return context.expr().Accept(this);
     }
 
     public override Expr VisitFromExpr(RedisQLParser.FromExprContext context)
@@ -212,6 +225,9 @@ internal class Emitter : RedisQLBaseVisitor<Expr>
         };
 
         if (value != null) return new LiteralExpr(value);
+
+        if (context.PipelineValue() != null) return new IdentExpr(PipelineValueIdent);
+
         return context.Ident() != null
             ? new IdentExpr(context.Ident().GetText())
             : base.VisitPrimary(context);
