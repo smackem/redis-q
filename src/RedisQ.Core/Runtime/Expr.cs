@@ -66,8 +66,12 @@ public record ListExpr(IReadOnlyList<Expr> Items) : Expr
 
     private protected override async Task<Value> EvaluateOverride(Context ctx)
     {
-        var tasks = Items.Select(expr => expr.Evaluate(ctx));
-        var list = await Task.WhenAll(tasks).ConfigureAwait(false);
+        var list = new List<Value>();
+        foreach (var item in Items)
+        {
+            var value = await item.Evaluate(ctx).ConfigureAwait(false);
+            list.Add(value);
+        }
         return new ListValue(list);
     }
 }
