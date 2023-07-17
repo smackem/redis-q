@@ -23,6 +23,7 @@ public class CliFunctions
         registry.Register(new("trace", 1, FuncTrace, "(value: any) -> value"));
         registry.Register(new("cli", 1, instance.FuncCli, "(value: any) -> string"));
         registry.Register(new("load", 1, FuncLoad, "(path: string) -> value"));
+        registry.Register(new("lines", 1, FuncLines, "(path: string) -> enumerable of value"));
     }
 
     private async Task<Value> FuncCli(Context ctx, Value[] arguments)
@@ -93,5 +94,21 @@ public class CliFunctions
     {
         if (arguments[0] is StringValue path == false) throw new RuntimeException($"load({arguments[0]}): incompatible operand, string expected");
         return new RedisValue(await File.ReadAllBytesAsync(path.Value));
+    }
+
+    private static Task<Value> FuncLines(Context ctx, Value[] arguments)
+    {
+        if (arguments[0] is StringValue path == false) throw new RuntimeException($"lines({arguments[0]}): incompatible operand, string expected");
+
+        async IAsyncEnumerable<Value> WalkLines()
+        {
+            using var reader = new StreamReader(path.Value);
+            while (await reader.ReadLineAsync() is { } line)
+            {
+                yield return new StringValue(line);
+            }
+        }
+
+        return Task.FromResult<Value>(new EnumerableValue(WalkLines()));
     }
 }
