@@ -10,3 +10,17 @@ internal static class Helpers
     public static ListValue IntegerList(params long[] integers) =>
         new(integers.Select(IntegerValue.Of).ToArray());
 }
+
+
+internal interface IProduct<out T> where T : IProduct<T>
+{
+    static abstract T Produce();
+}
+
+internal class Item : IProduct<Item>
+{
+    public static Item Produce()
+    {
+        return new Item();
+    }
+}

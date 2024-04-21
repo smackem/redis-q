@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <DefaultTargetFramework>net6.0</DefaultTargetFramework>
+        <DefaultTargetFramework>net8.0</DefaultTargetFramework>
     </PropertyGroup>
 
     <PropertyGroup>
