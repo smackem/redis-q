@@ -11,6 +11,13 @@
     <NoWarn>CS2002;CS3021;NU1605</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Version>$(VersionPrefix)</Version>
+    <Authors>smackem</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Antlr4" Version="$(Antlr4_Version)">
       <PrivateAssets>all</PrivateAssets>
@@ -32,5 +39,6 @@
 
   <ItemGroup>
     <Content Include="Antlr4\RedisQL.g4" />
+    <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>
